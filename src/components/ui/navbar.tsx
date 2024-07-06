@@ -12,10 +12,10 @@ export default function Navbar() {
         <span className="sr-only">Donate It</span>
       </Link>
       <nav className="ml-auto flex gap-4 sm:gap-6 items-center">
-        <Link href="#" className="text-sm font-medium hover:underline underline-offset-4" prefetch={false}>
+        <Link href="/auth/register/samaritan" className="text-sm font-medium hover:underline underline-offset-4" prefetch={false}>
           Donate
         </Link>
-        <Link href="#" className="text-sm font-medium hover:underline underline-offset-4" prefetch={false}>
+        <Link href="/auth/register/requester" className="text-sm font-medium hover:underline underline-offset-4" prefetch={false}>
           Request
         </Link>
         <Link href="#" className="text-sm font-medium hover:underline underline-offset-4" prefetch={false}>
