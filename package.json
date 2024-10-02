@@ -1,5 +1,5 @@
 {
-  "name": "donation-app",
+  "name": "givny",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -20,10 +20,12 @@
     "@radix-ui/react-tabs": "^1.1.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "framer-motion": "^11.9.0",
     "lucide-react": "^0.400.0",
     "next": "14.2.4",
     "react": "^18.3.1",
     "react-dom": "^18",
+    "react-use-measure": "^2.1.1",
     "tailwind-merge": "^2.3.0",
     "tailwindcss-animate": "^1.0.7"
   },

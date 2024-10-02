@@ -27,108 +27,49 @@ import Link from "next/link"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import Navbar from "./ui/navbar"
+import { Search } from "lucide-react"
+import AnimatedHeader from "./ui/animated-header"
+import { AnimatedGroup } from "./ui/animated-group"
+import { InView } from "./ui/in-view"
+import DonationSteps from "./ui/donation-steps"
+import { SlidingListings } from "./ui/sliding-listings"
 
 export function LandingPage() {
   return (
     <div className="flex flex-col min-h-[100dvh]">
       <Navbar />
-      <main className="flex-1">
-        <section className="w-full flex justify-center py-12 sm:py-24 lg:py-32 bg-primary">
-          <div className="container px-4 md:px-6">
-            <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
-              <div className="flex flex-col justify-center space-y-4">
-                <div className="space-y-2">
-                  <h1 className="text-3xl font-bold tracking-tighter text-primary-foreground sm:text-5xl xl:text-6xl/none">
-                    Donate or Request Items with Ease
-                  </h1>
-                  <p className="max-w-[600px] text-primary-foreground md:text-xl">
-                    Our app makes it simple to donate items you no longer need or request specific items you require.
-                    Join our community and make a difference.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                  <Link
-                    href="/auth/register/samaritan"
-                    className="inline-flex h-10 items-center justify-center rounded-md bg-primary-foreground px-8 text-sm font-medium text-primary shadow transition-colors hover:bg-primary-foreground/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-                    prefetch={false}
-                  >
-                    Donate
-                  </Link>
-                  <Link
-                    href="/auth/register/requester"
-                    className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-primary px-8 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-                    prefetch={false}
-                  >
-                    Request
-                  </Link>
-                </div>
-              </div>
-              <img
-                src="/placeholder.svg"
-                width="550"
-                height="550"
-                alt="Hero"
-                className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last lg:aspect-square"
-              />
-            </div>
-          </div>
-        </section>
-        <section className="flex justify-center w-full py-12 md:py-24 lg:py-32 bg-muted">
-          <div className="container px-4 md:px-6">
-            <div className="flex flex-col items-center justify-center space-y-4 text-center">
-              <div className="space-y-2">
-                <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">Key Features</div>
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
-                  Streamline Your Donations and Requests
-                </h2>
-                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                  Our app makes it easy to donate items you no longer need or request specific items you require. With
-                  our intuitive interface and community-driven approach, you can make a real impact.
+      <main className="flex-1 bg-secondary">
+        <section className="w-full flex justify-center py-12 sm:py-24 lg:py-32 bg-[url('/img-1.jpg')] bg-cover bg-center bg-no-repeat relative">
+          <div className="absolute inset-0 bg-black opacity-50" />
+          <div className="container px-4 md:px-6 relative z-10">
+            <div className="flex flex-col justify-center space-y-4 min-h-[600px]">
+              <AnimatedGroup 
+                className="space-y-2 flex flex-col items-center justify-center w-full max-w-[600px] mx-auto"
+                variants={{
+                  item: {
+                    visible: {
+                      width: '100%',
+                    }
+                  }
+                }}
+              >
+                <AnimatedHeader key={1} />
+                <p key={2} className="text-secondary md:text-lg text-center">
+                  Our app makes it simple to donate items you no longer need or request specific items you require.
+                  Join our community and make a difference.
                 </p>
-              </div>
-            </div>
-            <div className="mx-auto grid max-w-5xl items-center gap-6 py-12 lg:grid-cols-2 lg:gap-12">
-              <div className="flex flex-col justify-center space-y-4">
-                <ul className="grid gap-6">
-                  <li>
-                    <div className="grid gap-1">
-                      <h3 className="text-xl font-bold">Effortless Donations</h3>
-                      <p className="text-muted-foreground">
-                        {`Quickly and easily list items you're ready to donate, and our community will take care of the
-                        rest.`}
-                      </p>
-                    </div>
-                  </li>
-                  <li>
-                    <div className="grid gap-1">
-                      <h3 className="text-xl font-bold">Targeted Requests</h3>
-                      <p className="text-muted-foreground">
-                        Search for and request the specific items you need, and our community will work to fulfill your
-                        requests.
-                      </p>
-                    </div>
-                  </li>
-                  <li>
-                    <div className="grid gap-1">
-                      <h3 className="text-xl font-bold">Community Impact</h3>
-                      <p className="text-muted-foreground">
-                        {`See the real-world impact of your donations and requests, and be inspired by the stories of
-                        those you've helped.`}
-                      </p>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-              <img
-                src="/placeholder.svg"
-                width="550"
-                height="310"
-                alt="Features"
-                className="mx-auto aspect-video overflow-hidden rounded-xl object-cover object-center sm:w-full lg:order-last"
-              />
+                <div key={3} className="flex items-center justify-center !my-8 relative w-full">
+                  <input type="text" placeholder="Search for items" className="input input-bordered w-full focus:outline-none h-16 rounded-full px-4 w-full" />
+                  <Link href="/app/requester/explore" className="absolute right-4 top-0 bottom-0 flex items-center justify-center">
+                    <Search className="size-6 text-primary z-10 cursor-pointer" />
+                  </Link>
+                </div>
+              </AnimatedGroup>
             </div>
           </div>
         </section>
+        <DonationSteps />
+        <SlidingListings />
         <section className="flex justify-center w-full py-12 md:py-24 lg:py-32">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
@@ -234,10 +175,10 @@ export function LandingPage() {
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
                 <Link
                   href="/auth/register/samaritan"
-                  className="inline-flex h-10 items-center justify-center rounded-md bg-primary-foreground px-8 text-sm font-medium text-primary shadow transition-colors hover:bg-primary-foreground/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                  className="inline-flex h-10 items-center justify-center rounded-full bg-primary-foreground px-8 text-sm font-medium text-primary shadow transition-colors hover:bg-primary-foreground/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
                   prefetch={false}
                 >
-                  Donate
+                  List an Item
                 </Link>
               </div>
             </div>

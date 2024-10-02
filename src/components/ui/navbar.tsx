@@ -1,84 +1,120 @@
+"use client";
+
 import Link from "next/link";
-import React from "react";
+import React, { useState } from "react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import Image from "next/image"
+import { Menu, User, ChevronDown, ChevronUp } from "lucide-react"
 
 export default function Navbar() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
+
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const toggleAccount = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent the event from bubbling up
+    setIsAccountOpen(!isAccountOpen);
+  };
+
+  const navLinks = [
+    { href: "/app/requester/explore", label: "Explore" },
+    { href: "/auth/register/samaritan", label: "List an Item" },
+    { href: "#", label: "About" },
+    { href: "#", label: "Contact" },
+  ];
+
+  const profileLinks = [
+    { href: "/app/requester", label: "Profile" },
+    { href: "#", label: "Settings" },
+    { href: "/", label: "Sign out" },
+  ];
+
   return (
-    <header className="px-4 lg:px-6 h-14 flex items-center">
-      <Link href="/" className="flex items-center justify-center" prefetch={false}>
-        <GiftIcon className="h-6 w-6" />
-        <span className="sr-only">Donate It</span>
-      </Link>
-      <nav className="ml-auto flex gap-4 sm:gap-6 items-center">
-        <Link href="/auth/register/samaritan" className="text-sm font-medium hover:underline underline-offset-4" prefetch={false}>
-          Donate
+    <header className="px-4 lg:px-6 h-14 flex items-center !bg-white">
+      <div className="container mx-auto max-w-7xl flex items-center justify-between">
+        <Link href="/" className="flex items-center justify-center" prefetch={false}>
+          <Image src="/logo.png" alt="Givny" width={100} height={34.8} />
+          <span className="sr-only">Givny</span>
         </Link>
-        <Link href="/auth/register/requester" className="text-sm font-medium hover:underline underline-offset-4" prefetch={false}>
-          Request
-        </Link>
-        <Link href="#" className="text-sm font-medium hover:underline underline-offset-4" prefetch={false}>
-          About
-        </Link>
-        <Link href="#" className="text-sm font-medium hover:underline underline-offset-4" prefetch={false}>
-          Contact
-        </Link>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src="/placeholder-user.jpg" />
-                <AvatarFallback>JD</AvatarFallback>
-              </Avatar>
-              <span className="sr-only">Toggle user menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem>
-              <Link href="/app/requester" className="flex items-center gap-2" prefetch={false}>
-                <div className="h-4 w-4" />
-                <span>Profile</span>
+        <nav className="ml-auto flex gap-4 sm:gap-6 items-center">
+          {/* Desktop menu */}
+          <div className="hidden md:flex gap-4 sm:gap-6 items-center">
+            {navLinks.map((link) => (
+              <Link key={link.href} href={link.href} className="text-sm font-medium hover:underline underline-offset-4" prefetch={false}>
+                {link.label}
               </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Link href="#" className="flex items-center gap-2" prefetch={false}>
-                <div className="h-4 w-4" />
-                <span>Settings</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Link href="/" className="flex items-center gap-2" prefetch={false}>
-                <div className="h-4 w-4" />
-                <span>Sign out</span>
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </nav>
+            ))}
+          </div>
+          
+          {/* Mobile menu */}
+          <div className="md:hidden">
+            <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={toggleMenu}>
+                  <Menu className="h-6 w-6" />
+                  <span className="sr-only">Toggle menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-screen mt-2">
+                {navLinks.map((link) => (
+                  <DropdownMenuItem key={link.href}>
+                    <Link href={link.href} className="w-full" prefetch={false}>
+                      {link.label}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="p-0" onSelect={(e) => e.preventDefault()}>
+                  <button 
+                    className="w-full p-2 hover:bg-accent hover:text-accent-foreground cursor-pointer flex items-center justify-between" 
+                    onClick={toggleAccount}
+                  >
+                    <span className="flex items-center">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Account</span>
+                    </span>
+                    {isAccountOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </button>
+                </DropdownMenuItem>
+                {isAccountOpen && profileLinks.map((link) => (
+                  <DropdownMenuItem key={link.href} className="pl-8">
+                    <Link href={link.href} className="w-full" prefetch={false}>
+                      {link.label}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* User menu (visible only on desktop) */}
+          <div className="hidden md:block">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="/placeholder-user.jpg" />
+                    <AvatarFallback>JD</AvatarFallback>
+                  </Avatar>
+                  <span className="sr-only">Toggle user menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {profileLinks.map((link) => (
+                  <DropdownMenuItem key={link.href}>
+                    <Link href={link.href} className="flex items-center gap-2 w-full" prefetch={false}>
+                      <div className="h-4 w-4" />
+                      <span>{link.label}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </nav>
+      </div>
     </header>
   );
-}
-
-function GiftIcon(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="3" y="8" width="18" height="4" rx="1" />
-      <path d="M12 8v13" />
-      <path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" />
-      <path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5" />
-    </svg>
-  )
 }
