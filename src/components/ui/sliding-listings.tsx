@@ -81,7 +81,7 @@ export function SlidingListings() {
             <ImageCard
                 key={donation.id}
                 image={donation.image}
-                title={donation.name}
+                title={donation.category}
                 description={donation.description}
                 containerClassName="bg-[transparent]"
                 titleClassName="text-white"
