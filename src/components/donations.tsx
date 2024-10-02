@@ -105,7 +105,7 @@ export default function Donations() {
   };
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="flex flex-row items-center justify-between">
+      <div className="flex flex-row items-center justify-between flex-wrap">
         <div>
           <h1 className="text-3xl font-bold">Listings</h1>
           <p className="text-muted-foreground mb-8">
