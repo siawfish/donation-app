@@ -30,9 +30,9 @@ import Navbar from "./ui/navbar"
 import { Search } from "lucide-react"
 import AnimatedHeader from "./ui/animated-header"
 import { AnimatedGroup } from "./ui/animated-group"
-import { InView } from "./ui/in-view"
 import DonationSteps from "./ui/donation-steps"
 import { SlidingListings } from "./ui/sliding-listings"
+import Image from "next/image"
 
 export function LandingPage() {
   return (
@@ -60,11 +60,36 @@ export function LandingPage() {
                 </p>
                 <div key={3} className="flex items-center justify-center !my-8 relative w-full">
                   <input type="text" placeholder="Search for items" className="input input-bordered w-full focus:outline-none h-16 rounded-full px-4 w-full" />
-                  <Link href="/app/requester/explore" className="absolute right-4 top-0 bottom-0 flex items-center justify-center">
+                  <Link href="/app/user/explore" className="absolute right-4 top-0 bottom-0 flex items-center justify-center">
                     <Search className="size-6 text-primary z-10 cursor-pointer" />
                   </Link>
                 </div>
               </AnimatedGroup>
+            </div>
+          </div>
+        </section>
+        <section className="flex justify-center w-full py-12 md:py-24 lg:py-32 px-4 md:px-6">
+          <div className="container mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+              <div className="flex flex-col gap-4">
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
+                  Why we do this.
+                </h2>
+                <p className="text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                  We believe that everyone deserves a chance to thrive, and that starts with having the basic necessities.
+                  That&apos;s why we&apos;re committed to making sure everyone has access to the things they need to live a healthy and happy life.
+                </p>
+                <p className="text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                  We&apos;re a community-driven platform that connects those in need with those who have extra items to spare.
+                  Our mission is to make it easy and convenient for people to give and receive items, helping to reduce waste and promote sustainability.
+                </p>
+                <p className="text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                  Together, we can create a more sustainable and equitable world, where everyone has the opportunity to thrive.
+                </p>
+              </div>
+              <div className="flex items-center justify-center">
+                <Image src="/give-1.jpg" alt="Why we do this" className="rounded-lg" width={650} height={550} />
+              </div>
             </div>
           </div>
         </section>
@@ -164,18 +189,18 @@ export function LandingPage() {
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
-                <h2 className="text-3xl font-bold tracking-tighter text-primary-foreground sm:text-5xl">
+                <h2 className="text-3xl font-bold tracking-tighter text-white sm:text-5xl">
                   Ready to Make a Difference?
                 </h2>
-                <p className="max-w-[600px] text-primary-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                <p className="max-w-[600px] text-white md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   Join our community and start donating or requesting items today. Together, we can create a more
                   sustainable and equitable world.
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
                 <Link
-                  href="/auth/register/samaritan"
-                  className="inline-flex h-10 items-center justify-center rounded-full bg-primary-foreground px-8 text-sm font-medium text-primary shadow transition-colors hover:bg-primary-foreground/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                  href="/auth/register/donor"
+                  className="inline-flex h-10 items-center justify-center rounded-full bg-white px-8 text-sm font-medium text-primary shadow transition-colors hover:bg-white/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
                   prefetch={false}
                 >
                   List an Item

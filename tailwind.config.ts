@@ -11,6 +11,8 @@ const config: Config = {
       fontFamily: {
         body: ["Lora", "serif"],
         heading: ["Lora", "serif"],
+        cabinet: ["Cabinet Grotesk", "sans-serif"],
+        cabinetLight: ["Cabinet Grotesk Light", "sans-serif"],
       },
       colors: {
         border: 'hsl(var(--border))',
@@ -20,7 +22,7 @@ const config: Config = {
         foreground: 'hsl(var(--foreground))',
         primary: {
           DEFAULT: 'var(--primary)',
-          foreground: 'hsl(var(--primary-foreground))'
+          foreground: 'var(--primary-foreground)'
         },
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
@@ -46,6 +48,8 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))'
         },
+        warning: "hsl(var(--warning))",
+        success: "hsl(var(--success))",
       },
       borderRadius: {
         xl: `calc(var(--radius) + 4px)`,

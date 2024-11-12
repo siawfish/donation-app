@@ -1,8 +1,3 @@
-/**
- * v0 by Vercel.
- * @see https://v0.dev/t/OyjQXXxeeIu
- * Documentation: https://v0.dev/docs#integrating-generated-code-into-your-nextjs-app
- */
 "use client";
 
 import { useState } from "react";
@@ -136,7 +131,7 @@ export default function Donations() {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
         {currentDonations.map((donation) => (
-          <Link key={donation.id} href={`/app/requester/donation`}>
+          <Link key={donation.id} href={`/app/user?id=${donation.id}`}>
             <ImageCard
               image={donation.image}
               title={donation.category}

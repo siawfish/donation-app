@@ -4,6 +4,17 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+@font-face {
+  font-family: "Cabinet Grotesk";
+  src: url("./fonts/CabinetGrotesk-Bold.otf");
+}
+
+@font-face {
+  font-family: "Cabinet Grotesk Light";
+  src: url("./fonts/CabinetGrotesk-Light.otf");
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -13,7 +24,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
     --primary: #35a26d;
-    --primary-foreground: 0 0% 98%;
+    --primary-foreground: #35a26d20;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
     --muted: 240 4.8% 95.9%;
@@ -26,6 +37,8 @@
     --input: 240 5.9% 90%;
     --ring: 240 5.9% 10%;
     --radius: 0.5rem;
+    --warning: 35 100% 50%;
+    --success: 142 76% 36%;
   }
 }
 
@@ -41,7 +54,7 @@
     font-style: normal;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: "Poppins", sans-serif !important;
+  h1, h2, h3, h4, h5, h6, label, a {
+    font-family: "Cabinet Grotesk", Arial, Helvetica, sans-serif;
   }
 }

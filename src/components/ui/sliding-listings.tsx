@@ -76,18 +76,49 @@ const donations = [
 
 export function SlidingListings() {
   return (
-    <InfiniteSlider className="bg-primary py-12" gap={24} reverse>
+    <div className="flex flex-col gap-12 bg-primary py-16">
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="flex flex-row justify-between items-center">
+          <div className="flex flex-col">
+            <h2 className="text-white text-3xl font-bold">Recent Donations</h2>
+            <p className="text-white text-lg">
+              Check out some of the recent donations from our community.
+            </p>
+          </div>
+          <button className="bg-white text-primary px-4 py-2 rounded-full hidden md:block">
+            View All Donations
+          </button>
+        </div>
+      </div>
+      <InfiniteSlider gap={24} reverse>
         {donations.map((donation) => (
-            <ImageCard
-                key={donation.id}
-                image={donation.image}
-                title={donation.category}
-                description={donation.description}
-                containerClassName="bg-[transparent]"
-                titleClassName="text-white"
-                descriptionClassName="text-white"
-            />
+          <ImageCard
+            key={donation.id}
+            image={donation.image}
+            title={donation.category}
+            description={donation.description}
+            containerClassName="bg-[transparent]"
+            titleClassName="text-white"
+            descriptionClassName="text-white"
+          />
         ))}
-    </InfiniteSlider>
+      </InfiniteSlider>
+      <InfiniteSlider gap={24}>
+        {donations.map((donation) => (
+          <ImageCard
+            key={donation.id}
+            image={donation.image}
+            title={donation.category}
+            description={donation.description}
+            containerClassName="bg-[transparent]"
+            titleClassName="text-white"
+            descriptionClassName="text-white"
+          />
+        ))}
+      </InfiniteSlider>
+      <button className="bg-white text-primary px-4 py-2 rounded-full block md:hidden mx-auto">
+        View All Donations
+      </button>
+    </div>
   );
 }

@@ -30,76 +30,62 @@ import { Select } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import Image from "next/image"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
+import IndividualForm from "./IndividualForm"
+import OrganizationForm from "./OrganizationForm"
+import { ArrowRightIcon } from "lucide-react"
+import CustomButton from "./Button"
 
 export function Register({
-  title="Create an account to start donating",
-  link="/app/samaritan"
+  title="Donor Registration",
+  caption="Create an account to start donating",
+  link="/app/donor"
 }) {
   return (
-    <div className="flex flex-col min-h-screen">
-      <div className="flex-1 flex justify-center items-center">
-        <div className="max-w-2xl space-y-6 w-full sm:px-6 lg:px-8">
-          <div className="space-y-2 text-center">
-            <h1 className="text-3xl font-bold">Sign Up</h1>
-            <p className="text-muted-foreground">{title}</p>
-          </div>
-          <Card className="border-0">
-            <CardContent className="space-y-4">
+    <div className="container mx-auto min-h-[calc(100vh-160px)]">
+      <div className="grid grid-cols-1 lg:grid-cols-[65%_35%] h-full w-full">
+        <div className="flex-1 flex items-center lg:pr-16">
+          <div className="flex flex-col gap-y-12 w-full sm:px-6 lg:px-8">
+            <div className="space-y-1">
+              <h1 className="text-3xl font-bold">{title}</h1>
+              <p className="text-muted-foreground">{caption}</p>
+            </div>
+            <Tabs defaultValue="individual"  className="space-y-4">
               <div className="space-y-2">
                 <div className="flex items-center space-x-4">
-                  <RadioGroup value="organization">
-                    <RadioGroupItem id="organization" value="organization" />
-                    <Label htmlFor="organization">Organization</Label>
-                  </RadioGroup>
-                  <RadioGroup value="individual">
-                    <RadioGroupItem id="individual" value="individual" />
-                    <Label htmlFor="individual">Individual</Label>
-                  </RadioGroup>
+                  <TabsList className="p-0">
+                    <TabsTrigger value="individual">Individual</TabsTrigger>
+                    <TabsTrigger value="organization">Organization</TabsTrigger>
+                  </TabsList>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
-                  <Input id="fullName" placeholder="Enter your full name" required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="country">Select Country</Label>
-                  <Input id="country" type="tel" placeholder="Select your country" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="organizationName">Organization Name</Label>
-                <Input id="organizationName" placeholder="Enter your organization name" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input id="email" type="email" placeholder="Enter your email" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" type="tel" placeholder="Enter your phone number" />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="address">Street Address</Label>
-                  <Input id="address" placeholder="Enter your street address" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="city">City</Label>
-                  <Input id="city" placeholder="Enter your city" />
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="border-0">
-              <Link className="ml-auto" href={link}>
-                <Button type="submit">
-                  Sign Up
-                </Button>
-              </Link>
-            </CardFooter>
-          </Card>
+              <TabsContent value="individual">
+                <IndividualForm />
+              </TabsContent>
+              <TabsContent value="organization">
+                <OrganizationForm />
+              </TabsContent>
+            </Tabs>
+            <CustomButton 
+              icon={<ArrowRightIcon className="w-4 h-4" />}
+              iconPosition="right"
+              className="max-w-[200px] rounded-full py-6"
+            >
+              Register
+            </CustomButton>
+          </div>
+        </div>
+        <div className="flex-1 justify-center items-center hidden lg:flex pr-12">
+          <div className="max-w-[500px] relative">
+            <Image 
+              src="/give-5.jpg" 
+              alt="Register" 
+              width={507} 
+              height={760.5} 
+              className="object-cover rounded-lg transform skew-x-[-4deg] blur-[3px]" 
+            />
+          </div>
         </div>
       </div>
     </div>

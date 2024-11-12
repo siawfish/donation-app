@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import Image from "next/image"
 import { Menu, User, ChevronDown, ChevronUp } from "lucide-react"
+import Logo from "../Logo";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -19,25 +20,22 @@ export default function Navbar() {
   };
 
   const navLinks = [
-    { href: "/app/requester/explore", label: "Explore" },
-    { href: "/auth/register/samaritan", label: "List an Item" },
+    { href: "/app/user/explore", label: "Explore" },
+    { href: "/auth/register/donor", label: "List an Item" },
     { href: "#", label: "About" },
     { href: "#", label: "Contact" },
   ];
 
   const profileLinks = [
-    { href: "/app/requester", label: "Profile" },
+    { href: "/app/user", label: "Profile" },
     { href: "#", label: "Settings" },
     { href: "/", label: "Sign out" },
   ];
 
   return (
     <header className="px-4 lg:px-6 h-14 flex items-center !bg-white">
-      <div className="container mx-auto max-w-7xl flex items-center justify-between">
-        <Link href="/" className="flex items-center justify-center" prefetch={false}>
-          <Image src="/logo.png" alt="Givny" width={100} height={34.8} />
-          <span className="sr-only">Givny</span>
-        </Link>
+      <div className="container mx-auto max-w-8xl flex items-center justify-between">
+        <Logo />
         <nav className="ml-auto flex gap-4 sm:gap-6 items-center">
           {/* Desktop menu */}
           <div className="hidden md:flex gap-4 sm:gap-6 items-center">
