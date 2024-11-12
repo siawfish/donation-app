@@ -6,7 +6,7 @@ import CustomInput from "./CustomInput"
 import CustomTextarea from "./CustomTextarea"
 import DragAndDrop from "./ui/drag-n-drop"
 
-export function AddDonation() {
+export default function AddDonation() {
   return (
     <div className="container max-w-6xl mx-auto px-4 lg:py-12">
       <div className="grid grid-cols-1 lg:grid-cols-[60%_40%]">

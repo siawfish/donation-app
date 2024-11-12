@@ -1,5 +1,5 @@
 import CustomButton from "@/components/Button";
-import CustomInput from "@/components/Input";
+import CustomInput from "@/components/CustomInput";
 import Logo from "@/components/Logo";
 import Link from "next/link";
 import React from "react";

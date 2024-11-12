@@ -1,8 +1,9 @@
-import { AddDonation } from '@/components/AddDonation'
-import React from 'react'
-
+import React, { Suspense } from 'react'
+import AddDonation from '@/components/AddDonation'
 export default function AddDonationPage() {
     return (
-        <AddDonation />
+        <Suspense fallback={<div>Loading...</div>}>
+            <AddDonation />
+        </Suspense>
     )
 }

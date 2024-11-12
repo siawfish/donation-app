@@ -1,6 +1,5 @@
-import { Donor } from '@/components/Donor'
-import React from 'react'
-
+import React, { Suspense } from 'react'
+import Donor from '@/components/Donor'
 export const metadata = {
   title: 'Donor Dashboard',
   description: 'Donor dashboard',
@@ -8,6 +7,8 @@ export const metadata = {
 
 export default function Account() {
     return (
-        <Donor />
+        <Suspense fallback={<div>Loading...</div>}>
+            <Donor />
+        </Suspense>
     )
 }

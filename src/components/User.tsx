@@ -78,7 +78,7 @@ const donations = [
   // },
 ];
 
-export function User() {
+export default function User() {
   return (
     <div className="container max-w-8xl mx-auto px-4">
       <div className="grid grid-cols-1 lg:grid-cols-[80%_20%] gap-4">

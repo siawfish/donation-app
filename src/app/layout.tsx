@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import "./globals.css";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Givny",
@@ -15,9 +16,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <NuqsAdapter>
-          {children}
-        </NuqsAdapter>
+        <Suspense fallback={<div>Loading...</div>}>
+          <NuqsAdapter>
+            {children}
+          </NuqsAdapter>
+        </Suspense>
       </body>
     </html>
   );
