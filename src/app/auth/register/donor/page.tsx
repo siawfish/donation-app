@@ -1,6 +1,6 @@
 import React from 'react'
 import { Register } from '@/components/Register'
-import { registerDonorAction } from '../../actions/register'
+import { registerDonorAction } from '../../actions/Register'
 
 export default function RegisterPage() {
     return (
