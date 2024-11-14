@@ -32,7 +32,7 @@ export default function ImageCard({
                 <CardTitle className={`text-lg font-medium ${titleClassName}`}>{title}</CardTitle>
             </CardHeader>
             <CardContent className="px-0">
-                <p className={`text-sm text-muted-foreground ${descriptionClassName}`}>
+                <p className={`text-sm text-muted-foreground line-clamp-3 ${descriptionClassName}`}>
                     {description}
                 </p>
             </CardContent>

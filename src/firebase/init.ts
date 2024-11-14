@@ -1,0 +1,25 @@
+import admin from 'firebase-admin';
+import { authConfig } from './config';
+import {getFirestore} from 'firebase-admin/firestore';
+
+const initializeApp = () => {
+  if (!authConfig.serviceAccount) {
+    return admin.initializeApp();
+  }
+
+  return admin.initializeApp({
+    credential: admin.credential.cert(authConfig.serviceAccount)
+  });
+};
+
+export const getFirebaseAdminApp = () => {
+  if (admin.apps.length > 0) {
+    return admin.apps[0] as admin.app.App;
+  }
+
+  // admin.firestore.setLogFunction(console.log);
+
+  return initializeApp();
+};
+
+export const db = getFirestore(getFirebaseAdminApp());

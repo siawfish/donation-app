@@ -3,3 +3,79 @@ export enum ConditionType {
     FAIR = "fair",
     POOR = "poor"
 }
+
+export enum UserTypes {
+    DONOR = "donor",
+    USER = "user"
+}
+
+export enum AccountTypes {
+    INDIVIDUAL = "individual",
+    ORGANIZATION = "organization"
+}
+
+export interface DonorType {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    state: string;
+    zip: string;
+    country: string;
+    type: AccountTypes;
+    lastLogin: string;
+    createdAt: string;
+    updatedAt: string;
+    userType: UserTypes;
+}
+
+export interface DonorRegisterPayload extends DonorType {
+    password: string;
+}
+
+export interface UserRegisterPayload extends UserType {
+    password: string;
+    interestedCategories: string[];
+}
+
+export interface UserType extends DonorType {
+    interestedCategories: string[];
+}
+
+export interface ResponseData<T> {
+    success: boolean;
+    message: string;
+    data: T;
+}
+
+export interface ItemType {
+    id?: string;
+    name: string;
+    description: string;
+    category: CategoryType[];
+    condition: ConditionType;
+    assets: AssetType[];
+    createdBy?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface AssetType {
+    id: string;
+    url: string;
+    type: string;
+}
+
+export interface CategoryType {
+    id: string;
+    name: string;
+}
+
+export interface PaginatedData<T> {
+    items: T;
+    total: number;
+    page: number;
+    limit: number;
+}

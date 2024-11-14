@@ -5,13 +5,21 @@ import React, { useState } from "react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import Image from "next/image"
-import { Menu, User, ChevronDown, ChevronUp } from "lucide-react"
+import { Menu, User, ChevronDown, ChevronUp, LogIn, LockIcon } from "lucide-react"
 import Logo from "../Logo";
+import { useAuth } from "@/firebase/auth/AuthContext";
+import { getInitials } from "@/lib/utils";
+import { signOut } from "firebase/auth";
+import { getFirebaseAuth } from "@/firebase/auth/firebase";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import CustomButton from "../Button";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const {user} = useAuth();
+  const router = useRouter();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const toggleAccount = (e: React.MouseEvent) => {
@@ -27,10 +35,37 @@ export default function Navbar() {
   ];
 
   const profileLinks = [
-    { href: "/app/user", label: "Profile" },
-    { href: "#", label: "Settings" },
-    { href: "/", label: "Sign out" },
+    { 
+      id: 'profile',
+      href: `/app/${user?.userType}/my-items`, 
+      label: "Profile" 
+    },
+    { 
+      id: 'settings',
+      href: "#", 
+      label: "Settings" 
+    },
+    { 
+      id: 'signout',
+      href: "#", 
+      label: "Sign out" 
+    },
   ];
+
+  const logout = async () => {
+    try {
+      await Promise.all([
+        signOut(getFirebaseAuth()),
+        fetch('/api/logout', {
+          method: 'GET',
+        })
+      ]);
+      router.refresh();
+    } catch (error: any) {
+      console.error('Error logging out:', error);
+      toast.error('Error logging out', { description: error.message });
+    }
+  }
 
   return (
     <header className="px-4 lg:px-6 h-14 flex items-center !bg-white">
@@ -88,29 +123,44 @@ export default function Navbar() {
           </div>
 
           {/* User menu (visible only on desktop) */}
-          <div className="hidden md:block">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="/placeholder-user.jpg" />
-                    <AvatarFallback>JD</AvatarFallback>
-                  </Avatar>
-                  <span className="sr-only">Toggle user menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {profileLinks.map((link) => (
-                  <DropdownMenuItem key={link.href}>
-                    <Link href={link.href} className="flex items-center gap-2 w-full" prefetch={false}>
-                      <div className="h-4 w-4" />
-                      <span>{link.label}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          {
+            user ? (
+              <div className="hidden md:block">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user?.photoURL!} />
+                        <AvatarFallback>{getInitials(user?.displayName ?? '')}</AvatarFallback>
+                      </Avatar>
+                      <span className="sr-only">Toggle user menu</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {profileLinks.map((link) => (
+                      <DropdownMenuItem 
+                        key={link.id}
+                        onClick={() => {
+                          if (link.id === 'signout') {
+                            logout();
+                          }
+                        }}
+                      >
+                        <Link href={link.href} className="flex items-center gap-2 w-full" prefetch={false}>
+                          <div className="h-4 w-4" />
+                          <span>{link.label}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            ) : (
+              <Link href="/auth/login" className="text-sm font-medium hover:underline underline-offset-4">
+                <CustomButton icon={<LockIcon className="h-4 w-4" />} className="border-primary rounded-full !text-primary min-w-[100px] pr-[40px]" variant="outline">Login</CustomButton>
+              </Link>
+            )
+          }
         </nav>
       </div>
     </header>

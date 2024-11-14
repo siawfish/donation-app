@@ -4,120 +4,39 @@ import { ProfileSidePane } from "./ProfileSidePane"
 import { ProfileHeader } from "./ProfileHeader"
 import ImageCard from "./ui/image-card"
 import { CustomPagination } from "./CustomPagination"
+import { ItemType, PaginatedData } from "@/app/types";
 
-const donations = [
-  {
-    id: 1,
-    name: "John Doe",
-    category: "Food Bank",
-    description: "Donation to support local food bank.",
-    image: "/placeholder.svg",
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    category: "Disaster Relief",
-    description: "Donation to help with disaster relief efforts.",
-    image: "/placeholder.svg",
-  },
-  {
-    id: 3,
-    name: "Michael Johnson",
-    category: "Education",
-    description: "Donation to fund educational scholarships.",
-    image: "/placeholder.svg",
-  },
-  {
-    id: 4,
-    name: "Emily Davis",
-    category: "Animal Rescue",
-    description: "Donation to support animal rescue organization.",
-    image: "/placeholder.svg",
-  },
-  {
-    id: 5,
-    name: "David Wilson",
-    category: "Medical Research",
-    description: "Donation to help with medical research.",
-    image: "/placeholder.svg",
-  },
-  {
-    id: 6,
-    name: "Sarah Lee",
-    category: "Community Center",
-    description: "Donation to support local community center.",
-    image: "/placeholder.svg",
-  },
-  {
-    id: 7,
-    name: "Tom Brown",
-    category: "Environmental Conservation",
-    description: "Donation to help with environmental conservation efforts.",
-    image: "/placeholder.svg",
-  },
-  {
-    id: 8,
-    name: "Olivia Anderson",
-    category: "Youth Development",
-    description: "Donation to support youth development programs.",
-    image: "/placeholder.svg",
-  },
-  // {
-  //   id: 9,
-  //   name: "Daniel Martinez",
-  //   category: "Disaster Relief",
-  //   description: "Donation to help with disaster relief efforts.",
-  //   image: "/placeholder.svg",
-  // },
-  // {
-  //   id: 10,
-  //   name: "Sophia Hernandez",
-  //   category: "Animal Shelter",
-  //   description: "Donation to support local animal shelter.",
-  //   image: "/placeholder.svg",
-  // },
-];
+interface DonorProps {
+  donations: PaginatedData<ItemType[]>;
+}
 
-export default function Donor() {
+export default function Donor({ donations }: DonorProps) {
   return (
     <div className="container max-w-8xl mx-auto px-4">
       <div className="grid grid-cols-1 lg:grid-cols-[80%_20%] gap-4">
         <div className="flex flex-col gap-6">
           
-          <ProfileHeader type="donor" />
+          <ProfileHeader />
 
           <Tabs defaultValue="ongoing">
             <TabsList className="border-b">
               <TabsTrigger value="ongoing">Listed Items</TabsTrigger>
               <TabsTrigger value="past">Donated Items</TabsTrigger>
             </TabsList>
-            <TabsContent value="ongoing">
-              <div className="p-1 flex flex-col">
-                <CustomPagination />  
-                {/* TODO: List requested items */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
-                  {donations.map((donation) => (
-                    <Link key={donation.id} href={`/app/donor?id=${donation.id}`}>
-                      <ImageCard
-                        image={donation.image}
-                        title={donation.category}
-                        description={donation.description}
-                      />
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </TabsContent>
             <TabsContent value="past">
               <div className="p-1 flex flex-col">
-                <CustomPagination />
+                <CustomPagination 
+                  total={donations.total}
+                  page={donations.page}
+                  limit={donations.limit}
+                />
                 {/* TODO: List received items */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {donations.map((donation) => (
+                  {donations.items.map((donation) => (
                     <Link key={donation.id} href={`/app/user/donation`}>
                       <ImageCard
-                        image={donation.image}
-                        title={donation.category}
+                        image={donation.assets[0].url}
+                        title={donation.name}
                         description={donation.description}
                       />
                     </Link>
@@ -127,7 +46,7 @@ export default function Donor() {
             </TabsContent>
           </Tabs>
         </div>
-        <ProfileSidePane type="donor" />
+        <ProfileSidePane />
       </div>
     </div>
   )

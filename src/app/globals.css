@@ -15,6 +15,11 @@
   src: url("./fonts/CabinetGrotesk-Light.otf");
 }
 
+@font-face {
+  font-family: "Cabinet Grotesk Regular";
+  src: url("./fonts/CabinetGrotesk-Regular.otf");
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -48,7 +53,7 @@
   }
 
   body {
-    font-family: "Lora", serif !important;
+    font-family: "Cabinet Grotesk Regular", Arial, Helvetica, sans-serif;
     font-optical-sizing: auto;
     font-weight: 400;
     font-style: normal;

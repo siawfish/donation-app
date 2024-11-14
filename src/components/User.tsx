@@ -93,7 +93,7 @@ export default function User() {
             </TabsList>
             <TabsContent value="ongoing">
               <div className="p-1 flex flex-col">
-                <CustomPagination />  
+                {/* <CustomPagination />   */}
                 {/* TODO: List requested items */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
                   {donations.map((donation) => (
@@ -110,7 +110,7 @@ export default function User() {
             </TabsContent>
             <TabsContent value="past">
               <div className="p-1 flex flex-col">
-                <CustomPagination />
+                {/* <CustomPagination /> */}
                 {/* TODO: List received items */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                   {donations.map((donation) => (

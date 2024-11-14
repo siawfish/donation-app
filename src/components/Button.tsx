@@ -11,7 +11,7 @@ interface CustomButtonProps extends ButtonProps {
 
 export default function CustomButton({ children, icon, iconPosition = "right", className, isLoading, ...props }: CustomButtonProps) {
     return (
-        <Button disabled={isLoading} className={`relative group ${className}`} {...props}>
+        <Button className={`relative group ${className}`} {...props} disabled={isLoading || props.disabled}>
             {isLoading && 
                 <span className={cn("absolute flex justify-center items-center", iconPosition === "left" ? "right-4" : "left-4")}>
                     <Loader2 className="w-4 h-4 animate-spin" />

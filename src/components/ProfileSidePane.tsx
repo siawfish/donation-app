@@ -1,22 +1,25 @@
+'use client'
 import { CalendarIcon, PlusIcon } from 'lucide-react'
-import { MailIcon, MapPinIcon, PhoneIcon, UserIcon } from 'lucide-react'
+import { MailIcon, MapPinIcon, PhoneIcon } from 'lucide-react'
 import Link from 'next/link'
 import CustomButton from './Button'
 import React from 'react'
 import { SearchIcon } from 'lucide-react'
 import { Badge } from './ui/badge'
+import { UserTypes } from '@/app/types'
+import { AccountPill } from './AccountPill'
+import { useAuth } from '@/firebase/auth/AuthContext'
+import { formatRelative } from 'date-fns'
 
-export function ProfileSidePane({
-  type='user'
-}: {
-  type?: 'donor' | 'user'
-}) {
+export function ProfileSidePane() {
+    const { user } = useAuth();
+
     return (
         <div className="border-l border-gray-200 pl-4 py-6 hidden lg:block">
           <div className="flex flex-col gap-6">
             <div className="flex justify-end">
               {
-                type === 'user' && (
+                user?.userType === UserTypes.USER && (
                   <Link href="/app/user/explore">
                     <CustomButton 
                       className="!text-primary border-none bg-[transparent] rounded-full justify-start w-[170px]" 
@@ -29,7 +32,7 @@ export function ProfileSidePane({
                 )
               }
               {
-                type === 'donor' && (
+                user?.userType === UserTypes.DONOR && (
                   <Link href="/app/donor/add-item">
                     <CustomButton 
                       className="!text-primary border-none bg-[transparent] rounded-full justify-start w-[105px]" 
@@ -49,7 +52,7 @@ export function ProfileSidePane({
                 <span>
                   <MailIcon className="w-4 h-4 text-black" />
                 </span>
-                <p className="font-cabinetLight text-base font-medium">john@example.com</p>
+                <p className="font-cabinetLight text-base font-medium">{user?.email}</p>
               </div>
             </div>
 
@@ -59,7 +62,7 @@ export function ProfileSidePane({
                 <span>
                   <PhoneIcon className="w-4 h-4 text-black" />
                 </span>
-                <p className="font-cabinetLight text-base font-medium">+1 (555) 555-5555</p>
+                <p className="font-cabinetLight text-base font-medium">{user?.phoneNumber}</p>
               </div>
             </div>
 
@@ -69,7 +72,7 @@ export function ProfileSidePane({
                 <span>
                   <MapPinIcon className="w-4 h-4 text-black" />
                 </span>
-                <p className="font-cabinetLight text-base font-medium">123 Main St, Anytown, <br />Some State, United States</p>
+                <p className="font-cabinetLight text-base font-medium">{`${user?.address}, ${user?.city}, ${user?.state}, ${user?.zip}, ${user?.country}`}</p>
               </div>
             </div>
 
@@ -80,12 +83,7 @@ export function ProfileSidePane({
 
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-muted-foreground">Account Type:</label>
-              <Badge className="text-xs font-cabinet text-black w-[80px] flex flex-row items-center border-black bg-white uppercase border-[1.5px] gap-1" variant="default">
-                <span>
-                  <UserIcon className="w-4 h-4" />
-                </span>
-                <span className="mt-[2px]">User</span>
-              </Badge>
+              <AccountPill />
             </div>
 
             <div className="flex flex-col gap-2">
@@ -94,7 +92,9 @@ export function ProfileSidePane({
                 <span>
                   <CalendarIcon className="w-4 h-4 text-black" />
                 </span>
-                <p className="font-cabinetLight text-base font-medium">12/12/2024</p>
+                <p className="font-cabinetLight text-base font-medium capitalize">
+                  {formatRelative(new Date(user?.lastLogin || ''), new Date())}
+                </p>
               </div>
             </div>
 
@@ -104,7 +104,9 @@ export function ProfileSidePane({
                 <span>
                   <CalendarIcon className="w-4 h-4 text-black" />
                 </span>
-                <p className="font-cabinetLight text-base font-medium">12/12/2024</p>
+                <p className="font-cabinetLight text-base font-medium capitalize">
+                  {formatRelative(new Date(user?.updatedAt || ''), new Date())}
+                </p>
               </div>
             </div>
 
@@ -114,7 +116,9 @@ export function ProfileSidePane({
                 <span>
                   <CalendarIcon className="w-4 h-4 text-black" />
                 </span>
-                <p className="font-cabinetLight text-base font-medium">12/12/2024</p>
+                <p className="font-cabinetLight text-base font-medium capitalize">
+                  {formatRelative(new Date(user?.createdAt || ''), new Date())}
+                </p>
               </div>
             </div>
           </div>

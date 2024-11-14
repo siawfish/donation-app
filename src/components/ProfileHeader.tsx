@@ -1,14 +1,16 @@
+'use client'
+
 import Link from 'next/link'
 import React from 'react'
 import CustomButton from './Button'
 import { PlusIcon, SearchIcon } from 'lucide-react'
 import { Avatar, AvatarFallback } from './ui/avatar'
+import { useAuth } from '@/firebase/auth/AuthContext'
+import { UserTypes } from '@/app/types'
+import { getInitials } from '@/lib/utils'
 
-export function ProfileHeader({
-    type='user'
-}: {
-    type?: 'donor' | 'user'
-}) {
+export function ProfileHeader() {
+    const { user } = useAuth();
     return (
         <div className="md:flex items-center justify-between flex-wrap">
             <div className="flex flex-col-reverse md:flex-row w-full md:justify-between gap-4 md:gap-0">
@@ -16,13 +18,13 @@ export function ProfileHeader({
                     <span>Welcome, </span>
                     <Avatar className="w-10 h-10 bg-white">
                         <AvatarFallback className="bg-white border border-gray-200">
-                            <span className="text-base font-cabinet text-muted-foreground">JD</span>
+                            <span className="text-base font-cabinet text-muted-foreground">{getInitials(user?.displayName ?? '')}</span>
                         </AvatarFallback>
                     </Avatar>
-                    <span className="font-cabinet">John Doe</span>
+                    <span className="font-cabinet">{user?.displayName}</span>
                 </div>
                 {
-                    type === 'user' && (
+                    user?.userType === UserTypes.USER && (
                         <Link href="/app/user/explore" className="lg:hidden">
                             <CustomButton 
                                 className="!text-primary !p-0 border-none bg-[transparent] rounded-full justify-start w-[150px]" 
@@ -35,7 +37,7 @@ export function ProfileHeader({
                     )
                 }
                 {
-                    type === 'donor' && (
+                    user?.userType === UserTypes.DONOR && (
                         <Link href="/app/donor/add-item" className="lg:hidden">
                             <CustomButton 
                                 className="!text-primary border-none bg-[transparent] rounded-full justify-start w-[90px] p-0" 

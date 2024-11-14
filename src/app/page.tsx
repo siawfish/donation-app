@@ -1,7 +1,7 @@
-import { LandingPage } from "@/components/landing-page";
+import { LandingPage } from "@/components/LandingPage";
 import { Suspense } from "react";
 
-export default function Home() {
+export default async function Home() {
   return (
     <Suspense>
       <LandingPage />
