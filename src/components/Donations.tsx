@@ -56,14 +56,14 @@ export default function Donations({
 
   return (
     <div className="container mx-auto px-4">
-      <div className="flex flex-row items-center justify-between flex-wrap">
+      <div className="flex flex-row items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold">Listings</h1>
-          <p className="text-muted-foreground mb-8">
+          <p className="text-muted-foreground md:mb-8">
             Find the perfect donation for your cause.
           </p>
         </div>
-        <div className="flex flex-row items-center gap-4 min-w-[300px]">
+        <div className="flex flex-row items-center mb-8 md:mb-0 gap-4 min-w-[300px]">
           <Input
             type="text"
             placeholder="Search donations..."
