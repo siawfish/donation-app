@@ -107,7 +107,7 @@ export default function Donations({
         ) : (
             <EmptyState 
               title="No listings found" 
-              description="Oops no items have been listed yet" 
+              description="Oops no search results found" 
             />
         )
       }
