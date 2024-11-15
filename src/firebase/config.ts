@@ -1,7 +1,7 @@
 export const serverConfig = {
     cookieName: process.env.AUTH_COOKIE_NAME!,
     firebaseApiKey: process.env.FIREBASE_API_KEY!,
-    cookieSignatureKeys: [process.env.AUTH_COOKIE_SIGNATURE_KEY_CURRENT!, process.env.AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS!],
+    cookieSignatureKeys: [process.env.AUTH_COOKIE_SIGNATURE_KEY_CURRENT ?? "Secret1", process.env.AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS ?? "Secret2"],
     cookieSerializeOptions: {
       path: "/",
       httpOnly: true,
@@ -12,7 +12,10 @@ export const serverConfig = {
     serviceAccount: {
       projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
       clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL!,
-      privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY!,
+      privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(
+        /\\n/g,
+        '\n'
+      )!,
     }
   };
   
