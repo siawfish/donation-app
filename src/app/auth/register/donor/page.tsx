@@ -1,6 +1,12 @@
 import React from 'react'
 import { Register } from '@/components/Register'
 import { registerDonorAction } from '../../actions/register'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: "Register as Donor",
+  description: "Create an account and start listing items",
+};
 
 export default function RegisterPage() {
     return (

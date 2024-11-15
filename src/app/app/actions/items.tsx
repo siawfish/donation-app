@@ -18,6 +18,7 @@ export async function addItem(item: ItemType): Promise<ResponseData<string | nul
             ...item,
             donatedTo: null,
             donatedOn: null,
+            views: 0,
             createdBy: tokens.decodedToken.uid,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
@@ -90,7 +91,7 @@ export async function getMyItems({
     limit = 8
 }: {
     query?: string,
-    queryBy?: "name" | "condition" | "category",
+    queryBy?: "name" | "condition" | "categories",
     page?: number,
     limit?: number
 }): Promise<ResponseData<PaginatedData<ItemType[]> | null>> {
@@ -104,7 +105,7 @@ export async function getMyItems({
         let queryRef = db.collection('items').where('createdBy', '==', tokens.decodedToken.uid);
 
         if (query) {
-            if (queryBy === "category") {
+            if (queryBy === "categories") {
                 queryRef = queryRef.where(queryBy, 'array-contains', query);
             } else {
                 queryRef = queryRef.where(queryBy, '>=', query).where(queryBy, '<=', query + '\uf8ff');
@@ -114,7 +115,7 @@ export async function getMyItems({
         const startAt = (page - 1) * limit;
 
         const querySnapshot = await queryRef
-            .orderBy(queryBy === "category" ? "name" : queryBy) // Fallback to ordering by name if queryBy is category
+            .orderBy(queryBy === "categories" ? "name" : queryBy) // Fallback to ordering by name if queryBy is category
             .startAt(startAt)
             .limit(limit)
             .get();
@@ -149,7 +150,7 @@ export async function getMyDonations({
     limit = 8
 }: {
     query?: string,
-    queryBy?: "name" | "condition" | "category",
+    queryBy?: "name" | "condition" | "categories",
     page?: number,
     limit?: number
 }): Promise<ResponseData<PaginatedData<ItemType[]> | null>> {
@@ -163,7 +164,7 @@ export async function getMyDonations({
         let queryRef = db.collection('items').where('createdBy', '==', tokens.decodedToken.uid).where('donatedTo', '!=', null);
 
         if (query) {
-            if (queryBy === "category") {
+            if (queryBy === "categories") {
                 queryRef = queryRef.where(queryBy, 'array-contains', query);
             } else {
                 queryRef = queryRef.where(queryBy, '>=', query).where(queryBy, '<=', query + '\uf8ff');
@@ -173,7 +174,170 @@ export async function getMyDonations({
         const startAt = (page - 1) * limit;
 
         const querySnapshot = await queryRef
-            .orderBy(queryBy === "category" ? "name" : queryBy) // Fallback to ordering by name if queryBy is category
+            .orderBy(queryBy === "categories" ? "name" : queryBy) // Fallback to ordering by name if queryBy is category
+            .startAt(startAt)
+            .limit(limit)
+            .get();
+
+        const items = querySnapshot.docs.map((doc) => ({
+            ...doc.data(),
+            id: doc.id
+        } as ItemType));
+
+        const totalQuery = await queryRef.count().get();
+        const total = totalQuery.data().count;
+
+        return {
+            success: true,
+            message: "Items fetched successfully",
+            data: { items, total, page, limit }
+        }
+    } catch (error: any) {
+        const message = FirebaseErrors[error.code] || error.message;
+        return {
+            success: false,
+            message: message,
+            data: null
+        }
+    }
+}
+
+export async function getReceivedDonations({
+    query,
+    page = 1,
+    limit = 8
+}: {
+    query?: string,
+    page?: number,
+    limit?: number
+}): Promise<ResponseData<PaginatedData<ItemType[]> | null>> {
+    try {
+        const tokens = await getTokens(await cookies(), authConfig);
+  
+        if (!tokens) {
+            throw new Error('Unauthorized');
+        }
+        
+        let queryRef = db.collection('items').where('donatedTo', '==', tokens.decodedToken.uid);
+
+        if (query) {
+            queryRef = queryRef.where('name', '>=', query)
+                .where('name', '<=', query + '\uf8ff');
+        }
+
+        const startAt = (page - 1) * limit;
+
+        const querySnapshot = await queryRef
+            .orderBy("donatedOn")
+            .startAt(startAt)
+            .limit(limit)
+            .get();
+
+        const items = querySnapshot.docs.map((doc) => ({
+            ...doc.data(),
+            id: doc.id
+        } as ItemType));
+
+        const totalQuery = await queryRef.count().get();
+        const total = totalQuery.data().count;
+
+        return {
+            success: true,
+            message: "Items fetched successfully",
+            data: { items, total, page, limit }
+        }
+        
+    } catch (error: any) {
+        const message = FirebaseErrors[error.code] || error.message;
+        return {
+            success: false,
+            message: message,
+            data: null
+        }
+    }
+}
+
+export async function getMyRequests({
+    query,
+    page = 1,
+    limit = 8
+}: {
+    query?: string,
+    page?: number,
+    limit?: number
+}): Promise<ResponseData<PaginatedData<ItemType[]> | null>> {
+    try {
+        const tokens = await getTokens(await cookies(), authConfig);
+  
+        if (!tokens) {
+            throw new Error('Unauthorized');
+        }
+
+        let queryRef = db.collection('requests').where('createdBy', '==', tokens.decodedToken.uid);
+
+        if (query) {
+            queryRef = queryRef.where('name', '>=', query)
+                .where('name', '<=', query + '\uf8ff');
+        }
+
+        const startAt = (page - 1) * limit;
+
+        const querySnapshot = await queryRef
+            .orderBy("createdAt")
+            .startAt(startAt)
+            .limit(limit)
+            .get();
+
+        const items = querySnapshot.docs.map((doc) => ({
+            ...doc.data(),
+            id: doc.id
+        } as ItemType));
+
+        const totalQuery = await queryRef.count().get();
+        const total = totalQuery.data().count;
+
+        return {
+            success: true,
+            message: "Items fetched successfully",
+            data: { items, total, page, limit }
+        }
+
+    } catch (error: any) {
+        const message = FirebaseErrors[error.code] || error.message;
+        return {
+            success: false,
+            message: message,
+            data: null
+        }
+    }
+}
+
+export async function getListings({
+    query,
+    queryBy = "name",
+    page = 1,
+    limit = 8
+}:{
+    query?: string,
+    queryBy?: "name" | "condition" | "categories",
+    page?: number,
+    limit?: number
+}): Promise<ResponseData<PaginatedData<ItemType[]> | null>> {
+    try {
+        let queryRef = db.collection('items').where('donatedTo', '==', null);
+
+        if (query) {
+            if (queryBy === "categories") {
+                queryRef = queryRef.where(queryBy, 'array-contains', query);
+            } else {
+                queryRef = queryRef.where(queryBy, '>=', query).where(queryBy, '<=', query + '\uf8ff');
+            }
+        }
+
+        const startAt = (page - 1) * limit;
+
+        const querySnapshot = await queryRef
+            .orderBy(queryBy === "categories" ? "name" : queryBy) // Fallback to ordering by name if queryBy is category
             .startAt(startAt)
             .limit(limit)
             .get();

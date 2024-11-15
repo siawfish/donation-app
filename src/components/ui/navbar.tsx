@@ -14,6 +14,7 @@ import { getFirebaseAuth } from "@/firebase/auth/firebase";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import CustomButton from "../Button";
+import { UserTypes } from "@/app/types";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -28,16 +29,18 @@ export default function Navbar() {
   };
 
   const navLinks = [
-    { href: "/app/user/explore", label: "Explore" },
+    { href: "/explore", label: "Explore" },
     { href: "/auth/register/donor", label: "List an Item" },
     { href: "#", label: "About" },
     { href: "#", label: "Contact" },
   ];
 
+  const profileUrl = user?.userType === UserTypes.USER ? `/app/user/my-requests` : `/app/donor/my-items`
+
   const profileLinks = [
     { 
       id: 'profile',
-      href: `/app/${user?.userType}/my-items`, 
+      href: profileUrl, 
       label: "Profile" 
     },
     { 
@@ -99,25 +102,49 @@ export default function Navbar() {
                   </DropdownMenuItem>
                 ))}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="p-0" onSelect={(e) => e.preventDefault()}>
-                  <button 
-                    className="w-full p-2 hover:bg-accent hover:text-accent-foreground cursor-pointer flex items-center justify-between" 
-                    onClick={toggleAccount}
-                  >
-                    <span className="flex items-center">
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Account</span>
-                    </span>
-                    {isAccountOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </button>
-                </DropdownMenuItem>
-                {isAccountOpen && profileLinks.map((link) => (
-                  <DropdownMenuItem key={link.href} className="pl-8">
-                    <Link href={link.href} className="w-full" prefetch={false}>
-                      {link.label}
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
+                {
+                  user ? (
+                    <>
+                      <DropdownMenuItem className="p-0" onSelect={(e) => e.preventDefault()}>
+                        <button 
+                          className="w-full p-2 hover:bg-accent hover:text-accent-foreground cursor-pointer flex items-center justify-between" 
+                          onClick={toggleAccount}
+                        >
+                          <span className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={user?.photoURL!} />
+                              <AvatarFallback>{getInitials(user?.displayName ?? '')}</AvatarFallback>
+                            </Avatar>
+                            <h6 className="text-sm">{user?.displayName}</h6>
+                          </span>
+                          {isAccountOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </button>
+                      </DropdownMenuItem>
+                      {isAccountOpen && profileLinks.map((link) => (
+                        <DropdownMenuItem 
+                          key={link.href} 
+                          className="pl-8"
+                          onClick={() => {
+                            if (link.id === 'signout') {
+                              logout();
+                            }
+                          }}
+                        >
+                          <Link href={link.href} className="w-full" prefetch={false}>
+                            {link.label}
+                          </Link>
+                        </DropdownMenuItem>
+                      ))}
+                    </>
+                  ) : (
+                    <DropdownMenuItem className="p-0 flex justify-center items-center" onSelect={(e) => e.preventDefault()}>
+                      <Link href="/auth/login" className="text-sm font-medium hover:underline w-full text-center">
+                        <CustomButton icon={<LockIcon className="h-4 w-4" />} className="border-primary rounded-full !text-primary w-full max-w-[70%] pr-[40px]" variant="outline">Login</CustomButton>
+                      </Link>
+                    </DropdownMenuItem>
+                  )
+                }
+                
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -156,7 +183,7 @@ export default function Navbar() {
                 </DropdownMenu>
               </div>
             ) : (
-              <Link href="/auth/login" className="text-sm font-medium hover:underline underline-offset-4">
+              <Link href="/auth/login" className="text-sm font-medium hover:underline underline-offset-4 hidden md:block">
                 <CustomButton icon={<LockIcon className="h-4 w-4" />} className="border-primary rounded-full !text-primary min-w-[100px] pr-[40px]" variant="outline">Login</CustomButton>
               </Link>
             )

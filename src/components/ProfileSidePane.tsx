@@ -20,7 +20,7 @@ export function ProfileSidePane() {
             <div className="flex justify-end">
               {
                 user?.userType === UserTypes.USER && (
-                  <Link href="/app/user/explore">
+                  <Link href="/explore">
                     <CustomButton 
                       className="!text-primary border-none bg-[transparent] rounded-full justify-start w-[170px]" 
                       variant="outline"

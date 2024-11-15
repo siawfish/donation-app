@@ -31,11 +31,6 @@ const donorInitialValues: DonorType = {
   userType: UserTypes.DONOR
 }
 
-const userInitialValues: UserType = {
-  ...donorInitialValues,
-  interestedCategories: [],
-}
-
 const donorValidationSchema = yup.object({
   name: yup.string().min(1, "Name is required").required("Name is required"),
   email: yup.string().email("Invalid email address").required("Email is required"),
@@ -49,7 +44,7 @@ const donorValidationSchema = yup.object({
 
 const userValidationSchema = yup.object({
   ...donorValidationSchema.shape,
-  interestedCategories: yup.array(yup.string()).required("At least one category is required"),
+  preferedCategories: yup.array(yup.string()).required("At least one category is required"),
 })
 
 interface RegisterProps {

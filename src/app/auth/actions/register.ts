@@ -53,6 +53,10 @@ export async function registerUserAction(payload: UserRegisterPayload): Promise<
             ...userData,
             email,
             id: user.uid,
+            userType: UserTypes.USER,
+            createdAt: credential.user.metadata.creationTime ?? new Date().toISOString(),
+            lastLogin: credential.user.metadata.lastSignInTime ?? new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
         }
         await db.collection('users').doc(user.uid).set(dataWithoutPassword);
         return {

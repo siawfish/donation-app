@@ -1,11 +1,11 @@
 import MyItems from '@/components/MyItems';
-import { getMyItems } from '../../actions/items';
+import { getMyItems } from '../../../actions/items';
 import { Suspense } from 'react';
 import Loading from './loading';
 
 export const metadata = {
-  title: 'My Items',
-  description: 'My Items',
+  title: 'My Listings',
+  description: 'Items you have listed',
 }
 
 export default async function MyItemsPage() {

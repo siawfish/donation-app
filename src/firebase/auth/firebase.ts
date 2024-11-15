@@ -7,6 +7,7 @@ import {
 } from 'firebase/auth';
 import { clientConfig } from '../config';
 import { getStorage } from "firebase/storage";
+import { getFirestore } from "firebase/firestore";
 
 export const getFirebaseApp = () => {
   if (getApps().length) {
@@ -17,6 +18,8 @@ export const getFirebaseApp = () => {
 
   return app;
 };
+
+export const firestore = getFirestore(getFirebaseApp());
 
 export const storage = getStorage(getFirebaseApp());
 

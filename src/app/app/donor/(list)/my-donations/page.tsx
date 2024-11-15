@@ -1,11 +1,11 @@
 import MyDonations from '@/components/MyDonations';
-import { getMyDonations } from '../../actions/items';
+import { getMyDonations } from '../../../actions/items';
 import { Suspense } from 'react';
 import Loading from './loading';
 
 export const metadata = {
   title: 'My Donations',
-  description: 'My Donations',
+  description: 'Items given away',
 }
 
 export default async function MyDonationsPage() {

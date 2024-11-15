@@ -29,6 +29,7 @@ export interface DonorType {
     createdAt: string;
     updatedAt: string;
     userType: UserTypes;
+    profileUrl?: string;
 }
 
 export interface DonorRegisterPayload extends DonorType {
@@ -37,11 +38,11 @@ export interface DonorRegisterPayload extends DonorType {
 
 export interface UserRegisterPayload extends UserType {
     password: string;
-    interestedCategories: string[];
 }
 
 export interface UserType extends DonorType {
-    interestedCategories: string[];
+    preferedCategories: CategoryType[];
+    preferedLocation: string;
 }
 
 export interface ResponseData<T> {
@@ -54,12 +55,15 @@ export interface ItemType {
     id?: string;
     name: string;
     description: string;
-    category: CategoryType[];
+    categories: CategoryType[];
     condition: ConditionType;
     assets: AssetType[];
     createdBy?: string;
     createdAt?: string;
     updatedAt?: string;
+    donatedTo?: string;
+    donatedOn?: string;
+    views: number;
 }
 
 export interface AssetType {
