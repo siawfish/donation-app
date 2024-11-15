@@ -1,20 +1,19 @@
 "use client";
 
-import { ItemType } from "@/app/types";
-import { PaginatedData } from "@/app/types";
 import { CustomPagination } from "@/components/CustomPagination";
 import ImageCard from "@/components/ui/image-card";
 import { TabsContent } from "@/components/ui/tabs";
+import React from "react";
+import { PaginatedData, ItemType } from "@/app/types";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React from "react";
 import EmptyState from "./EmptyState";
 
-interface MyItemsProps {
-    donations: PaginatedData<ItemType[]>;
+interface ReceivedDonationsProps {
+  donations: PaginatedData<ItemType[]>;
 }
 
-export default function MyItems({donations}: MyItemsProps) {
+export default function ReceivedDonations({donations}: ReceivedDonationsProps) {
     const pathname = usePathname();
     return (
         <TabsContent value={pathname}>
@@ -28,12 +27,12 @@ export default function MyItems({donations}: MyItemsProps) {
                             containerClassName="hidden md:flex"
                         />  
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
-                            {donations.items.map((donation) => (
-                                <Link key={donation.id} href={`${pathname}?id=${donation.id}`}>
+                            {donations.items.map((request) => (
+                                <Link key={request.id} href={`${pathname}?id=${request.id}`}>
                                     <ImageCard
-                                        image={donation.assets[0].url}
-                                        title={donation.name}
-                                        description={donation.description}
+                                        image={request.assets[0].url}
+                                        title={request.name}
+                                        description={request.description}
                                     />
                                 </Link>
                             ))}
@@ -47,8 +46,8 @@ export default function MyItems({donations}: MyItemsProps) {
                     </div>
                 ) : (
                     <EmptyState 
-                        title="No items found" 
-                        description="You have not listed any items yet" 
+                        title="No donations found" 
+                        description="You have not received any donations yet" 
                     />
                 )
             }

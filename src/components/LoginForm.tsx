@@ -39,7 +39,7 @@ export default function LoginForm({loginAction}: LoginFormProps) {
                 setSubmitting(false);
                 return;
             }
-            const initialPath = data?.userType === UserTypes.USER ? "/app/user" : "/app/donor/my-items";
+            const initialPath = data?.userType === UserTypes.USER ? "/app/user/my-requests" : "/app/donor/my-items";
             router.push(redirect || initialPath);
         });
     }

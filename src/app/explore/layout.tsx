@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Navbar from "@/components/ui/navbar";
 import { ItemDetails } from "@/components/ItemDetails";
 import { Suspense } from "react";

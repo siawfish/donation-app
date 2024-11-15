@@ -14,7 +14,7 @@ export function ProfileHeader() {
     return (
         <div className="md:flex items-center justify-between flex-wrap">
             <div className="flex flex-col-reverse md:flex-row w-full md:justify-between gap-4 md:gap-0">
-                <div className="text-4xl font-cabinetLight tracking-tight flex flex-row items-center gap-2">
+                <div className="text-4xl font-cabinetLight tracking-tight flex flex-row flex-wrap items-center gap-2">
                     <span>Welcome, </span>
                     <Avatar className="w-10 h-10 bg-white">
                         <AvatarFallback className="bg-white border border-gray-200">
@@ -25,7 +25,7 @@ export function ProfileHeader() {
                 </div>
                 {
                     user?.userType === UserTypes.USER && (
-                        <Link href="/app/user/explore" className="lg:hidden">
+                        <Link href="/explore" className="lg:hidden">
                             <CustomButton 
                                 className="!text-primary !p-0 border-none bg-[transparent] rounded-full justify-start w-[150px]" 
                                 variant="outline"
