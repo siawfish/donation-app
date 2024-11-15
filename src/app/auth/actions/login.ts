@@ -4,11 +4,10 @@ import {signInWithEmailAndPassword, signOut} from 'firebase/auth';
 import {refreshCookiesWithIdToken} from 'next-firebase-auth-edge/lib/next/cookies';
 import {cookies, headers} from 'next/headers';
 import { getFirebaseAuth } from '@/firebase/auth/firebase';
-import { authConfig } from '@/firebase/config';
 import { DonorType, ResponseData, UserType } from '@/app/types';
 import { FirebaseErrors } from '@/firebase/errors';
 import { db } from '@/firebase/init';
-
+import { authConfig } from '@/firebase/config/server-config';
 export async function loginAction(email: string, password: string): Promise<ResponseData<UserType | DonorType | null>> {
     try {
         const credential = await signInWithEmailAndPassword(

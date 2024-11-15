@@ -5,10 +5,9 @@ import {
   inMemoryPersistence,
   setPersistence
 } from 'firebase/auth';
-import { clientConfig } from '../config';
 import { getStorage } from "firebase/storage";
 import { getFirestore } from "firebase/firestore";
-
+import { clientConfig } from '../config/client-config';
 export const getFirebaseApp = () => {
   if (getApps().length) {
     return getApp();

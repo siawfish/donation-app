@@ -1,12 +1,11 @@
 import { ProfileHeader } from "@/components/ProfileHeader";
 import { ProfileSidePane } from "@/components/ProfileSidePane";
 import ProfileTabs from "@/components/ProfileTabs";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Donor Dashboard",
-  description: "Donor dashboard",
+  title: "Donor Profile",
+  description: "Donor profile",
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {
