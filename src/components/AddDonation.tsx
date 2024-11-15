@@ -55,8 +55,6 @@ export default function AddDonation({ addItem, categories }: { addItem: (item: I
     return await Promise.all(promises);
   }
 
-  console.log(categories)
-
   const handleSubmit = async (values: typeof defaultValues, { setSubmitting }: { setSubmitting: (isSubmitting: boolean) => void }) => {
    try {
       if (!user) {
@@ -73,7 +71,8 @@ export default function AddDonation({ addItem, categories }: { addItem: (item: I
           name: categories.find((c) => c.id === category)?.name || ""
         })),
         condition: values.condition as ConditionType,
-        assets
+        assets,
+        views: 0
       }
       startTransition(async () => {
         const {success, message} = await addItem(data);
