@@ -1,5 +1,6 @@
 export const serverConfig = {
     cookieName: process.env.AUTH_COOKIE_NAME!,
+    firebaseApiKey: process.env.FIREBASE_API_KEY!,
     cookieSignatureKeys: [process.env.AUTH_COOKIE_SIGNATURE_KEY_CURRENT!, process.env.AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS!],
     cookieSerializeOptions: {
       path: "/",
@@ -27,12 +28,9 @@ export const serverConfig = {
   
 
 export const authConfig = {
-  apiKey: clientConfig.apiKey,
+  apiKey: serverConfig.firebaseApiKey,
   cookieName: serverConfig.cookieName,
-  cookieSignatureKeys: [
-    process.env.AUTH_COOKIE_SIGNATURE_KEY_CURRENT!,
-    process.env.AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS!
-  ],
+  cookieSignatureKeys: serverConfig.cookieSignatureKeys,
   cookieSerializeOptions: {
     path: '/',
     httpOnly: true,
@@ -42,4 +40,9 @@ export const authConfig = {
   },
   serviceAccount: serverConfig.serviceAccount,
   debug: true,
+  // Set to false in Firebase Hosting environment due to https://stackoverflow.com/questions/44929653/firebase-cloud-function-wont-store-cookie-named-other-than-session
+  enableMultipleCookies: true,
+  // Set to false if you're not planning to use `signInWithCustomToken` Firebase Client SDK method
+  enableCustomToken: true,
+  experimental_enableTokenRefreshOnExpiredKidHeader: true,
 };

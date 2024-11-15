@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authMiddleware, redirectToHome, redirectToLogin } from "next-firebase-auth-edge";
-import { clientConfig, serverConfig, authConfig } from "@/firebase/config";
+import { authConfig } from "@/firebase/config";
 
 const PUBLIC_PATHS = ['/auth/register/donor', '/auth/login'];
 
@@ -13,7 +13,11 @@ export async function middleware(request: NextRequest) {
     cookieSignatureKeys: authConfig.cookieSignatureKeys,
     cookieSerializeOptions: authConfig.cookieSerializeOptions,
     serviceAccount: authConfig.serviceAccount,
-    debug: true,
+    debug: authConfig.debug,
+    enableMultipleCookies: authConfig.enableMultipleCookies,
+    enableCustomToken: authConfig.enableCustomToken,
+    experimental_enableTokenRefreshOnExpiredKidHeader:
+      authConfig.experimental_enableTokenRefreshOnExpiredKidHeader,
     handleValidToken: async ({token, decodedToken, customToken}, headers) => {
       // Authenticated user should not be able to access /login, /register and /reset-password routes
       if (PUBLIC_PATHS.includes(request.nextUrl.pathname)) {
