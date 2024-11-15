@@ -43,3 +43,4 @@ export const authConfig = {
   serviceAccount: serverConfig.serviceAccount,
   debug: true,
 };
+
