@@ -1,7 +1,7 @@
 export const serverConfig = {
-  cookieName: process.env.AUTH_COOKIE_NAME ?? "auth",
+  cookieName: process.env.AUTH_COOKIE_NAME!,
   firebaseApiKey: process.env.FIREBASE_API_KEY!,
-  cookieSignatureKeys: [process.env.AUTH_COOKIE_SIGNATURE_KEY_CURRENT ?? "Secret1", process.env.AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS ?? "Secret2"],
+  cookieSignatureKeys: [process.env.AUTH_COOKIE_SIGNATURE_KEY_CURRENT!, process.env.AUTH_COOKIE_SIGNATURE_KEY_PREVIOUS!],
   cookieSerializeOptions: {
     path: "/",
     httpOnly: true,
