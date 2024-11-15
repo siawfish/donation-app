@@ -5,10 +5,10 @@ import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { headers } from "next/headers";
 import { getTokens } from "next-firebase-auth-edge";
-import { authConfig } from "@/firebase/config";
 import { toUser } from "@/firebase/user";
 import { AuthProvider } from "@/firebase/auth/AuthProvider";
 import { Toaster } from "@/components/ui/sonner"
+import { authConfig } from "@/firebase/config/server-config";
 
 export const metadata: Metadata = {
   title: "Givny",

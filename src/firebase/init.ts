@@ -1,5 +1,5 @@
 import admin from 'firebase-admin';
-import { authConfig } from './config';
+import { authConfig } from './config/server-config';
 import {getFirestore} from 'firebase-admin/firestore';
 
 const initializeApp = () => {

@@ -2,8 +2,8 @@
 
 import { CategoryType, ItemType, PaginatedData, ResponseData } from "@/app/types";
 import { FirebaseErrors } from "@/firebase/errors";
-import { authConfig } from "@/firebase/config";
 import { db } from "@/firebase/init";
+import { authConfig } from "@/firebase/config/server-config";
 import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
 
