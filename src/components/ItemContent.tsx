@@ -1,12 +1,11 @@
-import React, { useEffect, useState, useCallback } from "react"
+import React, { useEffect, useState } from "react"
 import { SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet"
-import { CalendarIcon, EyeIcon, HandIcon, LockIcon, LogInIcon, MessageCircleIcon, PencilIcon } from "lucide-react"
+import { CalendarIcon, EyeIcon, HandIcon, LockIcon, MessageCircleIcon, PencilIcon } from "lucide-react"
 import CustomAlert from "./CustomAlert"
 import { Badge } from "./ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import CustomButton from "./Button"
 import Image from "next/image"
-import { useQueryState } from "nuqs"
 import { firestore } from "@/firebase/auth/firebase"
 import { collection, doc, getDoc, where, query, getDocs, updateDoc, addDoc } from "firebase/firestore"
 import { DonorType, ItemType } from "@/app/types"
@@ -19,13 +18,15 @@ import { getInitials } from "@/lib/utils"
 import ItemLoader from "./ItemLoader"
 import EmptyState from "./EmptyState"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 
 export default function ItemContent() {
-    const [id] = useQueryState('id')
     const { user } = useAuth()
     const [item, setItem] = useState<ItemType | null>(null)
     const [donor, setDonor] = useState<DonorType | null>(null)
     const [loading, setLoading] = useState(false)
+    const searchParams = useSearchParams()
+    const id = searchParams.get('id')
 
     useEffect(()=>{
         (async () => {
