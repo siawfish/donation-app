@@ -4,6 +4,7 @@ import React, { useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { FileIcon, UploadIcon, XIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import Image from 'next/image'
 
 interface FileWithPreview extends File {
   preview?: string;
@@ -83,14 +84,17 @@ export default function DragAndDrop({ files = [], onChange, maxFiles = 5, error,
           {files.map((file, index) => (
             <div key={index} className="flex items-center space-x-2 bg-gray-100 rounded-lg">
               {file.type.startsWith('image/') ? (
-                <img
-                  src={file.preview}
+                <Image
+                  src={file.preview || ''}
                   alt={file.name}
-                  className="w-[60px] h-[60px] object-cover rounded"
+                  width={60}
+                  height={60}
+                  className="object-cover rounded"
+                  unoptimized
                 />
               ) : file.type.startsWith('video/') ? (
                 <video
-                  src={file.preview}
+                  src={file.preview || ''}
                   className="w-[60px] h-[60px] object-cover rounded"
                 />
               ) : (
@@ -99,7 +103,9 @@ export default function DragAndDrop({ files = [], onChange, maxFiles = 5, error,
               <div className="flex-grow">
                 <p className="font-semibold truncate text-sm">{file.name}</p>
                 <p className="text-sm text-gray-500 text-xs">{file.type}</p>
-                <p className="text-sm text-gray-500 text-xs">{formatFileSize(file.size)}</p>
+                {file.size > 0 && (
+                  <p className="text-sm text-gray-500 text-xs">{formatFileSize(file.size)}</p>
+                )}
               </div>
               <Button 
                 className="min-w-4" 

@@ -91,9 +91,11 @@ export default function Donations({
                     {donations.items.map((donation) => (
                         <Link key={donation.id} href={`${pathname}?id=${donation.id}`}>
                             <ImageCard
-                              image={donation.assets[0].url}
-                              title={donation.name}
-                              description={donation.description}
+                              image={donation?.assets[0]?.url || ""}
+                              title={donation?.name || ""}
+                              description={donation?.description || ""}
+                              itemId={donation?.id || ""}
+                              createdBy={donation?.createdBy || ""}
                             />
                         </Link>
                     ))}

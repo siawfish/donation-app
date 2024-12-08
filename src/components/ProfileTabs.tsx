@@ -5,12 +5,16 @@ import { usePathname, useRouter } from "next/navigation";
 
 const UserLinks = [
     {
-        label: "My Requests",
-        value: "/app/user/my-requests"
+        label: "Pending Requests",
+        value: "/app/user/pending-requests"
     },
     {
-        label: "Donations",
+        label: "Received Donations",
         value: "/app/user/donations"
+    },
+    {
+        label: "My Wishlist",
+        value: "/app/user/wishlist"
     }
 ]
 

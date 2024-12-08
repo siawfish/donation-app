@@ -3,13 +3,14 @@ import { getMyDonations } from '../../../actions/items';
 import { Suspense } from 'react';
 import Loading from './loading';
 
-export const metadata = {
-  title: 'My Donations',
-  description: 'Items given away',
-}
-
-export default async function MyDonationsPage() {
-  const {success, data, message} = await getMyDonations({});
+export default async function MyDonationsPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined }
+}) {
+  const page = searchParams.page ? Number(searchParams.page) : 1;
+  const {success, data, message} = await getMyDonations({ page });
+  
   return (
     <Suspense fallback={<Loading />}>
         <MyDonations donations={data!} />

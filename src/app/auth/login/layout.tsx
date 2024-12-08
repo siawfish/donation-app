@@ -13,7 +13,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
     });
     const user = tokens ? await toUser(tokens) : null;
     if(user){
-        const redirectUrl = user.userType === UserTypes.DONOR ? '/app/donor/my-items' : '/app/user/my-requests'
+        const redirectUrl = user.userType === UserTypes.DONOR ? '/app/donor' : '/app/user'
         return redirect(redirectUrl)
     }
     return (

@@ -11,7 +11,6 @@ import { Form, Formik } from 'formik'
 import { AccountTypes, CategoryType, ResponseData, UserRegisterPayload, UserType, UserTypes } from '@/app/types'
 import * as yup from 'yup'
 import { toast } from 'sonner'
-import { FirebaseErrors } from '@/firebase/errors'
 import { useRouter } from 'next/navigation'
 
 const steps = [
@@ -96,7 +95,7 @@ export default function RegisterPage({
             if (!success) {
                 toast.error("Failed to register user", {description: message});
             } else {
-                router.push("/app/user/my-requests");
+                router.push("/app/user");
                 toast.success("User registered successfully", {description: "You can proceed to login"});
             }
             setSubmitting(false);

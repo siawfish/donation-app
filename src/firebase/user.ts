@@ -2,6 +2,8 @@ import {Tokens} from 'next-firebase-auth-edge';
 import {filterStandardClaims} from 'next-firebase-auth-edge/lib/auth/claims';
 import { User } from './auth/AuthContext';
 import { db } from './init';
+import { DocumentSnapshot } from 'firebase-admin/firestore';
+import { AccountTypes, UserType, UserTypes } from '@/app/types';
 
 export const toUser = async ({token, customToken, decodedToken}: Tokens): Promise<User> => {
   const {
@@ -15,29 +17,29 @@ export const toUser = async ({token, customToken, decodedToken}: Tokens): Promis
   } = decodedToken;
 
   const customClaims = filterStandardClaims(decodedToken);
-  const user = await db.collection('users').doc(uid).get();
+  const user = await db.collection('users').doc(uid).get() as DocumentSnapshot<UserType>;
   const userData = user.data();
 
   return {
     uid,
-    email: email ?? null,
-    displayName: displayName ?? userData?.name ?? null,
-    photoURL: photoURL ?? null,
-    phoneNumber: phoneNumber ?? userData?.phone ?? null,
-    emailVerified: emailVerified ?? false,
+    email: email || null,
+    displayName: displayName || userData?.name || null,
+    photoURL: photoURL || userData?.profileUrl || null,
+    phoneNumber: phoneNumber || userData?.phone || null,
+    emailVerified: emailVerified || false,
     providerId: signInProvider,
     customClaims,
     idToken: token,
     customToken,
-    userType: userData?.userType ?? null,
-    type: userData?.type ?? null,
-    createdAt: userData?.createdAt ?? null,
-    updatedAt: userData?.updatedAt ?? null,
-    lastLogin: userData?.lastLogin ?? null,
-    address: userData?.address ?? null,
-    city: userData?.city ?? null,
-    state: userData?.state ?? null,
-    zip: userData?.zip ?? null,
-    country: userData?.country ?? null
+    userType: userData?.userType || UserTypes.USER,
+    type: userData?.type || AccountTypes.INDIVIDUAL,
+    createdAt: userData?.createdAt || '',
+    updatedAt: userData?.updatedAt || '',
+    lastLogin: userData?.lastLogin || '',
+    address: userData?.address || '',
+    city: userData?.city || '',
+    state: userData?.state || '',
+    zip: userData?.zip || '',
+    country: userData?.country || ''
   };
 };

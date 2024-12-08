@@ -7,8 +7,8 @@ import CustomTextarea from "./CustomTextarea"
 import DragAndDrop from "./ui/drag-n-drop"
 import { Form, Formik } from "formik"
 import * as yup from "yup"
-import { CategoryType, ConditionType, ItemType, ResponseData } from "@/app/types"
-import { useState, useTransition } from "react"
+import { AssetType, CategoryType, ConditionType, ItemType, ResponseData } from "@/app/types"
+import { useEffect, useState, useTransition } from "react"
 import { storage } from "@/firebase/auth/firebase"
 import MultiSelectInput from "./MultiSelectInput"
 import SelectInput from "./SelectInput"
@@ -19,65 +19,97 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 
-const defaultValues = {
+const INITIAL_VALUES: ItemType = {
   name: "",
-  category: [],
-  condition: "",
+  categories: [],
+  condition: null,
   description: "",
-  assets: []
+  assets: [],
+  views: 0
+}
+
+interface AddDonationProps { 
+  addItem: (item: ItemType) => Promise<ResponseData<string | null>>, 
+  editItem?: (item: ItemType, id: string) => Promise<ResponseData<ItemType | null>>
+  categories: CategoryType[] 
+  defaultValues?: ItemType
 }
 
 const validationSchema = yup.object({
   name: yup.string().required("Item name is required"),
-  category: yup.array().of(yup.string()).min(1, "Select at least one category"),
+  categories: yup.array().of(yup.string()).min(1, "Select at least one category"),
   condition: yup.string().required("Condition is required"),
   description: yup.string().required("Description is required"),
   assets: yup.array().of(yup.mixed()).min(1, "Upload at least one asset"),
 })
 
-export default function AddDonation({ addItem, categories }: { addItem: (item: ItemType) => Promise<ResponseData<string | null>>, categories: CategoryType[] }) {
-  const [initialValues, setInitialValues] = useState(defaultValues);
+export default function AddDonation({ addItem, editItem, categories, defaultValues }: AddDonationProps) {
+  const [initialValues, setInitialValues] = useState(INITIAL_VALUES);
   const router = useRouter();
   const { user } = useAuth();
   const [_, startTransition] = useTransition();
-  const saveAssets = async (assets: File[]) => {
+
+  useEffect(() => {
+    if (defaultValues) {
+      setInitialValues({
+        ...defaultValues,
+        assets: defaultValues.assets.map((asset, i) => ({
+          ...asset,
+          preview: asset.url,
+          id: `image-${i+1}`,
+          type: asset.type
+        }))
+      });
+    }
+  }, [defaultValues]);
+
+  const saveAssets = async (assets: (File | AssetType)[]) => {
     const storageRef = ref(storage, `donor/${user?.uid}`);
     const promises = assets.map(async (asset) => {
-      const assetRef = ref(storageRef, `${asset.type.split("/")[0]}/${asset.name}_${Date.now()}`);
-      const uploadResult = await uploadBytesResumable(assetRef, asset);
+      if ('url' in asset) {
+        return asset;
+      }
+      const file = asset as File;
+      const assetRef = ref(storageRef, `${file.type.split("/")[0]}/${file.name}_${Date.now()}`);
+      const uploadResult = await uploadBytesResumable(assetRef, file);
       const url = await getDownloadURL(uploadResult.ref);
       return {
         id: uploadResult.ref.fullPath,
         url,
-        type: asset.type
+        type: file.type
       };
     });
     return await Promise.all(promises);
   }
 
-  const handleSubmit = async (values: typeof defaultValues, { setSubmitting }: { setSubmitting: (isSubmitting: boolean) => void }) => {
-   try {
+  const handleSubmit = async (values: ItemType, { setSubmitting }: { setSubmitting: (isSubmitting: boolean) => void }) => {
+    try {
       if (!user) {
         throw new Error("You seem to be unauthorized. If this persists, please log out and log back in.");
       }
       toast.loading("Uploading assets...", { description: "Please wait while we upload your assets...", id: "saving-item" });
       const assets = await saveAssets(values.assets);
       toast.loading("Saving item...", { description: "Please wait while we save your item...", id: "saving-item" });
-      const data:ItemType = {
+      
+      const data: ItemType = {
         name: values.name,
         description: values.description,
-        categories: values.category.map((category) => ({
-          id: category,
-          name: categories.find((c) => c.id === category)?.name || ""
-        })),
-        condition: values.condition as ConditionType,
+        categories: values.categories,
+        condition: values.condition,
         assets,
-        views: 0
+        views: values.views || 0
       }
+
       startTransition(async () => {
-        const {success, message} = await addItem(data);
-        if (!success) throw new Error(message);
-        toast.success("Item added successfully", { description: "You can now view your item in your dashboard.", id: "saving-item" });
+        if (defaultValues && editItem) {
+          const { success, message } = await editItem(data, defaultValues.id!);
+          if (!success) throw new Error(message);
+          toast.success("Item updated successfully", { description: "Your item has been updated.", id: "saving-item" });
+        } else {
+          const { success, message } = await addItem(data);
+          if (!success) throw new Error(message);
+          toast.success("Item added successfully", { description: "You can now view your item in your dashboard.", id: "saving-item" });
+        }
         router.push("/app/donor/my-items");
       });
 
@@ -93,6 +125,7 @@ export default function AddDonation({ addItem, categories }: { addItem: (item: I
       initialValues={initialValues}
       validationSchema={validationSchema}
       onSubmit={handleSubmit}
+      enableReinitialize
     >
       {
         ({
@@ -111,8 +144,8 @@ export default function AddDonation({ addItem, categories }: { addItem: (item: I
             <div className="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-y-4">
               <div className="flex flex-col justify-center gap-6 lg:mr-4">
                 <div>
-                  <h1 className="text-3xl font-bold">Add an Item</h1>
-                  <p className="text-muted-foreground">Complete form to add a new item.</p>
+                  <h1 className="text-3xl font-bold">{defaultValues ? "Edit Item" : "Add an Item"}</h1>
+                  <p className="text-muted-foreground">{defaultValues ? "Update your item details." : "Complete form to add a new item."}</p>
                 </div>
                 <div className="flex flex-col justify-center gap-4 flex-1">
                   <CustomInput
@@ -133,17 +166,17 @@ export default function AddDonation({ addItem, categories }: { addItem: (item: I
                         label: category.name,
                         value: category.id
                       }))}
-                      values={values.category}
-                      onChange={(values) => setFieldValue("category", values)}
-                      error={touched.category && errors.category ? errors.category as string : undefined}
-                      onTouched={() => setFieldTouched("category", true)}
+                      values={values.categories.map(c => c.id)}
+                      onChange={(values) => setFieldValue("categories", values)}
+                      error={touched.categories && errors.categories ? errors.categories as string : undefined}
+                      onTouched={() => setFieldTouched("categories", true)}
                       disabled={isSubmitting || _}
                     />
                     <SelectInput
                       containerClassName="w-full"
                       label="Condition"
                       options={Conditions}
-                      value={values.condition}
+                      value={values.condition || ''}
                       onChange={(value) => setFieldValue("condition", value)}
                       error={touched.condition && errors.condition ? errors.condition : undefined}
                       onTouched={() => setFieldTouched("condition", true)}
@@ -162,10 +195,21 @@ export default function AddDonation({ addItem, categories }: { addItem: (item: I
                 </div>
               </div>
               <DragAndDrop 
-                files={values.assets} 
-                onChange={(files) => setFieldValue("assets", files)} 
-                error={touched.assets && errors.assets ? errors.assets as string : undefined} 
-                onTouched={() => setFieldTouched("assets", true)} 
+                files={values.assets.map(asset => ({
+                  ...asset,
+                  lastModified: Date.now(),
+                  name: asset.id,
+                  webkitRelativePath: '',
+                  size: 0,
+                  type: asset.type,
+                  arrayBuffer: async () => new ArrayBuffer(0),
+                  slice: (start?: number, end?: number) => new Blob(),
+                  stream: () => new ReadableStream(),
+                  text: async () => ''
+                }))}
+                onChange={(files) => setFieldValue("assets", files)}
+                error={touched.assets && errors.assets ? errors.assets as string : undefined}
+                onTouched={() => setFieldTouched("assets", true)}
                 disabled={isSubmitting || _}
               />
             </div>

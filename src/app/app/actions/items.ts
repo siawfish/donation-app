@@ -1,6 +1,6 @@
 "use server";
 
-import { CategoryType, ItemType, PaginatedData, ResponseData } from "@/app/types";
+import { CategoryType, ItemType, PaginatedData, RequestStatus, RequestType, ResponseData, WishlistType } from "@/app/types";
 import { FirebaseErrors } from "@/firebase/errors";
 import { db } from "@/firebase/init";
 import { authConfig } from "@/firebase/config/server-config";
@@ -102,7 +102,9 @@ export async function getMyItems({
             throw new Error('Unauthorized');
         }
 
-        let queryRef = db.collection('items').where('createdBy', '==', tokens.decodedToken.uid);
+        let queryRef = db.collection('items')
+            .where('createdBy', '==', tokens.decodedToken.uid)
+            .where('donatedTo', '==', null); // Only get items that haven't been donated
 
         if (query) {
             if (queryBy === "categories") {
@@ -273,7 +275,7 @@ export async function getMyRequests({
             throw new Error('Unauthorized');
         }
 
-        let queryRef = db.collection('requests').where('createdBy', '==', tokens.decodedToken.uid);
+        let queryRef = db.collection('requests').where('createdBy', '==', tokens.decodedToken.uid).where('status', '==', RequestStatus.PENDING);
 
         if (query) {
             queryRef = queryRef.where('name', '>=', query)
@@ -288,17 +290,31 @@ export async function getMyRequests({
             .limit(limit)
             .get();
 
-        const items = querySnapshot.docs.map((doc) => ({
+        const requests: RequestType[] = querySnapshot.docs.map((doc) => ({
             ...doc.data(),
+            itemId: doc.data().itemId,
+            donorId: doc.data().donorId,
+            status: doc.data().status,
             id: doc.id
-        } as ItemType));
+        }));
+
+        // Fetch items for each request
+        const items = await Promise.all(
+            requests.map(async (request) => {
+                const itemDoc = await db.collection('items').doc(request.itemId).get();
+                return {
+                    ...itemDoc.data(),
+                    id: itemDoc.id
+                } as ItemType;
+            })
+        );
 
         const totalQuery = await queryRef.count().get();
         const total = totalQuery.data().count;
 
         return {
             success: true,
-            message: "Items fetched successfully",
+            message: "Items fetched successfully", 
             data: { items, total, page, limit }
         }
 
@@ -354,6 +370,92 @@ export async function getListings({
             success: true,
             message: "Items fetched successfully",
             data: { items, total, page, limit }
+        }
+    } catch (error: any) {
+        const message = FirebaseErrors[error.code] || error.message;
+        return {
+            success: false,
+            message: message,
+            data: null
+        }
+    }
+}
+
+export async function getWishlist({
+    query,
+    page = 1,
+    limit = 8
+}: {
+    query?: string,
+    page?: number,
+    limit?: number
+}): Promise<ResponseData<PaginatedData<ItemType[]> | null>> {
+    try {
+        const tokens = await getTokens(await cookies(), authConfig);
+  
+        if (!tokens) {
+            throw new Error('Unauthorized');
+        }
+
+        let queryRef = db.collection('wishlist').where('createdBy', '==', tokens.decodedToken.uid);
+
+        if (query) {
+            queryRef = queryRef.where('name', '>=', query)
+                .where('name', '<=', query + '\uf8ff');
+        }
+
+        const startAt = (page - 1) * limit;
+
+        const querySnapshot = await queryRef
+            .orderBy("createdAt")
+            .startAt(startAt)
+            .limit(limit)
+            .get();
+
+        const wishlist = querySnapshot.docs.map((doc) => ({
+            ...doc.data(),
+            id: doc.id
+        } as WishlistType));
+
+        // Fetch items for each request
+        const items = await Promise.all(
+            wishlist.map(async (request) => {
+                const itemDoc = await db.collection('items').doc(request.itemId).get();
+                return {
+                    ...itemDoc.data(),
+                    id: itemDoc.id
+                } as ItemType;
+            })
+        );
+
+        const totalQuery = await queryRef.count().get();
+        const total = totalQuery.data().count;
+
+        return {
+            success: true,
+            message: "Items fetched successfully",
+            data: { items, total, page, limit }
+        }
+    } catch (error: any) {
+        const message = FirebaseErrors[error.code] || error.message;
+        return {
+            success: false,
+            message: message,
+            data: null
+        }
+    }
+}
+
+export async function getItem(id: string): Promise<ResponseData<ItemType | null>> {
+    try {
+        const itemDoc = await db.collection('items').doc(id).get();
+        return {
+            success: true,
+            message: "Item fetched successfully",
+            data: {
+                ...itemDoc.data(),
+                id: itemDoc.id
+            } as ItemType
         }
     } catch (error: any) {
         const message = FirebaseErrors[error.code] || error.message;

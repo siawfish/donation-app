@@ -12,6 +12,7 @@ export const FirebaseErrors: Record<string, string> = {
     "auth/invalid-continue-uri": "The continue URL must be a valid URL string.",
     "auth/invalid-creation-time": "The creation time must be a valid UTC date string.",
     "auth/invalid-credential": "Wrong email or password",
+    "auth/network-request-failed": "Network connection error. Kindly check your internect connection",
     "auth/invalid-disabled-field": "The provided value for the disabled user property is invalid. It must be a boolean.",
     "auth/invalid-display-name": "The provided value for the displayName user property is invalid. It must be a non-empty string.",
     "auth/invalid-dynamic-link-domain": "The provided dynamic link domain is not configured or authorized for the current project.",

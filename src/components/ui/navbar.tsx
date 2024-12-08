@@ -5,22 +5,24 @@ import React, { useState } from "react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { Menu, User, ChevronDown, ChevronUp, LogIn, LockIcon } from "lucide-react"
+import { Menu, ChevronDown, ChevronUp, LockIcon, SettingsIcon, LogOutIcon, HomeIcon } from "lucide-react"
 import Logo from "../Logo";
 import { useAuth } from "@/firebase/auth/AuthContext";
 import { getInitials } from "@/lib/utils";
 import { signOut } from "firebase/auth";
 import { getFirebaseAuth } from "@/firebase/auth/firebase";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
 import CustomButton from "../Button";
 import { UserTypes } from "@/app/types";
+import NotificationsButton from "../NotificationsButton";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const {user} = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const toggleAccount = (e: React.MouseEvent) => {
@@ -35,23 +37,26 @@ export default function Navbar() {
     { href: "#", label: "Contact" },
   ];
 
-  const profileUrl = user?.userType === UserTypes.USER ? `/app/user/my-requests` : `/app/donor/my-items`
+  const profileUrl = user?.userType === UserTypes.USER ? `/app/user` : `/app/donor`
 
   const profileLinks = [
     { 
-      id: 'profile',
+      id: 'dashboard',
       href: profileUrl, 
-      label: "Profile" 
+      label: "Dashboard",
+      icon: <HomeIcon className="h-4 w-4" />
     },
     { 
       id: 'settings',
-      href: "#", 
-      label: "Settings" 
+      href: "/app/settings", 
+      label: "Settings",
+      icon: <SettingsIcon className="h-4 w-4" />
     },
     { 
       id: 'signout',
       href: "#", 
-      label: "Sign out" 
+      label: "Sign out",
+      icon: <LogOutIcon className="h-4 w-4" />
     },
   ];
 
@@ -78,12 +83,21 @@ export default function Navbar() {
           {/* Desktop menu */}
           <div className="hidden md:flex gap-4 sm:gap-6 items-center">
             {navLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="text-sm font-medium hover:underline underline-offset-4" prefetch={false}>
+              <Link 
+                key={link.href} 
+                href={link.href} 
+                className={`text-sm font-medium px-3 py-1.5 rounded-md transition-colors hover:bg-primary-foreground hover:text-primary active:bg-primary-foreground active:text-primary ${link.href === pathname ? 'bg-primary-foreground text-primary' : ''}`} 
+                prefetch={false}
+              >
                 {link.label}
               </Link>
             ))}
           </div>
-          
+          {
+            user && (
+              <NotificationsButton />
+            )
+          }
           {/* Mobile menu */}
           <div className="md:hidden">
             <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
@@ -95,8 +109,8 @@ export default function Navbar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-screen mt-2">
                 {navLinks.map((link) => (
-                  <DropdownMenuItem key={link.href}>
-                    <Link href={link.href} className="w-full" prefetch={false}>
+                  <DropdownMenuItem key={link.href} className={`${link.href === pathname ? 'bg-primary-foreground text-primary' : ''}`}>
+                    <Link href={link.href} className={`w-full`} prefetch={false}>
                       {link.label}
                     </Link>
                   </DropdownMenuItem>
@@ -107,7 +121,7 @@ export default function Navbar() {
                     <>
                       <DropdownMenuItem className="p-0" onSelect={(e) => e.preventDefault()}>
                         <button 
-                          className="w-full p-2 hover:bg-accent hover:text-accent-foreground cursor-pointer flex items-center justify-between" 
+                          className="w-full p-2 hover:bg-accent hover:text-accent-foreground active:bg-primary-foreground active:text-primary cursor-pointer flex items-center justify-between" 
                           onClick={toggleAccount}
                         >
                           <span className="flex items-center gap-2">
@@ -130,7 +144,8 @@ export default function Navbar() {
                             }
                           }}
                         >
-                          <Link href={link.href} className="w-full" prefetch={false}>
+                          <Link href={link.href} className={`w-full active:bg-primary-foreground active:text-primary flex items-center gap-2 ${link.href === pathname ? 'bg-primary-foreground text-primary' : ''}`} prefetch={false}>
+                            {link.icon}
                             {link.label}
                           </Link>
                         </DropdownMenuItem>
@@ -139,7 +154,7 @@ export default function Navbar() {
                   ) : (
                     <DropdownMenuItem className="p-0 flex justify-center items-center" onSelect={(e) => e.preventDefault()}>
                       <Link href="/auth/login" className="text-sm font-medium hover:underline w-full text-center">
-                        <CustomButton icon={<LockIcon className="h-4 w-4" />} className="border-primary rounded-full !text-primary w-full max-w-[70%] pr-[40px]" variant="outline">Login</CustomButton>
+                        <CustomButton icon={<LockIcon className="h-4 w-4" />} className="border-primary rounded-full !text-primary w-full max-w-[70%] pr-[40px] active:bg-primary-foreground active:text-primary" variant="outline">Login</CustomButton>
                       </Link>
                     </DropdownMenuItem>
                   )
@@ -172,9 +187,10 @@ export default function Navbar() {
                             logout();
                           }
                         }}
+                        className={`${link.href === pathname ? 'bg-primary-foreground text-primary' : ''}`}
                       >
                         <Link href={link.href} className="flex items-center gap-2 w-full" prefetch={false}>
-                          <div className="h-4 w-4" />
+                          {link.icon}
                           <span>{link.label}</span>
                         </Link>
                       </DropdownMenuItem>
