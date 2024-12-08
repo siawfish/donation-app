@@ -56,14 +56,22 @@ export interface ItemType {
     name: string;
     description: string;
     categories: CategoryType[];
-    condition: ConditionType;
+    condition: ConditionType | null;
     assets: AssetType[];
     createdBy?: string;
     createdAt?: string;
     updatedAt?: string;
     donatedTo?: string;
     donatedOn?: string;
-    views: number;
+    views?: number;
+}
+
+export interface WishlistType {
+    id?: string;
+    itemId: string;
+    createdBy: string;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface AssetType {
@@ -82,4 +90,73 @@ export interface PaginatedData<T> {
     total: number;
     page: number;
     limit: number;
+}
+
+export interface RequestType {
+    id?: string;
+    itemId: string;
+    donorId: string;
+    createdBy?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    status: RequestStatus;
+}
+
+export interface ActivityType {
+    id?: string;
+    recipientId: string;
+    action: ActivityAction;
+    itemId?: string;
+    requestId?: string;
+    read?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+    createdBy?: string;
+}
+
+export enum ActivityAction {
+    ITEM_VIEWED = "item_viewed",
+    ITEM_REQUESTED = "item_requested",
+    REQUEST_COMPLETED = "request_completed",
+    REQUEST_CANCELLED = "request_cancelled",
+    ITEM_ADDED_TO_WISHLIST = "item_added_to_wishlist",
+    ITEM_REMOVED_FROM_WISHLIST = "item_removed_from_wishlist",
+    REQUEST_ACCEPTED = "request_accepted",
+    REQUEST_REJECTED = "request_rejected",
+    ACCOUNT_CREATED = "account_created",
+    ACCOUNT_UPDATED = "account_updated",
+    ACCOUNT_DELETED = "account_deleted",
+    ACCOUNT_VERIFIED = "account_verified"
+}
+
+export enum RequestStatus {
+    PENDING = "pending",
+    ACCEPTED = "accepted",
+    REJECTED = "rejected",
+    CANCELLED = "cancelled",
+    COMPLETED = "completed"
+}
+
+export interface MediaType {
+    type: string
+    url: string
+}
+
+export interface MessageType {
+  id: string
+  senderId: string
+  recipientId: string
+  content: string
+  read: boolean
+  media: MediaType[]
+  itemId: string
+  requestId: string
+  createdAt?: string
+}
+
+export interface ChatMessage {
+  id: string
+  content: string
+  role: 'user' | 'assistant'
+  timestamp: Date
 }

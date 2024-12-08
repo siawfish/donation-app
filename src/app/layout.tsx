@@ -34,7 +34,9 @@ export default async function RootLayout({
               <main>
                 {children}
               </main>
-              <Toaster />
+              <Toaster 
+                position="bottom-left"
+              />
             </NuqsAdapter>
           </AuthProvider>
         </Suspense>

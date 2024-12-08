@@ -18,6 +18,10 @@ export interface User extends UserInfo {
   state: string;
   zip: string;
   country: string;
+  profileUrl?: string;
+  bio?: string;
+  phone?: string;
+  location?: string;
 }
 
 export interface AuthContextValue {

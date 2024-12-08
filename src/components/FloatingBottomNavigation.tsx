@@ -1,0 +1,70 @@
+"use client";
+
+import Link from "next/link";
+import { Home, ListTodo, MessageSquare, Settings } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useAuth } from "@/firebase/auth/AuthContext";
+import { UserTypes } from "@/app/types";
+
+const getIsActive = (pathname: string, href: string) => {
+    return pathname === href || 
+        (href === '/app/donor/my-items' && 
+        (pathname === '/app/donor/my-donations' || pathname === '/app/donor/add-item' || pathname.includes('/app/donor/edit-item'))) ||
+        (href === '/app/user/pending-requests' && 
+        (pathname === '/app/user/donations' || pathname === '/app/user/wishlist'));
+}
+
+export default function FloatingBottomNavigation() {
+    const pathname = usePathname();
+    const { user } = useAuth();
+    const isUser = user?.userType === UserTypes.USER;
+
+    const links = [
+        {
+            href: isUser ? "/app/user" : "/app/donor",
+            icon: Home,
+            label: "Dashboard"
+        },
+        {
+            href: isUser ? "/app/user/pending-requests" : "/app/donor/my-items",
+            icon: ListTodo,
+            label: "Listings"
+        },
+        {
+            href: "/app/messages",
+            icon: MessageSquare,
+            label: "Messages"
+        },
+        {
+            href: "/app/settings",
+            icon: Settings,
+            label: "Settings"
+        }
+    ]
+
+    return (
+        <div className="fixed bottom-0 left-0 right-0 flex justify-center w-full pb-4">
+            <nav className="bg-white border border-gray-200 rounded-full shadow-lg w-full lg:max-w-[400px] animate-slide-up">
+                <div className="flex justify-center items-center h-18">
+                    {
+                        links.map((link) => {
+                            const isActive = getIsActive(pathname, link.href)
+                            return (
+                                <Link 
+                                    key={link.href}
+                                    href={link.href} 
+                                    className={`flex flex-col items-center justify-center w-full py-2 group max-w-[80px] ${pathname === ""}`}
+                                >
+                                    <span className={`p-1 rounded-md transition-colors duration-200 ease-in-out ${isActive ? 'bg-primary-foreground' : 'group-hover:bg-primary-foreground'}`}>
+                                        <link.icon className={`w-6 h-6 transition-colors duration-200 ease-in-out ${isActive ? 'text-primary' : 'group-hover:text-primary'}`} />
+                                    </span>
+                                    <span className={`text-xs mt-1 transition-colors duration-200 ease-in-out ${isActive ? 'text-primary' : 'group-hover:text-primary'}`}>{link.label}</span>
+                                </Link>
+                            );
+                        })
+                    }
+                </div>
+            </nav>
+        </div>
+    );
+}

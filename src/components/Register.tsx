@@ -57,7 +57,7 @@ interface RegisterProps {
 export function Register({
   title="Donor Registration",
   caption="Create an account to start donating",
-  callbackUrl="/app/donor/my-items",
+  callbackUrl="/app/donor",
   registerAction
 }:RegisterProps) {
   const [_, startTransition] = useTransition();

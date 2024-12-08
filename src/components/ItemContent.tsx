@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useCallback, useEffect, useState, useTransition } from "react"
 import { SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet"
 import { CalendarIcon, EyeIcon, HandIcon, LockIcon, MessageCircleIcon, PencilIcon } from "lucide-react"
 import CustomAlert from "./CustomAlert"
@@ -8,7 +8,7 @@ import CustomButton from "./Button"
 import Image from "next/image"
 import { firestore } from "@/firebase/auth/firebase"
 import { collection, doc, getDoc, where, query, getDocs, updateDoc, addDoc } from "firebase/firestore"
-import { DonorType, ItemType } from "@/app/types"
+import { DonorType, ItemType, RequestStatus, RequestType, UserTypes } from "@/app/types"
 import { toast } from "sonner"
 import { FirebaseErrors } from "@/firebase/errors"
 import { useAuth } from "@/firebase/auth/AuthContext"
@@ -19,6 +19,8 @@ import ItemLoader from "./ItemLoader"
 import EmptyState from "./EmptyState"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
+import { ConfirmDialog } from "./ConfirmDialog"
+import { sendRequest } from "@/app/app/actions/requests"
 
 export default function ItemContent() {
     const { user } = useAuth()
@@ -27,6 +29,9 @@ export default function ItemContent() {
     const [loading, setLoading] = useState(false)
     const searchParams = useSearchParams()
     const id = searchParams.get('id')
+    const [confirmRequest, setConfirmRequest] = useState(false)
+    const [request, setRequest] = useState<RequestType | null>(null)
+    const [_, startTransition] = useTransition()
 
     useEffect(()=>{
         (async () => {
@@ -48,30 +53,62 @@ export default function ItemContent() {
         })()
     },[item, user, id])
 
-    useEffect(() => {
+    const getResource = useCallback(async () => {
         if (!id) return
-        void (async () => {
+        try {
+            setLoading(true)
+            const docRef = doc(firestore, 'items', id)
+            const q = query(collection(firestore, 'requests'), where('itemId', '==', id), where('createdBy', '==', user?.uid))
+            const [requestDoc, docSnap] = await Promise.all([
+                getDocs(q),
+                getDoc(docRef)
+            ])
+            const donorDoc = await getDoc(doc(firestore, 'users', docSnap.data()?.createdBy))
+            setRequest(requestDoc.docs.length > 0 ? {
+                ...requestDoc.docs[0].data(),
+                id: requestDoc.docs[0].id
+            } as RequestType : null)
+            setDonor({
+                ...donorDoc.data(),
+                id: donorDoc.id
+            } as DonorType)
+            setItem({
+                ...docSnap.data(),
+                id: docSnap.id
+            } as ItemType)
+        } catch (error: any) {
+            const message = FirebaseErrors[error.code] || error.message
+            toast.error('Error fetching item', { description: message, position: 'bottom-left' })
+        } finally {
+            setLoading(false)
+        }
+    }, [id, user])
+
+    useEffect(() => {
+        getResource()
+    }, [getResource])
+
+    const handleRequest = () => {
+        if(_) return
+        startTransition(async () => {
             try {
-                setLoading(true)
-                const docRef = doc(firestore, 'items', id)
-                const docSnap = await getDoc(docRef)
-                const donorDoc = await getDoc(doc(firestore, 'users', docSnap.data()?.createdBy))
-                setDonor({
-                    ...donorDoc.data(),
-                    id: donorDoc.id
-                } as DonorType)
-                setItem({
-                    ...docSnap.data(),
-                    id: docSnap.id
-                } as ItemType)
+                if (!user || !id || !donor?.id) {
+                    throw new Error('Invalid user or donor')
+                }
+                await sendRequest({
+                    itemId: id,
+                    donorId: donor?.id,
+                    status: RequestStatus.PENDING
+                })
+                toast.success('Request sent successfully', { description: 'You will be notified when the donor either accepts or rejects your request.', position: 'bottom-left' })
             } catch (error: any) {
                 const message = FirebaseErrors[error.code] || error.message
-                toast.error('Error fetching item', { description: message, position: 'bottom-left' })
+                toast.error('Error sending request', { description: message, position: 'bottom-left' })
             } finally {
-                setLoading(false)
+                getResource()
             }
-        })()
-    }, [id, user])
+        })
+    }
     
     return (
         <SheetContent className="min-w-[100vw] lg:min-w-[600px] px-0">
@@ -92,11 +129,57 @@ export default function ItemContent() {
                                         </div>
                                     </div>
                                     {
-                                        user?.uid !== item?.createdBy && (
+                                        user?.uid !== item?.createdBy && user?.userType !== UserTypes.DONOR && !request && (
                                             <CustomAlert 
                                                 title="Contact Donor" 
                                                 description="You will only be able to contact the donor once you have requested the item and it has been accepted by the donor. This is to protect the donor from receiving unsolicited messages." 
                                                 variant="warning" 
+                                            />
+                                        )
+                                    }
+
+                                    {
+                                        user?.userType === UserTypes.DONOR && !request && item?.createdBy !== user?.uid && (
+                                            <CustomAlert
+                                                title="You are a donor"
+                                                description="You are currently logged in as a donor. You cannot request items as a donor."
+                                                variant="warning"
+                                            />
+                                        )
+                                    }
+                                    {
+                                        user?.userType === UserTypes.USER && request && request?.status === RequestStatus.PENDING && (
+                                            <CustomAlert
+                                                title="Request Pending"
+                                                description="You will be notified when the donor either accepts or rejects your request."
+                                                variant="warning"
+                                            />
+                                        )
+                                    }
+                                    {
+                                        user?.userType === UserTypes.USER && request && request?.status === RequestStatus.ACCEPTED && (
+                                            <CustomAlert
+                                                title="Request Accepted"
+                                                description="You will be able to contact the donor now."
+                                                variant="success"
+                                            />
+                                        )
+                                    }
+                                    {
+                                        user?.userType === UserTypes.USER && request && request?.status === RequestStatus.REJECTED && (
+                                            <CustomAlert
+                                                title="Request Rejected"
+                                                description="The donor has rejected your request."
+                                                variant="destructive"
+                                            />
+                                        )
+                                    }
+                                    {
+                                        item?.donatedOn && (
+                                            <CustomAlert
+                                                title="Item Donated"
+                                                description="This item has been donated and is no longer available."
+                                                variant="destructive"
                                             />
                                         )
                                     }
@@ -165,31 +248,66 @@ export default function ItemContent() {
                                     <>
                                         {
                                             user?.uid ? (
-                                                <div className="absolute bottom-0 left-0 right-0 px-4 bg-white py-6 flex justify-between md:justify-end gap-2">
-                                                    <CustomButton 
-                                                        variant="outline" 
-                                                        className="w-[180px] border-primary !text-primary rounded-full hover:bg-transparent"
-                                                        onClick={() => {}}
-                                                        disabled={true}
-                                                        icon={<MessageCircleIcon className="w-4 h-4" />}
-                                                    >
-                                                        Contact Donor
-                                                    </CustomButton>
-                                                    <CustomButton 
-                                                        variant="default" 
-                                                        className="w-[180px] rounded-full"
-                                                        onClick={() => window.alert("COMING SOON!!!!")}
-                                                        icon={<HandIcon className="w-4 h-4" />}
-                                                    >
-                                                        Request Item
-                                                    </CustomButton>
-                                                </div>
+                                                <>
+                                                    {
+                                                        user?.userType === UserTypes.USER && !request && (
+                                                            <div className="absolute bottom-0 left-0 right-0 px-4 bg-white py-6 flex justify-between md:justify-end gap-2">
+                                                                <CustomButton 
+                                                                    variant="outline" 
+                                                                    className="w-[180px] border-primary !text-primary rounded-full hover:bg-transparent py-6"
+                                                                    disabled={true}
+                                                                    icon={<MessageCircleIcon className="w-4 h-4" />}
+                                                                >
+                                                                    Contact Donor
+                                                                </CustomButton>
+                                                                {
+                                                                    !item?.donatedOn && (
+                                                                        <CustomButton 
+                                                                            variant="default" 
+                                                                            className="w-[180px] rounded-full py-6"
+                                                                            onClick={() => setConfirmRequest(true)}
+                                                                            icon={<HandIcon className="w-4 h-4" />}
+                                                                            disabled={_}
+                                                                            isLoading={_}
+                                                                        >
+                                                                            Request Item
+                                                                        </CustomButton>
+                                                                    )
+                                                                }
+                                                            </div>
+                                                        )
+                                                    }
+                                                    {
+                                                        user?.userType === UserTypes.USER && request && !item?.donatedOn && (
+                                                            <div className="absolute bottom-0 left-0 right-0 px-4 bg-white py-6 flex justify-between md:justify-end gap-2">
+                                                                <Link href={`/app/messages?rid=${request?.id}`}>
+                                                                    <CustomButton 
+                                                                        variant="outline" 
+                                                                        className="w-[180px] border-primary !text-primary rounded-full hover:bg-transparent py-6"
+                                                                        disabled={request?.status !== RequestStatus.ACCEPTED}
+                                                                        icon={<MessageCircleIcon className="w-4 h-4" />}
+                                                                    >
+                                                                        Contact Donor
+                                                                    </CustomButton>
+                                                                </Link>
+                                                                <CustomButton 
+                                                                    variant="default" 
+                                                                    className="w-[200px] rounded-full py-6"
+                                                                    icon={<HandIcon className="w-4 h-4" />}
+                                                                    disabled={true}
+                                                                >
+                                                                    Already Requested
+                                                                </CustomButton>
+                                                            </div>
+                                                        )
+                                                    }
+                                                </>
                                             ) : (
                                                 <div className="absolute bottom-0 left-0 right-0 px-4 bg-white py-6 flex justify-between md:justify-end gap-2">
                                                     <Link href={`/auth/login?redirect=/explore?id=${id}`}>
                                                         <CustomButton 
                                                             variant="default" 
-                                                            className="w-[180px] rounded-full"
+                                                            className="w-[180px] rounded-full py-6"
                                                             icon={<LockIcon className="w-4 h-4" />}
                                                         >
                                                             Login
@@ -201,14 +319,18 @@ export default function ItemContent() {
                                     </>
                                 ) : (
                                     <div className="absolute bottom-0 left-0 right-0 px-4 bg-white py-6 flex justify-between md:justify-end gap-2">
-                                        <CustomButton 
-                                            variant="outline" 
-                                            className="w-[180px] border-primary !text-primary rounded-full hover:bg-transparent py-6"
-                                            onClick={() => {}}
-                                            icon={<PencilIcon className="w-4 h-4" />}
-                                        >
-                                            Edit Item
-                                        </CustomButton>
+                                        <Link href={`/app/donor/edit-item/${id}`}>
+                                            <CustomButton 
+                                                variant="outline" 
+                                                className="w-[180px] border-primary !text-primary rounded-full hover:bg-transparent py-6"
+                                                onClick={() => {}}
+                                                disabled={_ || !!item?.donatedOn}
+                                                isLoading={_}
+                                                icon={<PencilIcon className="w-4 h-4" />}
+                                            >
+                                                Edit Item
+                                            </CustomButton>
+                                        </Link>
                                     </div>
                                 )
                             }
@@ -216,6 +338,21 @@ export default function ItemContent() {
                     )
                 )
             }
+            <ConfirmDialog 
+                title={`Request for ${item?.name} from ${donor?.name}`} 
+                onConfirm={handleRequest} 
+                submitLabel="Confirm"
+                open={confirmRequest}
+                onOpenChange={setConfirmRequest}
+            >
+                <div className="flex flex-col gap-2">
+                    <p className="text-black text-base font-medium">We are going to send a request to {donor?.name} for {item?.name}.</p>
+                    <span className="text-muted-foreground tracking-tight text-sm">
+                        You will be notified when the donor either accepts or rejects your request.
+                        <strong>You will be able to contact the donor once the request has been accepted.</strong>
+                    </span>
+                </div>
+            </ConfirmDialog>
         </SheetContent>
     )
 }

@@ -31,9 +31,10 @@ export default function MyRequests({requests}: MyRequestsProps) {
                             {requests.items.map((request) => (
                                 <Link key={request.id} href={`${pathname}?id=${request.id}`}>
                                     <ImageCard
-                                    image={request.assets[0].url}
-                                    title={request.name}
-                                    description={request.description}
+                                        image={request?.assets?.[0]?.url}
+                                        title={request?.name}
+                                        description={request?.description}
+                                        itemId={request?.id || ""}
                                     />
                                 </Link>
                             ))}
