@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -45,7 +45,34 @@ export default function Chatbox() {
   const [lastMessage, setLastMessage] = useState<any>(null)
   const [firstMessage, setFirstMessage] = useState<any>(null)
 
-  const getRequest = async (rid: string) => {
+  const getRecipient = useCallback(async (id: string) => {
+    try {
+      const docRef = doc(collection(firestore, 'users'), id)
+      const docSnap = await getDoc(docRef)
+      setRecipient(docSnap.data() as UserType | DonorType)
+    } catch (error) {
+      toast.error("An error occurred while fetching the recipient", {
+        description: FirebaseErrors[error as keyof typeof FirebaseErrors] || 'An error occurred'
+      })
+    }
+  }, [])
+
+  const getItem = useCallback(async (id: string) => {
+    try {
+      const docRef = doc(collection(firestore, 'items'), id)
+      const docSnap = await getDoc(docRef)
+      setItem({
+        ...docSnap.data(),
+        id: docSnap.id
+      } as ItemType)
+    } catch (error) {
+      toast.error("An error occurred while fetching the item", {
+        description: FirebaseErrors[error as keyof typeof FirebaseErrors] || 'An error occurred'
+      })
+    }
+  }, [])
+
+  const getRequest = useCallback(async (rid: string) => {
     try {
       const docRef = doc(collection(firestore, 'requests'), rid)
       const docSnap = await getDoc(docRef)
@@ -63,34 +90,8 @@ export default function Chatbox() {
         description: FirebaseErrors[error as keyof typeof FirebaseErrors] || 'An error occurred'
       })
     }
-  }
+  }, [getRecipient, getItem, user])
 
-  const getRecipient = async (id: string) => {
-    try {
-      const docRef = doc(collection(firestore, 'users'), id)
-      const docSnap = await getDoc(docRef)
-      setRecipient(docSnap.data() as UserType | DonorType)
-    } catch (error) {
-      toast.error("An error occurred while fetching the recipient", {
-        description: FirebaseErrors[error as keyof typeof FirebaseErrors] || 'An error occurred'
-      })
-    }
-  }
-
-  const getItem = async (id: string) => {
-    try {
-      const docRef = doc(collection(firestore, 'items'), id)
-      const docSnap = await getDoc(docRef)
-      setItem({
-        ...docSnap.data(),
-        id: docSnap.id
-      } as ItemType)
-    } catch (error) {
-      toast.error("An error occurred while fetching the item", {
-        description: FirebaseErrors[error as keyof typeof FirebaseErrors] || 'An error occurred'
-      })
-    }
-  }
   const groupMessagesByDate = (messages: MessageType[]) => {
     const groups: { [key: string]: MessageType[] } = {}
     
@@ -119,11 +120,9 @@ export default function Chatbox() {
     if (!rid || !user) return
     getRequest(rid)
     
-    const today = startOfDay(new Date())
     const q = query(
       collection(firestore, 'messages'),
       where('requestId', '==', rid),
-      where('createdAt', '>=', today),
       orderBy('createdAt', 'asc'),
       limit(20)
     )
@@ -144,7 +143,7 @@ export default function Chatbox() {
       }
     })
     return () => unsubscribe()
-  }, [rid])
+  }, [rid, user, recipient, item, request, getRequest, getRecipient, getItem])
 
   const loadOlderMessages = async () => {
     if (!firstMessage || !rid || isLoadingMore) return
