@@ -58,16 +58,30 @@ export default function ItemContent() {
         try {
             setLoading(true)
             const docRef = doc(firestore, 'items', id)
-            const q = query(collection(firestore, 'requests'), where('itemId', '==', id), where('createdBy', '==', user?.uid))
-            const [requestDoc, docSnap] = await Promise.all([
-                getDocs(q),
-                getDoc(docRef)
-            ])
+            let requestDoc;
+            let docSnap;
+            
+            if (user?.uid) {
+                const q = query(collection(firestore, 'requests'), where('itemId', '==', id), where('createdBy', '==', user.uid))
+                ;[requestDoc, docSnap] = await Promise.all([
+                    getDocs(q),
+                    getDoc(docRef)
+                ])
+            } else {
+                docSnap = await getDoc(docRef)
+            }
+
             const donorDoc = await getDoc(doc(firestore, 'users', docSnap.data()?.createdBy))
-            setRequest(requestDoc.docs.length > 0 ? {
-                ...requestDoc.docs[0].data(),
-                id: requestDoc.docs[0].id
-            } as RequestType : null)
+            
+            if (requestDoc) {
+                setRequest(requestDoc.docs.length > 0 ? {
+                    ...requestDoc.docs[0].data(),
+                    id: requestDoc.docs[0].id
+                } as RequestType : null)
+            } else {
+                setRequest(null)
+            }
+
             setDonor({
                 ...donorDoc.data(),
                 id: donorDoc.id
