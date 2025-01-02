@@ -7,7 +7,7 @@ import CustomTextarea from "./CustomTextarea"
 import DragAndDrop from "./ui/drag-n-drop"
 import { Form, Formik } from "formik"
 import * as yup from "yup"
-import { AssetType, CategoryType, ConditionType, ItemType, ResponseData } from "@/app/types"
+import { AssetType, CategoryType, ItemType, ResponseData } from "@/app/types"
 import { useEffect, useState, useTransition } from "react"
 import { storage } from "@/firebase/auth/firebase"
 import MultiSelectInput from "./MultiSelectInput"
@@ -37,10 +37,22 @@ interface AddDonationProps {
 
 const validationSchema = yup.object({
   name: yup.string().required("Item name is required"),
-  categories: yup.array().of(yup.string()).min(1, "Select at least one category"),
+  categories: yup.array().of(
+    yup.object().shape({
+      id: yup.string().required(),
+      name: yup.string().required()
+    })
+  ).min(1, "Select at least one category"),
   condition: yup.string().required("Condition is required"),
   description: yup.string().required("Description is required"),
-  assets: yup.array().of(yup.mixed()).min(1, "Upload at least one asset"),
+  assets: yup.array().of(
+    yup.mixed().test('is-valid-asset', 'Invalid asset format', function(value) {
+      return (
+        (value instanceof File) || 
+        (typeof value === 'object' && value !== null && 'url' in value && 'type' in value)
+      );
+    })
+  ).min(1, "Upload at least one asset"),
 })
 
 export default function AddDonation({ addItem, editItem, categories, defaultValues }: AddDonationProps) {
@@ -66,18 +78,27 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
   const saveAssets = async (assets: (File | AssetType)[]) => {
     const storageRef = ref(storage, `donor/${user?.uid}`);
     const promises = assets.map(async (asset) => {
-      if ('url' in asset) {
+      if ('url' in asset && asset.url) {
         return asset;
       }
+      
       const file = asset as File;
-      const assetRef = ref(storageRef, `${file.type.split("/")[0]}/${file.name}_${Date.now()}`);
-      const uploadResult = await uploadBytesResumable(assetRef, file);
-      const url = await getDownloadURL(uploadResult.ref);
-      return {
-        id: uploadResult.ref.fullPath,
-        url,
-        type: file.type
-      };
+      const fileType = file.type.split("/")[0];
+      const fileName = `${fileType}/${Date.now()}_${file.name}`;
+      const assetRef = ref(storageRef, fileName);
+      
+      try {
+        const uploadResult = await uploadBytesResumable(assetRef, file);
+        const url = await getDownloadURL(uploadResult.ref);
+        return {
+          id: uploadResult.ref.fullPath,
+          url,
+          type: file.type
+        };
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        throw new Error(`Failed to upload ${file.name}`);
+      }
     });
     return await Promise.all(promises);
   }
@@ -166,8 +187,14 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
                         label: category.name,
                         value: category.id
                       }))}
-                      values={values.categories.map(c => c.id)}
-                      onChange={(values) => setFieldValue("categories", values)}
+                      values={values.categories.map(c => typeof c === 'string' ? c : c.id)}
+                      onChange={(values) => {
+                        const selectedCategories = values.map(value => {
+                          const category = categories.find(c => c.id === value);
+                          return category || { id: value, name: '' };
+                        });
+                        setFieldValue("categories", selectedCategories);
+                      }}
                       error={touched.categories && errors.categories ? errors.categories as string : undefined}
                       onTouched={() => setFieldTouched("categories", true)}
                       disabled={isSubmitting || _}
