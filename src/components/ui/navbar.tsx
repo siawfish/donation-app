@@ -33,8 +33,8 @@ export default function Navbar() {
   const navLinks = [
     { href: "/explore", label: "Explore" },
     { href: "/auth/register/donor", label: "List an Item" },
-    { href: "#", label: "About" },
-    { href: "#", label: "Contact" },
+    { href: "/about", label: "About" },
+    { href: "/contact", label: "Contact" },
   ];
 
   const profileUrl = user?.userType === UserTypes.USER ? `/app/user` : `/app/donor`
