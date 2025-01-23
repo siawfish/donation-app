@@ -48,7 +48,7 @@ export default function DonationSteps() {
                 Our donation process is simple and straightforward. Follow these steps to give or receive items.
               </p>
             </div>
-            <div className="flex flex-wrap flex-row items-center gap-6 max-w-5xl">
+            <div className="flex flex-wrap flex-row items-center gap-12 max-w-5xl">
               {steps.map((step, index) => (
                 <Card key={index} className="group bg-secondary cursor-pointer relative overflow-hidden transition-all duration-300 ease-in-out p-6 max-w-[30%] min-w-full md:min-w-[300px]">
                   <CardContent className="flex flex-col gap-4 px-0">
