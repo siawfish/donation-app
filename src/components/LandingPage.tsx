@@ -50,7 +50,7 @@ export function LandingPage() {
                 </p>
               </div>
               <div className="flex items-center justify-center">
-                <Image src="/give-1.jpg" alt="Why we do this" className="rounded-lg" width={650} height={550} />
+                <Image src="/give-1.jpg" alt="Why we do this" className="rounded-lg" width={650} height={366} />
               </div>
             </div>
           </div>
