@@ -7,7 +7,7 @@ import { collection, where, query, getDocs, addDoc, deleteDoc } from "firebase/f
 import { toast } from "sonner"
 import { FirebaseErrors } from "@/firebase/errors"
 import { useAuth } from "@/firebase/auth/AuthContext"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "./button"
 import { ActivityAction } from "@/app/types"
 
@@ -36,11 +36,7 @@ export default function ImageCard({
     const [isWishlisted, setIsWishlisted] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        checkWishlistStatus();
-    }, [itemId, user]);
-
-    const checkWishlistStatus = async () => {
+    const checkWishlistStatus = useCallback(async () => {
         if (!user || !itemId) return;
         
         try {
@@ -59,7 +55,11 @@ export default function ImageCard({
                 position: "bottom-left"
             })
         }
-    };
+    }, [user, itemId]);
+
+    useEffect(() => {
+        checkWishlistStatus();
+    }, [checkWishlistStatus]);
 
     const handleWishlist = async (e: React.MouseEvent) => {
         e.stopPropagation(); // Prevent event bubbling to parent card

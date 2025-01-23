@@ -13,7 +13,7 @@ export default function About() {
                         <div className="w-full flex justify-center items-center">
                             <div className="flex flex-col items-center gap-12 w-full">
                                 <h1 className="text-3xl md:text-4xl lg:text-5xl text-center font-bold flex-1">
-                                    Give What You Don't Need, <br />Get What You Do
+                                    Give What You Don&apos;t Need, <br />Get What You Do
                                 </h1>
                                 <div className="w-full h-[500px] bg-gray-200 bg-[url('/ab_1.jpg')] bg-cover bg-center bg-no-repeat rounded-3xl" />
                             </div>

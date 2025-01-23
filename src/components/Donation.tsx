@@ -4,6 +4,8 @@
 * Documentation: https://v0.dev/docs#integrating-generated-code-into-your-nextjs-app
 */
 
+import Image from "next/image";
+
 /** Add fonts into your Next.js project:
 
 import { Libre_Franklin } from 'next/font/google'
@@ -44,8 +46,8 @@ export function Donation() {
           <div className="mt-6">
             <h2 className="text-lg font-medium mb-2">Images/Videos</h2>
             <div className="grid grid-cols-2 gap-4">
-              <img src="/placeholder.svg" width="300" height="200" alt="Donation Item" className="rounded-md" />
-              <img src="/placeholder.svg" width="300" height="200" alt="Donation Item" className="rounded-md" />
+              <Image src="/placeholder.svg" width={300} height={200} alt="Donation Item" className="rounded-md" />
+              <Image src="/placeholder.svg" width={300} height={200} alt="Donation Item" className="rounded-md" />
             </div>
           </div>
           <div className="mt-6">

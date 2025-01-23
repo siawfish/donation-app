@@ -14,12 +14,12 @@ export default function TermsOfUse() {
               <h1 className="text-5xl font-bold mb-6">Terms and Conditions</h1>
               <div className="prose prose-gray max-w-none">
                 <p className="text-gray-600 mb-4">
-                  These Terms and Conditions ("Terms") govern your use of our website, mobile application, and services (collectively, "Services"). By accessing or using Givny, you agree to comply with and be bound by these Terms. If you do not agree, please refrain from using our Services.
+                  These Terms and Conditions (&ldquo;Terms&rdquo;) govern your use of our website, mobile application, and services (collectively, &ldquo;Services&rdquo;). By accessing or using Givny, you agree to comply with and be bound by these Terms. If you do not agree, please refrain from using our Services.
                 </p>
 
                 <h2 className="text-2xl font-semibold mt-6 mb-3">Definitions</h2>
                 <p className="text-gray-600 mb-4">
-                  Givny refers to the platform owned and operated by Givnt Ltd. A "User" refers to anyone registering for or using the Services, including donors and recipients. "Items" refer to goods listed, requested, or exchanged on the Platform.
+                  Givny refers to the platform owned and operated by Givnt Ltd. A &ldquo;User&rdquo; refers to anyone registering for or using the Services, including donors and recipients. &ldquo;Items&rdquo; refer to goods listed, requested, or exchanged on the Platform.
                 </p>
 
                 <h2 className="text-2xl font-semibold mt-6 mb-3">Eligibility</h2>
@@ -65,7 +65,7 @@ export default function TermsOfUse() {
 
                     <h2 className="text-2xl font-semibold mt-6 mb-3">Disclaimer of Warranties</h2>
                     <p className="text-gray-600 mb-4">
-                    Givny is provided "as is" and "as available." We make no warranties, express or implied, regarding the platform's accuracy, reliability, or availability. Givny disclaims liability for any harm resulting from the use of items exchanged through the Platform.
+                    Givny is provided &ldquo;as is&rdquo; and &ldquo;as available.&rdquo; We make no warranties, express or implied, regarding the platform&apos;s accuracy, reliability, or availability. Givny disclaims liability for any harm resulting from the use of items exchanged through the Platform.
                     </p>
 
                     <h2 className="text-2xl font-semibold mt-6 mb-3">Limitation of Liability</h2>
