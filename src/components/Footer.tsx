@@ -32,7 +32,6 @@ export default function Footer() {
                     <nav className="flex flex-col space-y-3">
                         <Link href="/terms-of-use" className="text-sm font-normal hover:text-gray-300">Terms</Link>
                         <Link href="/terms-of-use#privacy" className="text-sm font-normal hover:text-gray-300">Privacy</Link>
-                        <Link href="/terms-of-use#cookies" className="text-sm font-normal hover:text-gray-300">Cookies</Link>
                     </nav>
                 </div>
             </div>

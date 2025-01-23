@@ -32,7 +32,7 @@ export default function Navbar() {
 
   const navLinks = [
     { href: "/explore", label: "Explore" },
-    { href: "/auth/register/donor", label: "List an Item" },
+    // { href: "/auth/register/donor", label: "List an Item" },
     { href: "/about", label: "About" },
     { href: "/contact", label: "Contact" },
   ];

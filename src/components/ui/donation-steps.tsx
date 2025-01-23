@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card"
-import { GiftIcon, SearchIcon, UserPlusIcon, HandIcon } from "lucide-react"
+import { GiftIcon, SearchIcon, UserPlusIcon, HandIcon, MessageCircleIcon } from "lucide-react"
 import Image from "next/image"
 
 const steps = [
@@ -19,7 +19,7 @@ const steps = [
     description: "Browse through available items near you. Use categories and filters to find exactly what you're looking for, quickly and easily.",
   },
   {
-    icon: <HandIcon className="h-[24px] w-[24px]" />,
+    icon: <MessageCircleIcon className="h-[24px] w-[24px]" />,
     title: "Request",
     description: "Found something you need? Send a request to the donor with a brief message.",
   },
@@ -31,20 +31,36 @@ const steps = [
 ]
 
 
-export default function DonationSteps() {
+export default function DonationSteps({
+  showImage = true,
+  contentClassName = "",
+  containerClassName = "",
+  contentHeaderClassName = "",
+  titleClassName = "",
+  descriptionClassName = ""
+}: {
+  showImage?: boolean
+  contentClassName?: string
+  containerClassName?: string
+  contentHeaderClassName?: string
+  titleClassName?: string
+  descriptionClassName?: string
+}) {
   return (
-    <section className="flex justify-center w-full py-12 md:py-24 lg:py-32 px-4 md:px-6 bg-white">
+    <section className={`flex justify-center w-full py-12 md:py-24 lg:py-32 px-4 md:px-6 bg-white ${containerClassName}`}>
       <div className="container mx-auto">
         <div className="flex flex-col lg:flex-row gap-12">
-          <div className="hidden lg:block">
-            <Image src="/give-5.jpg" alt="Donation Steps" className="rounded-lg" width={500} height={750} />
-          </div>
-          <div className="flex flex-col justify-center gap-12">
-            <div className="flex flex-col items-start gap-4 self-start">
-              <h2 className="text-left text-3xl font-bold sm:text-5xl">
+          {showImage && (
+            <div className="hidden lg:block">
+              <Image src="/give-5.jpg" alt="Donation Steps" className="rounded-lg" width={500} height={750} />
+            </div>
+          )}
+          <div className={`flex flex-col justify-center gap-12 ${contentClassName}`}>
+            <div className={`flex flex-col items-start gap-4 self-start ${contentHeaderClassName}`}>
+              <h2 className={`text-left text-3xl font-bold sm:text-5xl ${titleClassName}`}>
                 How It Works
               </h2>
-              <p className="text-left text-gray-700 md:text-xl lg:text-base xl:text-xl max-w-xl">
+              <p className={`text-left text-gray-700 md:text-xl lg:text-base xl:text-xl max-w-xl ${descriptionClassName}`}>
                 Our donation process is simple and straightforward. Follow these steps to give or receive items.
               </p>
             </div>

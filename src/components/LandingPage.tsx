@@ -14,7 +14,7 @@ export function LandingPage() {
     <div className="flex flex-col min-h-[100dvh]">
       <Navbar />
       <main className="flex-1 bg-secondary">
-        <section className="w-full flex justify-center py-12 sm:py-24 lg:py-32 bg-[url('/give-3.jpg')] bg-cover bg-center bg-no-repeat relative">
+        <section className="w-full flex justify-center py-12 sm:py-24 lg:py-32 bg-[url('/test-1.jpg')] bg-cover bg-center bg-no-repeat relative">
           <div className="absolute inset-0 bg-black opacity-50" />
           <div className="container px-4 md:px-6 relative z-10">
             <div className="flex flex-col justify-center space-y-4 min-h-[600px]">
@@ -32,31 +32,24 @@ export function LandingPage() {
                 <p key={2} className="text-secondary md:text-lg text-center">
                   Givny connects people to share pre-loved items, whether you’re giving or receiving. Join us in reducing waste, supporting sustainability, and uplifting communities.
                 </p>
-                <SearchComponent />
+                {/* <SearchComponent /> */}
+                <div className="flex justify-center">
+                  <Link
+                    href="/auth/register/donor"
+                    className="inline-flex py-4 w-[80%] items-center justify-center rounded-full bg-white px-8 text-lg font-medium text-primary shadow transition-colors hover:bg-white/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                    prefetch={false}
+                  >
+                    Join our waitlist
+                  </Link>
+                </div>
               </AnimatedGroup>
             </div>
           </div>
         </section>
         <DonationSteps />
-        <section className="flex justify-center w-full py-12 md:py-24 lg:py-32 px-4 md:px-6">
-          <div className="container mx-auto max-w-5xl">
-            <div className="grid grid-cols-1 md:grid-cols-[30%_70%] gap-16 items-center">
-              <div className="flex flex-col gap-4">
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
-                  What is Givny? 
-                </h2>
-                <p className="text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                  Givny is a digital platform where individuals can list items they no longer need, and others can request and receive them for free. We believe in giving items a second life by connecting those who no longer need them with those who do. We focus on accessibility and ease of use, championing sustainability, minimising waste, and addressing poverty and inequality.
-                </p>
-              </div>
-              <div className="flex items-center justify-center">
-                <Image src="/give-1.jpg" alt="Why we do this" className="rounded-lg" width={650} height={366} />
-              </div>
-            </div>
-          </div>
-        </section>
+        
         {/* <SlidingListings /> */}
-        <section className="bg-white flex justify-center w-full py-12 md:py-24 lg:py-32">
+        {/* <section className="bg-white flex justify-center w-full py-12 md:py-24 lg:py-32">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
@@ -145,7 +138,7 @@ export function LandingPage() {
               </div>
             </div>
           </div>
-        </section>
+        </section> */}
         <section className="flex justify-center w-full py-12 md:py-24 lg:py-32 bg-secondary">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
@@ -164,7 +157,7 @@ export function LandingPage() {
                   className="inline-flex h-10 items-center justify-center rounded-full bg-white px-8 text-sm font-medium text-primary shadow transition-colors hover:bg-white/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
                   prefetch={false}
                 >
-                  List an Item
+                  Join our waitlist
                 </Link>
               </div>
             </div>

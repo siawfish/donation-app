@@ -30,7 +30,7 @@ export default function Contact() {
               </div>
               <p className="text-gray-600 mt-2">Come say hello at our office HQ.</p>
             </div> */}
-
+{/* 
             <div>
               <h2 className="text-2xl font-bold mb-3">Phone</h2>
               <div className="flex gap-2">
@@ -38,7 +38,7 @@ export default function Contact() {
                 <p>+49 1525 8595009</p>
               </div>
               <p className="text-gray-600 mt-2">Mon-Fri from 8am to 5pm.</p>
-            </div>
+            </div> */}
           </div>
 
           {/* Service Selection and Form */}

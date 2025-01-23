@@ -2,199 +2,138 @@ import Link from "next/link";
 import Navbar from "@/components/ui/navbar";
 import Footer from "@/components/Footer";
 import Image from "next/image";
-import { InfiniteSlider } from "@/components/ui/infinite-slider";
-
-const teamMembers = [
-  {
-    name: "Christian Owusu Amoako",
-    role: "Founder & CEO",
-    bio: "Several years of experience in Social entrepreneurship and sustainability and leading several social innovation initiatives in Ghana and Europe.",
-    image: "/placeholder.svg"
-  },
-  {
-    name: "Kenneth Anku",
-    role: "Co-Founder & Product Manager",
-    bio: "Extensive experience in eCommerce and business Development from building high-impact social startups in Ghana.",
-    image: "/placeholder.svg"
-  },
-  {
-    name: "Gerald Amanor",
-    role: "CTO",
-    bio: "Lead software engineer with over 5 years of experience in software development and management.",
-    image: "/placeholder.svg"
-  },
-  {
-    name: "Elorm Akoto",
-    role: "Head of Logistics and Marketing ",
-    bio: "Over 6 years of experience working in operations, marketing, delivery and logistics from companies like Jumia Group, Uber, Kobo 360",
-    image: "/placeholder.svg"
-  }
-];
-
-const jobListings = [
-  {
-    category: "Software Development",
-    jobs: [
-      {
-        title: "Software Developer Intern",
-        tag: "Software",
-        description: "We're looking for a passionate software developer intern to join our team.",
-        location: "Accra, Ghana",
-        type: "Full-time",
-        salary: "GHS 1,500 - 2,000"
-      }
-    ]
-  },
-  {
-    category: "Operations",
-    jobs: [
-      {
-        title: "Operations Manager",
-        tag: "Operations",
-        description: "We're looking for an experienced operations manager to oversee our daily operations.",
-        location: "Accra, Ghana",
-        type: "Full-time",
-        salary: "GHS 5,000 - 7,000"
-      }
-    ]
-  },
-  {
-    category: "IT Support",
-    jobs: [
-      {
-        title: "IT Admin Support",
-        tag: "IT",
-        description: "We're looking for an IT admin support specialist to maintain our systems and assist team members.",
-        location: "Accra, Ghana",
-        type: "Full-time",
-        salary: "GHS 3,000 - 4,500"
-      }
-    ]
-  }
-];
+import DonationSteps from "@/components/ui/donation-steps";
 
 export default function About() {
-  return (
-    <div className="flex flex-col min-h-[100dvh] bg-white">
-      <Navbar />
-      <main className="flex-1">
-        <section className="py-12 md:py-24 container mx-auto px-4 md:px-6">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-8 lg:gap-12 mb-12 lg:mb-20">
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold flex-1">
-              Meet the talented team<br />
-              who make all this happen
-            </h1>
-            <p className="text-lg md:text-xl text-gray-600 flex-1">
-              Our leadership team reflects our commitment to African excellence, with diverse
-              executives and board members bringing deep expertise from across the continent.
-            </p>
-          </div>
-          
-          <InfiniteSlider duration={40} gap={16} className="py-8">
-            {teamMembers.map((member) => (
-              <div 
-                key={member.name} 
-                className="w-[250px] md:w-[300px] flex-shrink-0 rounded-2xl p-4 bg-secondary/20"
-              >
-                <div className="aspect-square relative mb-4 rounded-xl overflow-hidden">
-                  <Image
-                    src={member.image}
-                    alt={member.name}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <h3 className="text-lg md:text-xl font-semibold mb-1">{member.name}</h3>
-                <p className="text-gray-600 font-medium mb-2">{member.role}</p>
-                <p className="text-gray-500 text-sm">{member.bio}</p>
-              </div>
-            ))}
-          </InfiniteSlider>
-        </section>
+    return (
+        <div className="flex flex-col min-h-[100dvh] bg-white">
+            <Navbar />
+                <main className="flex-1">
+                    <section className="py-12 md:py-24 container mx-auto max-w-8xl px-4 md:px-6 space-y-48">
+                        <div className="w-full flex justify-center items-center">
+                            <div className="flex flex-col items-center gap-12 w-full">
+                                <h1 className="text-3xl md:text-4xl lg:text-5xl text-center font-bold flex-1">
+                                    Give What You Don't Need, <br />Get What You Do
+                                </h1>
+                                <div className="w-full h-[500px] bg-gray-200 bg-[url('/ab_1.jpg')] bg-cover bg-center bg-no-repeat rounded-3xl" />
+                            </div>
+                        </div>
+                        <section className="flex justify-center w-full px-4 md:px-6">
+                            <div className="container mx-auto max-w-8xl">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+                                    <div className="flex flex-col gap-4">
+                                        <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
+                                        What is Givny? 
+                                        </h2>
+                                        <p className="text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                                        Givny is a digital platform where individuals can list items they no longer need, and others can request and receive them for free. We believe in giving items a second life by connecting those who no longer need them with those who do. We focus on accessibility and ease of use, championing sustainability, minimising waste, and addressing poverty and inequality.
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center justify-center">
+                                        <Image 
+                                            src="/give-1.jpg" 
+                                            alt="Why we do this" 
+                                            className="rounded-lg" 
+                                            width={650} 
+                                            height={366} 
+                                            style={{
+                                                width: "100%",
+                                                height: "auto",
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                        <section className="flex justify-center w-full px-4 md:px-6">
+                            <div className="container mx-auto max-w-8xl space-y-12 max-w-5xl">
+                                <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl text-center">
+                                    Who Can Use Our Platform? 
+                                </h1>
+                                <p className="text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed text-center">
+                                    Givny is open to all individuals and organizations. Whether you want to donate items or are in need of items, the platform is here for you. Users must be at least 18 years old or have parental guidance to create an account and engage with the platform.
+                                </p>
+                            </div>
+                        </section>
+                        
+                        <DonationSteps 
+                            showImage={false} 
+                            contentClassName="max-w-5xl mx-auto text-center justify-center" 
+                            contentHeaderClassName="text-center self-center" 
+                            titleClassName="text-center self-center" 
+                            descriptionClassName="text-center self-center"
+                            containerClassName="py-0 md:py-0 lg:py-0"
+                        />
 
-        <section className="py-12 md:py-24 container mx-auto px-4 md:px-6">
-          <div className="max-w-2xl">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 md:mb-6">We&apos;re looking for talented people</h2>
-            <p className="text-lg md:text-xl text-gray-600 mb-12 md:mb-16">
-              Givny is growing fast, and we are always looking for passionate, dynamic,
-              and talented individuals to join our distributed team all around the world.
-            </p>
-          </div>
-
-          <div className="relative grid grid-cols-2 md:grid-cols-12 gap-2 md:gap-4 mb-12 md:mb-20">
-            <div className="relative col-span-1 md:col-span-3 aspect-[3/4] rounded-2xl overflow-hidden">
-              <Image
-                src="/about_1.jpg"
-                alt="Team member working"
-                fill
-                className="object-cover"
-                priority
-              />
-            </div>
-            <div className="relative col-span-1 md:col-span-3 aspect-square rounded-2xl overflow-hidden">
-              <Image
-                src="/about_2.jpg"
-                alt="Team collaboration"
-                fill
-                className="object-cover"
-              />
-            </div>
-            <div className="relative col-span-1 md:col-span-3 aspect-[3/4] rounded-2xl overflow-hidden">
-              <Image
-                src="/about_3.jpg"
-                alt="Office environment"
-                fill
-                className="object-cover"
-              />
-            </div>
-            <div className="relative col-span-1 md:col-span-3 aspect-square rounded-2xl overflow-hidden">
-              <Image
-                src="/about_4.jpg"
-                alt="Team meeting"
-                fill
-                className="object-cover"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-4 md:space-y-6">
-            {jobListings.map((category) => (
-              <div key={category.category}>
-                <h3 className="text-xl md:text-2xl font-semibold pt-6 md:pt-8 pb-3 md:pb-4">{category.category}</h3>
-                <div className="space-y-3 md:space-y-4">
-                  {category.jobs.map((job) => (
-                    <div key={job.title} className="border rounded-xl p-4 md:p-6">
-                      <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-4">
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2 mb-2">
-                            <h4 className="text-lg md:text-xl font-semibold">{job.title}</h4>
-                            <span className="px-2 py-1 bg-gray-100 rounded-full text-sm">{job.tag}</span>
-                          </div>
-                          <p className="text-gray-600 text-sm md:text-base">{job.description}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="px-3 py-1 bg-gray-100 rounded-full text-sm">{job.location}</span>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-4 md:gap-6 text-gray-600 text-sm md:text-base">
-                        <div className="flex items-center gap-2">
-                          <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                          <span>{job.type}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                          <span>{job.salary}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      </main>
-      <Footer />
-    </div>
-  );
+                        <section className="flex justify-center w-full px-4 md:px-6">
+                            <div className="container mx-auto max-w-8xl space-y-12">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                                    <div className="space-y-6">
+                                        <h2 className="text-2xl font-bold tracking-tighter sm:text-3xl">Things You Can List</h2>
+                                        <div className="grid grid-cols-1 gap-4">
+                                            {[
+                                                "Clothing and footwear",
+                                                "Electronics (in working condition)",
+                                                "Furniture",
+                                                "Books and educational materials",
+                                                "Kitchenware and household items",
+                                                "Toys and games",
+                                                "Non-perishable food items"
+                                            ].map((item, index) => (
+                                                <div key={index} className="flex items-center gap-2 p-4 rounded-lg border bg-white">
+                                                    <svg
+                                                        className="h-5 w-5 text-green-500"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M5 13l4 4L19 7"
+                                                        />
+                                                    </svg>
+                                                    <span>{item}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="space-y-6">
+                                        <h2 className="text-2xl font-bold tracking-tighter sm:text-3xl">Things You Cannot List</h2>
+                                        <div className="grid grid-cols-1 gap-4">
+                                            {[
+                                                "Hazardous materials (e.g., chemicals, explosives)",
+                                                "Expired or perishable food items",
+                                                "Broken or non-functional electronics",
+                                                "Illegal items (e.g., weapons or firearms, explosives, drugs)",
+                                                "Items that do not comply with hygiene standards or may pose health or safety risks"
+                                            ].map((item, index) => (
+                                                <div key={index} className="flex items-center gap-2 p-4 rounded-lg border bg-white">
+                                                    <svg
+                                                        className="h-5 w-5 text-red-500"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={2}
+                                                            d="M6 18L18 6M6 6l12 12"
+                                                        />
+                                                    </svg>
+                                                    <span>{item}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </section>
+                </main>
+            <Footer />
+        </div>
+    );
 }
