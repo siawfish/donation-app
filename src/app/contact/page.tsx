@@ -15,12 +15,12 @@ export default function Contact() {
               <h2 className="text-2xl font-bold mb-3">Chat to us</h2>
               <div className="flex gap-2">
                 <Mail className="w-5 h-5 text-primary" />
-                <p>hi@untitledui.com</p>
+                <p>support@givny.org</p>
               </div>
               <p className="text-gray-600 mt-2">Our friendly team is here to help.</p>
             </div>
 
-            <div>
+            {/* <div>
               <h2 className="text-2xl font-bold mb-3">Office</h2>
               <div className="flex gap-2">
                 <MapPin className="w-5 h-5 text-primary" />
@@ -29,13 +29,13 @@ export default function Contact() {
                 </div>
               </div>
               <p className="text-gray-600 mt-2">Come say hello at our office HQ.</p>
-            </div>
+            </div> */}
 
             <div>
               <h2 className="text-2xl font-bold mb-3">Phone</h2>
               <div className="flex gap-2">
                 <Phone className="w-5 h-5 text-primary" />
-                <p>+1 (555) 000-0000</p>
+                <p>+49 1525 8595009</p>
               </div>
               <p className="text-gray-600 mt-2">Mon-Fri from 8am to 5pm.</p>
             </div>
