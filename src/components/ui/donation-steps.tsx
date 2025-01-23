@@ -1,49 +1,58 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { GiftIcon, SearchIcon, UserPlusIcon, HandIcon } from "lucide-react"
 import Image from "next/image"
-export default function DonationSteps() {
-  const steps = [
-    {
-      icon: <UserPlusIcon className="h-8 w-8" />,
-      title: "Register to give/receive",
-      description: "Create an account in a few simple steps to start giving or receiving items.",
-    },
-    {
-      icon: <GiftIcon className="h-8 w-8" />,
-      title: "List Your Item",
-      description: "As a donor, add images and a detailed description of the item you're donating.",
-    },
-    {
-      icon: <SearchIcon className="h-8 w-8" />,
-      title: "Explore Items",
-      description: "As a receiver, browse through the catalog of items available for donation.",
-    },
-    {
-      icon: <HandIcon className="h-8 w-8" />,
-      title: "Request Item",
-      description: "As a receiver, submit a request for the item you need by a single click.",
-    },
-  ]
 
+const steps = [
+  {
+    icon: <UserPlusIcon className="h-[24px] w-[24px]" />,
+    title: "Register",
+    description: "Sign up in just a few steps to join the Givny community. Create a profile so you can start sharing or requesting items..",
+  },
+  {
+    icon: <GiftIcon className="h-[24px] w-[24px]" />,
+    title: "List",
+    description: "Have something you no longer need? Take a photo, add a short description, and list it on the platform for others to see.",
+  },
+  {
+    icon: <SearchIcon className="h-[24px] w-[24px]" />,
+    title: "Explore",
+    description: "Browse through available items near you. Use categories and filters to find exactly what you're looking for, quickly and easily.",
+  },
+  {
+    icon: <HandIcon className="h-[24px] w-[24px]" />,
+    title: "Request",
+    description: "Found something you need? Send a request to the donor with a brief message.",
+  },
+  {
+    icon: <HandIcon className="h-[24px] w-[24px]" />,
+    title: "Receive",
+    description: "Once your request is approved, coordinate with the donor to pick up your item. It's that simple!",
+  }
+]
+
+
+export default function DonationSteps() {
   return (
     <section className="flex justify-center w-full py-12 md:py-24 lg:py-32 px-4 md:px-6 bg-white">
       <div className="container mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-          <div className="flex items-center justify-center hidden md:block">
-            <Image src="/give-3.jpg" alt="How it works" className="rounded-lg" width={700} height={600} />
+        <div className="flex flex-col lg:flex-row gap-12">
+          <div className="hidden lg:block">
+            <Image src="/give-5.jpg" alt="Donation Steps" className="rounded-lg" width={500} height={750} />
           </div>
-          <div className="flex flex-col gap-4">
-            <h2 className="text-left text-3xl font-bold sm:text-5xl">
-              How It Works
-            </h2>
-            <p className="text-left text-gray-700 md:text-xl lg:text-base xl:text-xl max-w-xl">
-              Our donation process is simple and straightforward. Follow these steps to give or receive items.
-            </p>
-            <div className="mx-auto grid grid-cols-1 gap-2 max-w-5xl md:grid-cols-2 mt-4 items-center">
+          <div className="flex flex-col justify-center gap-12">
+            <div className="flex flex-col items-start gap-4 self-start">
+              <h2 className="text-left text-3xl font-bold sm:text-5xl">
+                How It Works
+              </h2>
+              <p className="text-left text-gray-700 md:text-xl lg:text-base xl:text-xl max-w-xl">
+                Our donation process is simple and straightforward. Follow these steps to give or receive items.
+              </p>
+            </div>
+            <div className="flex flex-wrap flex-row items-center gap-6 max-w-5xl">
               {steps.map((step, index) => (
-                <Card key={index} className="group shadow-none border-none cursor-pointer relative overflow-hidden transition-all duration-300 ease-in-out ">
-                  <CardContent className="flex flex-row gap-4">
-                    <div className="mb-4 min-w-16 rounded-full bg-gradient-to-br from-[#35a26d] via-[#35a26d] to-[#99c141] p-3 text-white w-16 h-16 flex items-center justify-center transition-transform duration-300">
+                <Card key={index} className="group bg-secondary cursor-pointer relative overflow-hidden transition-all duration-300 ease-in-out p-6 max-w-[30%] min-w-full md:min-w-[300px]">
+                  <CardContent className="flex flex-col gap-4 px-0">
+                    <div className="min-w-[32px] rounded-full bg-gradient-to-br from-[#35a26d] via-[#35a26d] to-[#99c141] text-white w-[40px] h-[40px] flex items-center justify-center transition-transform duration-300">
                       {step.icon}
                     </div>
                     <div className="flex flex-col">
