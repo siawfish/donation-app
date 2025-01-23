@@ -18,7 +18,7 @@ export default function TermsOfUse() {
               <p className="text-gray-600 mb-8">
                 If you have any questions, please send an email to{" "}
                 <a
-                  href="mailto:info@givny.org"
+                  href="mailto:support@givny.org"
                   className="text-primary hover:underline"
                 >
                   support@givny.org
