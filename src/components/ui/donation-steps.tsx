@@ -35,8 +35,8 @@ export default function DonationSteps() {
   return (
     <section className="flex justify-center w-full py-12 md:py-24 lg:py-32 px-4 md:px-6 bg-white">
       <div className="container mx-auto">
-        <div className="flex flex-col md:flex-row gap-12">
-          <div className="">
+        <div className="flex flex-col lg:flex-row gap-12">
+          <div className="hidden lg:block">
             <Image src="/give-5.jpg" alt="Donation Steps" className="rounded-lg" width={500} height={750} />
           </div>
           <div className="flex flex-col justify-center gap-12">
