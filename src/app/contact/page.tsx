@@ -15,7 +15,7 @@ export default function Contact() {
               <h2 className="text-2xl font-bold mb-3">Chat to us</h2>
               <div className="flex gap-2">
                 <Mail className="w-5 h-5 text-primary" />
-                <p>support@givny.org</p>
+                <a href="mailto:support@givny.org" className="hover:underline">support@givny.org</a>
               </div>
               <p className="text-gray-600 mt-2">Our friendly team is here to help.</p>
             </div>
