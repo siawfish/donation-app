@@ -86,8 +86,8 @@ export default function TermsOfUse() {
                     <h2 className="text-2xl font-semibold mt-6 mb-3">Contact Information</h2>
                     <p className="text-gray-600 mb-4">
                     For questions or concerns about these Terms, please contact us at{" "}
-                    <a href="mailto:support@givny.org" className="text-primary hover:underline">
-                        support@givny.org
+                    <a href="mailto:support@givny.com" className="text-primary hover:underline">
+                        support@givny.com
                     </a>
                     </p>
 
