@@ -4,15 +4,11 @@ import { useQueryState } from 'nuqs'
 import React from 'react'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { useAuth } from '@/firebase/auth/AuthContext';
-import { Edit2Icon, EditIcon, HandIcon, SaveIcon } from 'lucide-react';
+import { EditIcon, SaveIcon } from 'lucide-react';
 import CustomButton from './Button';
-import { MessageCircleIcon } from 'lucide-react';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
 import CustomInput from './CustomInput';
-import { Label } from './ui/label';
-import { AccountTypes, DonorType, UserTypes } from '@/app/types';
-import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 
 const validationSchema = Yup.object().shape({
     password: Yup.string()

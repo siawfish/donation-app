@@ -1,6 +1,6 @@
 "use client";
 
-import { ActivityAction, DonorType, RequestStatus, RequestType, UserType } from "@/app/types"
+import { ActivityAction, RequestStatus, RequestType, UserType } from "@/app/types"
 import { Button } from "./ui/button"
 import React, { useCallback, useEffect, useState } from "react"
 import { FirebaseErrors } from "@/firebase/errors"
@@ -11,7 +11,7 @@ import { useAuth } from "@/firebase/auth/AuthContext";
 
 interface NotificationActionProps {
     requestId: string
-    creator: UserType | DonorType | null
+    creator: UserType | null
 }
 
 export default function NotificationAction({ requestId, creator }: NotificationActionProps) {

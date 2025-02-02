@@ -9,8 +9,7 @@ import CustomButton from './Button';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
 import CustomInput from './CustomInput';
-import { AccountTypes, ActivityAction, DonorType, UserType, UserTypes } from '@/app/types';
-import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
+import { ActivityAction, UserType } from '@/app/types';
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { storage } from "@/firebase/auth/firebase";
 import { toast } from 'sonner';
@@ -50,7 +49,7 @@ const userValidationSchema = Yup.object().shape({
 
 export default function EditProfile() {
     const [action, setAction] = useQueryState('action')
-    const [initialValues, setInitialValues] = useState<DonorType | UserType>({} as DonorType | UserType)
+    const [initialValues, setInitialValues] = useState<UserType>({} as UserType)
     const isOpen = action === "edit_profile"
     const { user } = useAuth()
     const [_, startTransition] = useTransition()
@@ -61,7 +60,7 @@ export default function EditProfile() {
         const userRef = doc(collection(firestore, 'users'), user?.uid)
         const userDoc = await getDoc(userRef)
         if (userDoc.exists()) {
-            setInitialValues(userDoc.data() as DonorType | UserType)
+            setInitialValues(userDoc.data() as UserType)
         }
     }, [user])
 
@@ -97,7 +96,7 @@ export default function EditProfile() {
         }
     };
 
-    const handleSubmit = async (values: Partial<DonorType | UserType>) => {
+    const handleSubmit = async (values: Partial<UserType>) => {
         if (!user?.uid || _) return
         await startTransition(async () => {
             try {
@@ -130,7 +129,7 @@ export default function EditProfile() {
             <SheetContent className="min-w-[100vw] lg:min-w-[600px] px-0 bg-secondary overflow-y-auto">
                 <Formik
                     initialValues={initialValues}
-                    validationSchema={initialValues.userType === UserTypes.DONOR ? donorValidationSchema : userValidationSchema}
+                    validationSchema={userValidationSchema}
                     onSubmit={handleSubmit}
                     enableReinitialize
                 >
@@ -175,17 +174,6 @@ export default function EditProfile() {
                                     </div>
                                 </div>
                                 <div className="space-y-4">
-                                    <Tabs defaultValue={values.type} onValueChange={(value) => setFieldValue('type', value)}>
-                                        <div className="flex items-center space-x-4">
-                                            <TabsList className="p-0">
-                                                {
-                                                    Object.values(AccountTypes).map((accountType) => (
-                                                        <TabsTrigger className="capitalize" key={accountType} value={accountType}>{accountType}</TabsTrigger>
-                                                    ))
-                                                }
-                                            </TabsList>
-                                        </div>
-                                    </Tabs>
                                     <Field
                                         as={CustomInput}
                                         id="name"

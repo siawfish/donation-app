@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
 import DonorChart from "./DonorChart";
 import { useAuth } from "@/firebase/auth/AuthContext";
-import { ActivityType, DonorType, ItemType, UserType, UserTypes } from "@/app/types";
+import { ActivityType, ItemType, UserType } from "@/app/types";
 import UserChart from "./UserChart";
 import { firestore } from "@/firebase/auth/firebase"
 import { collection, onSnapshot, query, orderBy, limit, startAfter, getDocs, DocumentData, QueryDocumentSnapshot, where, getDoc, doc } from "firebase/firestore";
@@ -52,7 +52,7 @@ export default function ActivitesAndTrends() {
     const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true); 
-    const [itemsWithCreatorAndItem, setItemsWithCreatorAndItem] = useState<{ activity: ActivityType, creator: UserType | DonorType, item: ItemType }[]>([])
+    const [itemsWithCreatorAndItem, setItemsWithCreatorAndItem] = useState<{ activity: ActivityType, creator: UserType, item: ItemType }[]>([])
 
     useEffect(() => {
         if (!activities) return
@@ -64,7 +64,7 @@ export default function ActivitesAndTrends() {
                     const [docs, docsItem] = await Promise.all([getDocs(q), getDoc(qItem)])
                     return {
                         activity: item,
-                        creator: docs.docs[0].data() as UserType | DonorType,
+                        creator: docs.docs[0].data() as UserType,
                         item: docsItem.data() as ItemType
                     }
                 }))
@@ -153,8 +153,8 @@ export default function ActivitesAndTrends() {
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-[65%_33%] gap-6">
-            {user?.userType === UserTypes.DONOR && <DonorChart />}
-            {user?.userType === UserTypes.USER && <UserChart />}
+            <DonorChart />
+            <UserChart />
             <Card>
                 <CardHeader>
                     <CardTitle>Recent Activities</CardTitle>

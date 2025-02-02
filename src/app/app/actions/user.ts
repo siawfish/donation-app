@@ -1,6 +1,6 @@
 "use server";
 
-import { DonorType, ResponseData, UserType } from "@/app/types";
+import { ResponseData, UserType } from "@/app/types";
 import { FirebaseErrors } from "@/firebase/errors";
 import { db } from "@/firebase/init";
 import { authConfig } from "@/firebase/config/server-config";
@@ -9,7 +9,7 @@ import { cookies } from "next/headers";
 import { updatePassword } from 'firebase/auth';
 import { getFirebaseAuth } from "@/firebase/auth/firebase";
 
-export async function updateUserProfile(user: DonorType | UserType): Promise<ResponseData<string | null>> {
+export async function updateUserProfile(user: UserType): Promise<ResponseData<string | null>> {
     try {
         const tokens = await getTokens(await cookies(), authConfig);
         if (!tokens) {

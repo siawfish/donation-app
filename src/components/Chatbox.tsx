@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 import { toast } from 'sonner'
 import Image from 'next/image'
 import Link from 'next/link'
-import { DonorType, ItemType, MessageType, RequestType, UserType, UserTypes, RequestStatus, ActivityAction } from '@/app/types'
+import { ItemType, MessageType, RequestType, UserType, RequestStatus, ActivityAction } from '@/app/types'
 import { useQueryState } from 'nuqs'
 import { FirebaseErrors } from "@/firebase/errors"
 import { firestore } from "@/firebase/auth/firebase"
@@ -30,7 +30,7 @@ export default function Chatbox() {
   const [messages, setMessages] = useState<MessageType[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [request, setRequest] = useState<RequestType | null>(null)
-  const [recipient, setRecipient] = useState<UserType | DonorType | null>(null)
+  const [recipient, setRecipient] = useState<UserType | null>(null)
   const [item, setItem] = useState<ItemType | null>(null)
   const pathname = usePathname()
   const [mediaPreviews, setMediaPreviews] = useState<Array<{
@@ -49,7 +49,7 @@ export default function Chatbox() {
     try {
       const docRef = doc(collection(firestore, 'users'), id)
       const docSnap = await getDoc(docRef)
-      setRecipient(docSnap.data() as UserType | DonorType)
+      setRecipient(docSnap.data() as UserType)
     } catch (error) {
       toast.error("An error occurred while fetching the recipient", {
         description: FirebaseErrors[error as keyof typeof FirebaseErrors] || 'An error occurred'
@@ -82,7 +82,7 @@ export default function Chatbox() {
       } as RequestType
       setRequest(requestData)
       Promise.allSettled([
-        getRecipient(user?.userType === UserTypes.DONOR ? requestData?.createdBy as string : requestData?.donorId as string),
+        getRecipient(requestData?.createdBy as string),
         getItem(requestData?.itemId as string)
       ])
     } catch (error) {
@@ -90,7 +90,7 @@ export default function Chatbox() {
         description: FirebaseErrors[error as keyof typeof FirebaseErrors] || 'An error occurred'
       })
     }
-  }, [getRecipient, getItem, user])
+  }, [getRecipient, getItem])
 
   const groupMessagesByDate = (messages: MessageType[]) => {
     const groups: { [key: string]: MessageType[] } = {}
@@ -336,9 +336,7 @@ export default function Chatbox() {
           loadOlderMessages()
         }
       }}>
-        {request && 
-        user?.userType === UserTypes.DONOR && 
-        request.status === RequestStatus.ACCEPTED && (
+        {request && request.status === RequestStatus.ACCEPTED && (
           <RequestStatusBanner 
             request={request} 
             onStatusChange={updateRequestStatus}

@@ -1,4 +1,4 @@
-import { ActivityAction, ActivityType, UserType, DonorType, ItemType } from "@/app/types"
+import { ActivityAction, ActivityType, UserType, ItemType } from "@/app/types"
 import { CheckIcon, XIcon, HandIcon, GiftIcon, HeartIcon, HeartOffIcon, PencilIcon } from "lucide-react"
 import { formatDistanceToNow } from "date-fns";
 import NotificationAction from "./NotificationAction";
@@ -13,7 +13,7 @@ import { usePathname } from "next/navigation";
 interface NotificationProps {
     notification: {
         activity: ActivityType;
-        creator: UserType | DonorType | null;
+        creator: UserType | null;
         item: ItemType | null;
     };
 }

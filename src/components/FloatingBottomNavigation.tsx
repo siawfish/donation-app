@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { Home, ListTodo, MessageSquare, Settings } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useAuth } from "@/firebase/auth/AuthContext";
-import { UserTypes } from "@/app/types";
 
 const getIsActive = (pathname: string, href: string) => {
     return pathname === href || 
@@ -16,17 +14,15 @@ const getIsActive = (pathname: string, href: string) => {
 
 export default function FloatingBottomNavigation() {
     const pathname = usePathname();
-    const { user } = useAuth();
-    const isUser = user?.userType === UserTypes.USER;
 
     const links = [
         {
-            href: isUser ? "/app/user" : "/app/donor",
+            href: "/app",
             icon: Home,
             label: "Dashboard"
         },
         {
-            href: isUser ? "/app/user/pending-requests" : "/app/donor/my-items",
+            href: "/app/pending-requests",
             icon: ListTodo,
             label: "Listings"
         },

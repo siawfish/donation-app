@@ -6,8 +6,6 @@ import CustomButton from './Button'
 import React from 'react'
 import { SearchIcon } from 'lucide-react'
 import { Badge } from './ui/badge'
-import { UserTypes } from '@/app/types'
-import { AccountPill } from './AccountPill'
 import { useAuth } from '@/firebase/auth/AuthContext'
 import { formatRelative } from 'date-fns'
 
@@ -18,32 +16,24 @@ export function ProfileSidePane() {
         <div className="border-l border-gray-200 pl-4 py-6 hidden lg:block">
           <div className="flex flex-col gap-6">
             <div className="flex justify-end">
-              {
-                user?.userType === UserTypes.USER && (
-                  <Link href="/explore">
-                    <CustomButton 
-                      className="!text-primary border-none bg-[transparent] rounded-full justify-start w-[170px]" 
-                      variant="outline"
-                      icon={<SearchIcon className="w-4 h-4" />}
-                    >
-                      Explore Donations
-                    </CustomButton>
-                  </Link>
-                )
-              }
-              {
-                user?.userType === UserTypes.DONOR && (
-                  <Link href="/app/donor/add-item">
-                    <CustomButton 
-                      className="!text-primary border-none bg-[transparent] rounded-full justify-start w-[105px]" 
-                      variant="outline"
-                      icon={<PlusIcon className="w-4 h-4" />}
-                    >
-                      List Item
-                    </CustomButton>
-                  </Link>
-                )
-              }
+            <Link href="/explore">
+              <CustomButton 
+                className="!text-primary border-none bg-[transparent] rounded-full justify-start w-[170px]" 
+                variant="outline"
+                icon={<SearchIcon className="w-4 h-4" />}
+              >
+                Explore Donations
+              </CustomButton>
+            </Link>
+            <Link href="/app/donor/add-item">
+              <CustomButton 
+                className="!text-primary border-none bg-[transparent] rounded-full justify-start w-[105px]" 
+                variant="outline"
+                icon={<PlusIcon className="w-4 h-4" />}
+              >
+                List Item
+              </CustomButton>
+            </Link>
             </div>
 
             <div className="flex flex-col gap-2">
@@ -79,11 +69,6 @@ export function ProfileSidePane() {
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-muted-foreground">Account Status:</label>
               <Badge className="text-xs font-cabinet bg-primary text-white w-fit" variant="secondary">Active</Badge>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-muted-foreground">Account Type:</label>
-              <AccountPill />
             </div>
 
             <div className="flex flex-col gap-2">

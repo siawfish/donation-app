@@ -1,5 +1,5 @@
 import MyItems from '@/components/MyItems';
-import { getMyItems } from '../../../actions/items';
+import { getMyItems } from '@/app/app/actions/items';
 import { Suspense } from 'react';
 import Loading from './loading';
 

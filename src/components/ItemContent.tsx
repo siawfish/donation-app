@@ -8,7 +8,7 @@ import CustomButton from "./Button"
 import Image from "next/image"
 import { firestore } from "@/firebase/auth/firebase"
 import { collection, doc, getDoc, where, query, getDocs, updateDoc, addDoc } from "firebase/firestore"
-import { DonorType, ItemType, RequestStatus, RequestType, UserTypes } from "@/app/types"
+import { ItemType, RequestStatus, RequestType, UserType } from "@/app/types"
 import { toast } from "sonner"
 import { FirebaseErrors } from "@/firebase/errors"
 import { useAuth } from "@/firebase/auth/AuthContext"
@@ -25,7 +25,7 @@ import { sendRequest } from "@/app/app/actions/requests"
 export default function ItemContent() {
     const { user } = useAuth()
     const [item, setItem] = useState<ItemType | null>(null)
-    const [donor, setDonor] = useState<DonorType | null>(null)
+    const [donor, setDonor] = useState<UserType | null>(null)
     const [loading, setLoading] = useState(false)
     const searchParams = useSearchParams()
     const id = searchParams.get('id')
@@ -85,7 +85,7 @@ export default function ItemContent() {
             setDonor({
                 ...donorDoc.data(),
                 id: donorDoc.id
-            } as DonorType)
+            } as UserType)
             setItem({
                 ...docSnap.data(),
                 id: docSnap.id
@@ -143,7 +143,7 @@ export default function ItemContent() {
                                         </div>
                                     </div>
                                     {
-                                        user?.uid !== item?.createdBy && user?.userType !== UserTypes.DONOR && !request && (
+                                        user?.uid !== item?.createdBy && !request && (
                                             <CustomAlert 
                                                 title="Contact Donor" 
                                                 description="You will only be able to contact the donor once you have requested the item and it has been accepted by the donor. This is to protect the donor from receiving unsolicited messages." 
@@ -153,7 +153,7 @@ export default function ItemContent() {
                                     }
 
                                     {
-                                        user?.userType === UserTypes.DONOR && !request && item?.createdBy !== user?.uid && (
+                                        !request && item?.createdBy !== user?.uid && (
                                             <CustomAlert
                                                 title="You are a donor"
                                                 description="You are currently logged in as a donor. You cannot request items as a donor."
@@ -162,7 +162,7 @@ export default function ItemContent() {
                                         )
                                     }
                                     {
-                                        user?.userType === UserTypes.USER && request && request?.status === RequestStatus.PENDING && (
+                                        request && request?.status === RequestStatus.PENDING && (
                                             <CustomAlert
                                                 title="Request Pending"
                                                 description="You will be notified when the donor either accepts or rejects your request."
@@ -171,7 +171,7 @@ export default function ItemContent() {
                                         )
                                     }
                                     {
-                                        user?.userType === UserTypes.USER && request && request?.status === RequestStatus.ACCEPTED && (
+                                        request && request?.status === RequestStatus.ACCEPTED && (
                                             <CustomAlert
                                                 title="Request Accepted"
                                                 description="You will be able to contact the donor now."
@@ -180,7 +180,7 @@ export default function ItemContent() {
                                         )
                                     }
                                     {
-                                        user?.userType === UserTypes.USER && request && request?.status === RequestStatus.REJECTED && (
+                                        request && request?.status === RequestStatus.REJECTED && (
                                             <CustomAlert
                                                 title="Request Rejected"
                                                 description="The donor has rejected your request."
@@ -264,7 +264,7 @@ export default function ItemContent() {
                                             user?.uid ? (
                                                 <>
                                                     {
-                                                        user?.userType === UserTypes.USER && !request && (
+                                                        !request && (
                                                             <div className="absolute bottom-0 left-0 right-0 px-4 bg-white py-6 flex justify-between md:justify-end gap-2">
                                                                 <CustomButton 
                                                                     variant="outline" 
@@ -292,7 +292,7 @@ export default function ItemContent() {
                                                         )
                                                     }
                                                     {
-                                                        user?.userType === UserTypes.USER && request && !item?.donatedOn && (
+                                                        request && !item?.donatedOn && (
                                                             <div className="absolute bottom-0 left-0 right-0 px-4 bg-white py-6 flex justify-between md:justify-end gap-2">
                                                                 <Link href={`/app/messages?rid=${request?.id}`}>
                                                                     <CustomButton 

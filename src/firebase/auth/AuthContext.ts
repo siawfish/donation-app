@@ -1,15 +1,12 @@
 import { createContext, useContext } from 'react';
 import { UserInfo } from 'firebase/auth';
 import { Claims } from 'next-firebase-auth-edge/lib/auth/claims';
-import { AccountTypes, UserTypes } from '@/app/types';
 
 export interface User extends UserInfo {
   idToken: string;
   customToken?: string;
   emailVerified: boolean;
   customClaims: Claims;
-  userType: UserTypes;
-  type: AccountTypes;
   createdAt: string;
   updatedAt: string;
   lastLogin: string;

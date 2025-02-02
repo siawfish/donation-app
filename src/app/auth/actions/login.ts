@@ -4,12 +4,12 @@ import {signInWithEmailAndPassword, signOut} from 'firebase/auth';
 import {refreshCookiesWithIdToken} from 'next-firebase-auth-edge/lib/next/cookies';
 import {cookies, headers} from 'next/headers';
 import { getFirebaseAuth } from '@/firebase/auth/firebase';
-import { DonorType, ResponseData, UserType } from '@/app/types';
+import { ResponseData, UserType } from '@/app/types';
 import { FirebaseErrors } from '@/firebase/errors';
 import { db } from '@/firebase/init';
 import { authConfig } from '@/firebase/config/server-config';
 
-export async function loginAction(email: string, password: string): Promise<ResponseData<UserType | DonorType | null>> {
+export async function loginAction(email: string, password: string): Promise<ResponseData<UserType | null>> {
     try {
         const credential = await signInWithEmailAndPassword(
             getFirebaseAuth(),
@@ -44,9 +44,9 @@ export async function loginAction(email: string, password: string): Promise<Resp
     }
 }
 
-async function getUserByUid(uid: string): Promise<UserType | DonorType | null> {
+async function getUserByUid(uid: string): Promise<UserType | null> {
     const user = await db.collection('users').doc(uid).get();
-    return user.data() as UserType | DonorType | null;
+    return user.data() as UserType | null;
 }
 
 async function updateUserLastLogin(uid: string, lastLogin: string) {

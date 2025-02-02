@@ -7,7 +7,7 @@ import Link from "next/link";
 import CustomButton from "./Button";
 import * as Yup from "yup";
 import { useTransition } from "react";
-import { DonorType, ResponseData, UserType, UserTypes } from "@/app/types";
+import { ResponseData, UserType } from "@/app/types";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useQueryState } from "nuqs";
@@ -23,7 +23,7 @@ const validationSchema = Yup.object().shape({
 })
 
 interface LoginFormProps {
-    loginAction: (email: string, password: string) => Promise<ResponseData<UserType | DonorType | null>>;
+    loginAction: (email: string, password: string) => Promise<ResponseData<UserType | null>>;
 }
 
 export default function LoginForm({loginAction}: LoginFormProps) {
@@ -39,8 +39,7 @@ export default function LoginForm({loginAction}: LoginFormProps) {
                 setSubmitting(false);
                 return;
             }
-            const initialPath = data?.userType === UserTypes.USER ? "/app/user" : "/app/donor";
-            router.push(redirect || initialPath);
+            router.push(redirect || "/app");
         });
     }
 

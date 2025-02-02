@@ -1,7 +1,6 @@
 import { ProfileHeader } from "@/components/ProfileHeader";
 import { ProfileSidePane } from "@/components/ProfileSidePane";
 import ProfileTabs from "@/components/ProfileTabs";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Metadata } from "next";
 import { getTokens } from "next-firebase-auth-edge";
 import { authConfig } from "@/firebase/config/server-config";

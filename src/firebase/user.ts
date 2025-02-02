@@ -3,7 +3,7 @@ import {filterStandardClaims} from 'next-firebase-auth-edge/lib/auth/claims';
 import { User } from './auth/AuthContext';
 import { db } from './init';
 import { DocumentSnapshot } from 'firebase-admin/firestore';
-import { AccountTypes, UserType, UserTypes } from '@/app/types';
+import { UserType } from '@/app/types';
 
 export const toUser = async ({token, customToken, decodedToken}: Tokens): Promise<User> => {
   const {
@@ -31,8 +31,6 @@ export const toUser = async ({token, customToken, decodedToken}: Tokens): Promis
     customClaims,
     idToken: token,
     customToken,
-    userType: userData?.userType || UserTypes.USER,
-    type: userData?.type || AccountTypes.INDIVIDUAL,
     createdAt: userData?.createdAt || '',
     updatedAt: userData?.updatedAt || '',
     lastLogin: userData?.lastLogin || '',

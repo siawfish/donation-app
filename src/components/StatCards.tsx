@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { UserTypes } from "@/app/types";
 import { ListTodo, Clock, Gift, Users, Eye, Heart } from 'lucide-react'
 import { FirebaseErrors } from "@/firebase/errors"
 import { useAuth } from "@/firebase/auth/AuthContext"
@@ -30,24 +29,21 @@ export default function StatCards() {
         let unsubViews: () => void;
         let unsubWishlist: () => void;
         // Listings count (for donors)
-        if (user.userType === UserTypes.DONOR) {
-            const itemsQuery = query(
-                collection(firestore, "items"),
-                where("createdBy", "==", user.uid)
-            );
-            unsubItems = onSnapshot(itemsQuery, (snapshot) => {
-                setStats(prev => ({ ...prev, listings: snapshot.size }));
-                setLoading(false);
-            }, (error) => {
-                toast.error(FirebaseErrors[error.code] || "Error fetching listings");
-                setLoading(false);
-            });
-        }
-
+        const itemsQuery = query(
+            collection(firestore, "items"),
+            where("createdBy", "==", user.uid)
+        );
+        unsubItems = onSnapshot(itemsQuery, (snapshot) => {
+            setStats(prev => ({ ...prev, listings: snapshot.size }));
+            setLoading(false);
+        }, (error) => {
+            toast.error(FirebaseErrors[error.code] || "Error fetching listings");
+            setLoading(false);
+        });
         // Pending requests
         const requestsQuery = query(
             collection(firestore, "requests"),
-            where(user.userType === UserTypes.DONOR ? "donorId" : "createdBy", "==", user.uid),
+            where("createdBy", "==", user.uid),
             where("status", "==", "pending")
         );
         const unsubPending = onSnapshot(requestsQuery, (snapshot) => {
@@ -61,7 +57,7 @@ export default function StatCards() {
         // Completed donations
         const donationsQuery = query(
             collection(firestore, "requests"),
-            where(user.userType === UserTypes.DONOR ? "donorId" : "createdBy", "==", user.uid),
+            where("donorId", "==", user.uid),
             where("status", "==", "completed")
         );
         const unsubDonations = onSnapshot(donationsQuery, (snapshot) => {
@@ -75,18 +71,15 @@ export default function StatCards() {
         // Unique donors/beneficiaries
         const uniqueUsersQuery = query(
             collection(firestore, "requests"),
-            where(user.userType === UserTypes.DONOR ? "donorId" : "createdBy", "==", user.uid)
+            where("createdBy", "==", user.uid)
         );
         const unsubUsers = onSnapshot(uniqueUsersQuery, (snapshot) => {
             const uniqueUsers = new Set();
             snapshot.forEach(doc => {
-                uniqueUsers.add(user.userType === UserTypes.DONOR ? doc.data().createdBy : doc.data().donorId);
+                uniqueUsers.add(doc.data().createdBy);
             });
-            if (user.userType === UserTypes.DONOR) {
-                setStats(prev => ({ ...prev, beneficiaries: uniqueUsers.size }));
-            } else {
-                setStats(prev => ({ ...prev, donors: uniqueUsers.size }));
-            }
+            setStats(prev => ({ ...prev, beneficiaries: uniqueUsers.size }));
+            setStats(prev => ({ ...prev, donors: uniqueUsers.size }));
             setLoading(false);
         }, (error) => {
             toast.error(FirebaseErrors[error.code] || "Error fetching users");
@@ -94,43 +87,35 @@ export default function StatCards() {
         });
 
         // Views (for donors)
-        if (user.userType === UserTypes.DONOR) {
-            const viewsQuery = query(
-                collection(firestore, "views"),
-                where("createdBy", "==", user.uid)
-            );
-            unsubViews = onSnapshot(viewsQuery, (snapshot) => {
-                setStats(prev => ({ ...prev, views: snapshot.size }));
-                setLoading(false);
-            }, (error) => {
-                toast.error(FirebaseErrors[error.code] || "Error fetching views");
-                setLoading(false);
-            });
-        }
+        const viewsQuery = query(
+            collection(firestore, "views"),
+            where("createdBy", "==", user.uid)
+        );
+        unsubViews = onSnapshot(viewsQuery, (snapshot) => {
+            setStats(prev => ({ ...prev, views: snapshot.size }));
+            setLoading(false);
+        }, (error) => {
+            toast.error(FirebaseErrors[error.code] || "Error fetching views");
+            setLoading(false);
+        });
 
         // Wishlists (for users)
-        if (user.userType === UserTypes.USER) {
-            const wishlistQuery = query(
-                collection(firestore, "wishlist"),
-                where("createdBy", "==", user.uid)
-            );
-            unsubWishlist = onSnapshot(wishlistQuery, (snapshot) => {
-                setStats(prev => ({ ...prev, wishlists: snapshot.size }));
-                setLoading(false);
-            }, (error) => {
-                toast.error(FirebaseErrors[error.code] || "Error fetching wishlist");
-                setLoading(false);
-            });
-        }
+        const wishlistQuery = query(
+            collection(firestore, "wishlist"),
+            where("createdBy", "==", user.uid)
+        );
+        unsubWishlist = onSnapshot(wishlistQuery, (snapshot) => {
+            setStats(prev => ({ ...prev, wishlists: snapshot.size }));
+            setLoading(false);
+        }, (error) => {
+            toast.error(FirebaseErrors[error.code] || "Error fetching wishlist");
+            setLoading(false);
+        });
 
         return () => {
-            if (user.userType === UserTypes.DONOR) {
-                unsubItems();
-                unsubViews();
-            }
-            if (user.userType === UserTypes.USER) {
-                unsubWishlist();
-            }
+            unsubItems();
+            unsubViews();
+            unsubWishlist();
             unsubPending();
             unsubDonations();
             unsubUsers();
@@ -138,74 +123,32 @@ export default function StatCards() {
     }, [user]);
 
     if (loading) {
-        return <StatCardsSkeleton userType={user?.userType} />;
+        return <StatCardsSkeleton />;
     }
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {
-                user?.userType === UserTypes.DONOR && (
-                    <StatCard title="Total Listings" value={stats.listings.toString()} color="bg-blue-100" textColor="text-blue-800" icon={ListTodo} />
-                )
-            }
+            <StatCard title="Total Listings" value={stats.listings.toString()} color="bg-blue-100" textColor="text-blue-800" icon={ListTodo} />
             <StatCard title="Pending Requests" value={stats.pendingRequests.toString()} color="bg-green-100" textColor="text-green-800" icon={Clock} />
-            {
-                user?.userType === UserTypes.USER && (
-                    <StatCard title="Donations Received" value={stats.donations.toString()} color="bg-yellow-100" textColor="text-yellow-800" icon={Gift} />
-                )
-            }
-            {
-                user?.userType === UserTypes.DONOR && (
-                    <StatCard title="Total Donations" value={stats.donations.toString()} color="bg-yellow-100" textColor="text-yellow-800" icon={Gift} />
-                )
-            }
-            {
-                user?.userType === UserTypes.USER && (
-                    <StatCard title="Number of Donors" value={stats.donors.toString()} color="bg-purple-100" textColor="text-purple-800" icon={Users} />
-                )
-            }
-            {
-                user?.userType === UserTypes.DONOR && (
-                    <StatCard title="Number of Beneficiaries" value={stats.beneficiaries.toString()} color="bg-purple-100" textColor="text-purple-800" icon={Users} />
-                )
-            }
-            {
-                user?.userType === UserTypes.DONOR && (
-                    <StatCard title="Total Views" value={stats.views.toString()} color="bg-pink-100" textColor="text-pink-800" icon={Eye} />
-                )
-            }
-            {
-                user?.userType === UserTypes.USER && (
-                    <StatCard title="Total Wishlists" value={stats.wishlists.toString()} color="bg-pink-100" textColor="text-pink-800" icon={Heart} />
-                )
-            }
+            <StatCard title="Donations Received" value={stats.donations.toString()} color="bg-yellow-100" textColor="text-yellow-800" icon={Gift} />
+            <StatCard title="Number of Donors" value={stats.donors.toString()} color="bg-purple-100" textColor="text-purple-800" icon={Users} />
+            <StatCard title="Number of Beneficiaries" value={stats.beneficiaries.toString()} color="bg-purple-100" textColor="text-purple-800" icon={Users} />
+            <StatCard title="Total Views" value={stats.views.toString()} color="bg-pink-100" textColor="text-pink-800" icon={Eye} />
+            <StatCard title="Total Wishlists" value={stats.wishlists.toString()} color="bg-pink-100" textColor="text-pink-800" icon={Heart} />
         </div>
     )
 }
 
-function StatCardsSkeleton({ userType }: { userType?: UserTypes }) {
+function StatCardsSkeleton() {
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {
-                userType === UserTypes.DONOR && (
-                    <StatCardSkeleton />
-                )
-            }
             <StatCardSkeleton />
             <StatCardSkeleton />
-            {
-                userType === UserTypes.USER && (
-                    <StatCardSkeleton />
-                )
-            }
-            {
-                userType === UserTypes.DONOR && (
-                    <>
-                        <StatCardSkeleton />
-                        <StatCardSkeleton />
-                    </>
-                )
-            }
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
         </div>
     )
 }

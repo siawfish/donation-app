@@ -9,7 +9,7 @@ import { useAuth } from "@/firebase/auth/AuthContext"
 import { firestore } from "@/firebase/auth/firebase"
 import { collection, where, query, onSnapshot, doc, getDoc, orderBy, getDocs } from "firebase/firestore"
 import { toast } from "sonner"
-import { RequestType, UserTypes, RequestStatus, ItemType, UserType, DonorType } from "@/app/types";
+import { RequestType, RequestStatus, ItemType, UserType } from "@/app/types";
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import StatusBadge from "./StatusBadge";
@@ -20,7 +20,7 @@ export default function MessageList() {
   const [rid, setRid] = useQueryState("rid")
   const [requestsWithRecipientAndItemAndLastMessageAndUnreadCount, setRequestsWithRecipientAndItemAndLastMessageAndUnreadCount] = useState<{
     request: RequestType,
-    recipient: UserType | DonorType,
+    recipient: UserType,
     item: ItemType,
     lastMessage: string,
     unreadCount: number
@@ -30,14 +30,13 @@ export default function MessageList() {
   useEffect(() => {
     if (!user) return
     setIsLoading(true)
-    const q = user?.userType === UserTypes.DONOR ? 
-    query(collection(firestore, 'requests'), where('donorId', '==', user?.uid), where('status', 'in', [RequestStatus.COMPLETED, RequestStatus.CANCELLED, RequestStatus.ACCEPTED])) : 
-    query(collection(firestore, 'requests'), where('createdBy', '==', user?.uid), where('status', 'in', [RequestStatus.COMPLETED, RequestStatus.CANCELLED, RequestStatus.ACCEPTED]))
+    const q = query(collection(firestore, 'requests'), where('createdBy', '==', user?.uid), where('status', 'in', [RequestStatus.COMPLETED, RequestStatus.CANCELLED, RequestStatus.ACCEPTED]))
+
     const unsubscribe = onSnapshot(q, async (snapshot) => {
       try {
         const requestsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as RequestType)
         const requestsWithRecipientAndItem = await Promise.all(requestsData.map(async (request) => {
-          const recipientId = user?.userType === UserTypes.DONOR ? request.createdBy : request.donorId
+          const recipientId = request.createdBy
           const itemId = request.itemId
           const lastMessageQuery = query(collection(firestore, 'messages'), where('requestId', '==', request.id), orderBy('createdAt', 'desc'))
           const unreadCountQuery = query(collection(firestore, 'messages'), where('requestId', '==', request.id), where('read', '==', false))
@@ -52,7 +51,7 @@ export default function MessageList() {
             recipient: {
               ...recipient.data(),
               id: recipient.id
-            } as UserType | DonorType, 
+            } as UserType, 
             item: {
               ...item.data(),
               id: item.id

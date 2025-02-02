@@ -4,7 +4,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { useQueryState } from 'nuqs'
 import { BellIcon } from "lucide-react"
 import Notification from "./Notification"
-import { ActivityType, DonorType, UserType } from "@/app/types"
+import { ActivityType, UserType } from "@/app/types"
 import { ItemType } from "@/app/types"
 import { useState, useEffect } from "react"
 import { FirebaseErrors } from "@/firebase/errors"
@@ -20,7 +20,7 @@ interface NotificationsProps {
 
 export function Notifications({ items }: NotificationsProps) {
     const [notifications, setNotifications] = useQueryState('notifications')
-    const [itemsWithCreatorAndItem, setItemsWithCreatorAndItem] = useState<{ activity: ActivityType, creator: UserType | DonorType | null, item: ItemType | null }[]>([])
+    const [itemsWithCreatorAndItem, setItemsWithCreatorAndItem] = useState<{ activity: ActivityType, creator: UserType | null, item: ItemType | null }[]>([])
 
     useEffect(() => {
         if (!items) return
@@ -37,7 +37,7 @@ export function Notifications({ items }: NotificationsProps) {
                         itemData = itemDoc.exists() ? itemDoc.data() as ItemType : null
                     }
 
-                    const userData = userDocs.docs[0]?.data() as UserType | DonorType
+                    const userData = userDocs.docs[0]?.data() as UserType
 
                     return {
                         activity: item,
@@ -48,7 +48,7 @@ export function Notifications({ items }: NotificationsProps) {
                 const validItems = itemsWithCreators
                     .filter((result): result is PromiseFulfilledResult<{
                         activity: ActivityType;
-                        creator: UserType | DonorType;
+                        creator: UserType;
                         item: ItemType | null;
                     }> => result.status === 'fulfilled' && result.value.creator !== null)
                     .map(result => result.value)

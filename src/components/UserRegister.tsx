@@ -8,7 +8,7 @@ import CustomButton from './Button'
 import { ArrowRightIcon, SendIcon } from 'lucide-react'
 import MultiSelectInput from './MultiSelectInput'
 import { Form, Formik } from 'formik'
-import { AccountTypes, CategoryType, ResponseData, UserRegisterPayload, UserType, UserTypes } from '@/app/types'
+import { CategoryType, ResponseData, UserRegisterPayload, UserType } from '@/app/types'
 import * as yup from 'yup'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
@@ -29,7 +29,6 @@ const initialValues = {
     zip: "",
     country: "",
     preferedLocation: "",
-    type: AccountTypes.INDIVIDUAL,
     preferedCategories: [],
     password: "",
     confirmPassword: ""
@@ -85,17 +84,15 @@ export default function RegisterPage({
                 preferedCategories: values.preferedCategories,
                 password: values.password,
                 id: "",
-                type: values.type,
                 lastLogin: "",
                 createdAt: "",
                 updatedAt: "",
-                userType: UserTypes.USER
             }
             const { success, message} = await registerUserAction(payload);
             if (!success) {
                 toast.error("Failed to register user", {description: message});
             } else {
-                router.push("/app/user");
+                router.push("/app");
                 toast.success("User registered successfully", {description: "You can proceed to login"});
             }
             setSubmitting(false);

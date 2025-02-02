@@ -1,9 +1,9 @@
 import React from "react"
 import CustomInput from "./CustomInput"
 import { FormikProps } from "formik"
-import { DonorType } from "@/app/types"
+import { UserType } from "@/app/types"
 
-interface IndividualFormProps extends FormikProps<DonorType> {
+interface IndividualFormProps extends FormikProps<UserType> {
     disabled?: boolean;
 }
 

@@ -14,7 +14,7 @@ import { getFirebaseAuth } from "@/firebase/auth/firebase";
 import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
 import CustomButton from "../Button";
-import { UserTypes } from "@/app/types";
+import { UserType } from "@/app/types";
 import NotificationsButton from "../NotificationsButton";
 
 export default function Navbar() {
@@ -37,7 +37,7 @@ export default function Navbar() {
     { href: "/contact", label: "Contact" },
   ];
 
-  const profileUrl = user?.userType === UserTypes.USER ? `/app/user` : `/app/donor`
+  const profileUrl = `/app`
 
   const profileLinks = [
     { 

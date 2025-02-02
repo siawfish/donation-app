@@ -4,17 +4,11 @@ export enum ConditionType {
     POOR = "poor"
 }
 
-export enum UserTypes {
-    DONOR = "donor",
-    USER = "user"
+export interface UserRegisterPayload extends UserType {
+    password: string;
 }
 
-export enum AccountTypes {
-    INDIVIDUAL = "individual",
-    ORGANIZATION = "organization"
-}
-
-export interface DonorType {
+export interface UserType {
     id: string;
     name: string;
     email: string;
@@ -24,23 +18,10 @@ export interface DonorType {
     state: string;
     zip: string;
     country: string;
-    type: AccountTypes;
     lastLogin: string;
     createdAt: string;
     updatedAt: string;
-    userType: UserTypes;
     profileUrl?: string;
-}
-
-export interface DonorRegisterPayload extends DonorType {
-    password: string;
-}
-
-export interface UserRegisterPayload extends UserType {
-    password: string;
-}
-
-export interface UserType extends DonorType {
     preferedCategories: CategoryType[];
     preferedLocation: string;
 }

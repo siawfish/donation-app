@@ -1,5 +1,5 @@
 import MyDonations from '@/components/MyDonations';
-import { getMyDonations } from '../../../actions/items';
+import { getMyDonations } from '@/app/app/actions/items';
 import { Suspense } from 'react';
 import Loading from './loading';
 
