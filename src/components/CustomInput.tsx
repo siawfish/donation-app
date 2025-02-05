@@ -13,7 +13,7 @@ export default function CustomInput({ label, containerClassName, error, ...props
         <div className={cn("space-y-1 p-3 pb-5 bg-white rounded-md relative", containerClassName)}>
             {label && <Label htmlFor={props.id}>{label}</Label>}
             <Input {...props} className={cn(props.className, error ? "border-red-500" : "")} />
-            <p className={cn("text-xs font-cabinetLight text-red-500 absolute bottom-1 mt-1 break-words w-full pr-3 truncate", error ? "visible" : "invisible")}>{error}</p>
+            <p className={cn("text-xs text-red-500", error ? "visible" : "invisible")}>{error}</p>
         </div>
     )
 };

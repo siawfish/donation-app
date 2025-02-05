@@ -1,7 +1,8 @@
 import Footer from "@/components/Footer";
 import Navbar from "@/components/ui/navbar";
-import { Mail, MapPin, Phone } from "lucide-react";
+import { Mail } from "lucide-react";
 import ContactForm from "@/components/ContactForm";
+import { sendContactForm } from "./actions/send";
 
 export default function Contact() {
   return (
@@ -43,7 +44,7 @@ export default function Contact() {
 
           {/* Service Selection and Form */}
           <div className="bg-white px-6 lg:px-24 py-24">
-            <ContactForm />
+            <ContactForm onSubmit={sendContactForm} />
           </div>
         </div>
       </main>
