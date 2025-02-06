@@ -30,7 +30,7 @@ const sendEmail = async (payload: ContactFormData): Promise<{
         const info = await transporter.sendMail(data);
         return {
             success: true,
-            message: "Email sent successfully",
+            message: "Message sent successfully",
         };
     } catch (error: any) {
         console.log(error);
