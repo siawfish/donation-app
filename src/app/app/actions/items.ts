@@ -145,6 +145,27 @@ export async function getMyItems({
     }
 }
 
+export async function getPopularItems(): Promise<ResponseData<ItemType[] | null>> {
+    try {
+        const items = await db.collection('items').where('donatedTo', '==', null).orderBy('views', 'desc').limit(8).get();
+        return {
+            success: true,
+            message: "Items fetched successfully",
+            data: items.docs.map((doc) => ({
+                ...doc.data(),
+                id: doc.id
+            } as ItemType))
+        }
+    } catch (error: any) {
+        const message = FirebaseErrors[error.code] || error.message;
+        return {
+            success: false,
+            message: message,
+            data: null
+        }
+    }
+}
+
 export async function getMyDonations({
     query,
     queryBy = "name",

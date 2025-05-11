@@ -55,7 +55,7 @@ export default function Donations({
   }
 
   return (
-    <div className="container mx-auto px-4">
+    <div className="container mx-auto max-w-7xl px-4">
       <div className="flex flex-row items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold">Listings</h1>

@@ -136,14 +136,20 @@ export default function ImageCard({
     }
 
     return (
-        <Card className={`w-full max-w-md overflow-hidden border-none bg-secondary h-full shadow-none rounded-none ${containerClassName}`}>
+        <Card className={`w-full max-w-md overflow-hidden border-none bg-white h-full shadow-none rounded-none ${containerClassName}`}>
             <div className="relative w-full h-48">
-                <Image
-                    src={image}
-                    alt="Card image"
-                    layout="fill"
-                    objectFit="cover"
-                />
+                {
+                    image ? (
+                        <Image
+                            src={image}
+                            alt="Card image"
+                            layout="fill"
+                            objectFit="cover"
+                        />
+                    ) : (
+                        <div className="w-full h-full bg-gray-200 flex items-center justify-center" />
+                    )
+                }
                 {user && itemId && createdBy && (
                     <Button
                         variant="ghost"
