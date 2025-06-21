@@ -1,7 +1,8 @@
 import React from "react";
 import { Metadata } from "next";
 import Donations from "@/components/Donations";
-import { getListings, getCategories } from "../app/actions/items";
+import { getListings } from "../app/actions/items";
+import { getCategories } from "../app/actions/categories";
 
 export const metadata: Metadata = {
   title: "Explore listings",

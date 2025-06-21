@@ -1,4 +1,4 @@
-import { getCategories } from '@/app/app/actions/items';
+import { getCategories } from '@/app/app/actions/categories';
 import UserRegister from '@/components/UserRegister'
 import React from 'react'
 import { registerUserAction } from '@/app/auth/actions/register'
