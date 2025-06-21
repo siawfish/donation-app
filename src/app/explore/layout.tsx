@@ -8,10 +8,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="min-h-screen bg-secondary flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       <Navbar />
       <div className="flex-1 py-6 lg:py-12 flex justify-center">
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense>
           {children}
         </Suspense>
       </div>

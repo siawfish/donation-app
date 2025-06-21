@@ -13,6 +13,7 @@ import { RequestType, RequestStatus, ItemType, UserType } from "@/app/types";
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import StatusBadge from "./StatusBadge";
+import EmptyState from "./EmptyState";
 
 export default function MessageList() {
   const { user } = useAuth()
@@ -98,47 +99,55 @@ export default function MessageList() {
         />
       </div>
       <ScrollArea className="flex-grow">
-        {filteredMessages.map((message) => (
-          <div
-            key={message.request.id}
-            className={`flex flex-col cursor-pointer border-b hover:bg-primary-foreground ${rid === message?.request?.id ? 'bg-primary-foreground' : ''}`}
-            onClick={() => setRid(message.request.id ?? null)}
-          >
-            <div className="flex flex-row items-center p-4 pb-1">
-              <Avatar className="h-8 w-8 sm:h-10 sm:w-10 mr-2">
-                <AvatarImage src={message.recipient?.profileUrl} alt={message.recipient.name} />
-                <AvatarFallback>{message.recipient.name.slice(0, 2).toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 flex flex-col gap-0.5 sm:gap-1">
-                <div className="flex flex-col sm:flex-row sm:justify-between">
-                  <h3 className="font-semibold text-sm sm:text-base">{message.recipient.name}</h3>
-                  <div className="mt-1 sm:mt-0">
-                    <StatusBadge requestStatus={message.request.status as RequestStatus} />
+        {!isLoading && filteredMessages.length === 0 ? (
+          <EmptyState 
+            title="No messages yet"
+            description={searchTerm ? "No messages match your search criteria." : "You haven't started any conversations yet. Make a request to begin chatting!"}
+            containerClassName="min-h-[40vh]"
+          />
+        ) : (
+          filteredMessages.map((message) => (
+            <div
+              key={message.request.id}
+              className={`flex flex-col cursor-pointer border-b hover:bg-primary-foreground ${rid === message?.request?.id ? 'bg-primary-foreground' : ''}`}
+              onClick={() => setRid(message.request.id ?? null)}
+            >
+              <div className="flex flex-row items-center p-4 pb-1">
+                <Avatar className="h-8 w-8 sm:h-10 sm:w-10 mr-2">
+                  <AvatarImage src={message.recipient?.profileUrl} alt={message.recipient.name} />
+                  <AvatarFallback>{message.recipient.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 flex flex-col gap-0.5 sm:gap-1">
+                  <div className="flex flex-col sm:flex-row sm:justify-between">
+                    <h3 className="font-semibold text-sm sm:text-base">{message.recipient.name}</h3>
+                    <div className="mt-1 sm:mt-0">
+                      <StatusBadge requestStatus={message.request.status as RequestStatus} />
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate max-w-[80%] sm:max-w-[90%]">{message.lastMessage}</p>
+                    {message.unreadCount > 0 && (
+                      <div className="flex items-center justify-end">
+                        <span className="bg-primary text-white text-[10px] sm:text-xs rounded-full px-1.5 sm:px-2 py-0.5 sm:py-1 min-w-[16px] sm:min-w-[20px] max-w-[16px] sm:max-w-[20px] max-h-[16px] sm:max-h-[20px] flex items-center justify-center text-center">
+                          {message.unreadCount}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <p className="text-xs sm:text-sm text-muted-foreground truncate max-w-[80%] sm:max-w-[90%]">{message.lastMessage}</p>
-                  {message.unreadCount > 0 && (
-                    <div className="flex items-center justify-end">
-                      <span className="bg-primary text-white text-[10px] sm:text-xs rounded-full px-1.5 sm:px-2 py-0.5 sm:py-1 min-w-[16px] sm:min-w-[20px] max-w-[16px] sm:max-w-[20px] max-h-[16px] sm:max-h-[20px] flex items-center justify-center text-center">
-                        {message.unreadCount}
-                      </span>
-                    </div>
-                  )}
+              </div>
+              <div className="flex flex-row items-center gap-1.5 sm:gap-2 border-t px-4 py-1">
+                <div className="bg-accent rounded-sm flex items-center justify-center min-w-[20px] min-h-[20px] sm:min-w-[24px] sm:min-h-[24px]">
+                  <Image src={message.item.assets?.[0]?.url} alt="Call" width={24} height={24} className="rounded-sm"/>
+                </div>
+                <div className="flex-1">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">{message.item.name}</p>
+                  <p className="text-[8px] sm:text-[10px] text-muted-foreground line-clamp-1">{message.item.description}</p>
                 </div>
               </div>
             </div>
-            <div className="flex flex-row items-center gap-1.5 sm:gap-2 border-t px-4 py-1">
-              <div className="bg-accent rounded-sm flex items-center justify-center min-w-[20px] min-h-[20px] sm:min-w-[24px] sm:min-h-[24px]">
-                <Image src={message.item.assets?.[0]?.url} alt="Call" width={24} height={24} className="rounded-sm"/>
-              </div>
-              <div className="flex-1">
-                <p className="text-[10px] sm:text-xs text-muted-foreground">{message.item.name}</p>
-                <p className="text-[8px] sm:text-[10px] text-muted-foreground line-clamp-1">{message.item.description}</p>
-              </div>
-            </div>
-          </div>
-        ))}
+          ))
+        )}
       </ScrollArea>
     </div>
   )

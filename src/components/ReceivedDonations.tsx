@@ -16,7 +16,7 @@ interface ReceivedDonationsProps {
 export default function ReceivedDonations({donations}: ReceivedDonationsProps) {
     const pathname = usePathname();
     return (
-        <TabsContent value={pathname}>
+        <div>
             {
                 donations?.items?.length > 0 ? (
                     <div className="p-1 flex flex-col">
@@ -51,6 +51,6 @@ export default function ReceivedDonations({donations}: ReceivedDonationsProps) {
                     />
                 )
             }
-        </TabsContent>
+        </div>
     )
 }

@@ -10,6 +10,7 @@ export default async function WishlistPage({
 }) {
   const page = searchParams.page ? Number(searchParams.page) : 1;
   const {success, data, message} = await getWishlist({ page });
+
   return (
     <Suspense fallback={<Loading />}>
         <Wishlist wishlist={data!} />

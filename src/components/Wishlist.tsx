@@ -15,7 +15,7 @@ interface WishlistProps {
 export default function Wishlist({ wishlist }: WishlistProps) {
     const pathname = usePathname();
     return (
-        <TabsContent value={pathname}>
+        <div>
             {
                 wishlist?.items?.length > 0 ? (
                     <div className="p-1 flex flex-col">
@@ -52,6 +52,6 @@ export default function Wishlist({ wishlist }: WishlistProps) {
                     />
                 )
             }
-        </TabsContent>
+        </div>
     )
 }

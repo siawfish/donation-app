@@ -6,12 +6,12 @@ import { sendContactForm } from "./actions/send";
 
 export default function Contact() {
   return (
-    <div className="flex flex-col bg-secondary">
-      <main className="flex-1">
-        <Navbar />
-        <div className="grid md:grid-cols-[35%_65%] lg:h-[calc(100vh-56px)]">
+    <div className="flex flex-col bg-white">
+      <Navbar />
+      <main className="container max-w-7xl mx-auto">
+        <div className="grid md:grid-cols-[35%_65%] lg:h-[calc(100vh-150px)]">
           {/* Contact Information */}
-          <div className="flex flex-row md:flex-col flex-wrap gap-8 px-6 lg:px-24 py-24">
+          <div className="flex flex-row md:flex-col flex-wrap gap-8 px-6 pt-12 lg:py-24">
             <div>
               <h2 className="text-2xl font-bold mb-3">Chat to us</h2>
               <div className="flex gap-2">
@@ -43,7 +43,7 @@ export default function Contact() {
           </div>
 
           {/* Service Selection and Form */}
-          <div className="bg-white px-6 lg:px-24 py-24">
+          <div className="bg-white px-6 lg:px-24 py-12 lg:py-24">
             <ContactForm onSubmit={sendContactForm} />
           </div>
         </div>

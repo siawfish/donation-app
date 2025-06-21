@@ -1,9 +1,7 @@
-import type { Metadata } from "next";
 import Navbar from "@/components/ui/navbar";
 import { ItemDetails } from "@/components/ItemDetails";
 import { Suspense } from "react";
 import FloatingBottomNavigation from "@/components/FloatingBottomNavigation";
-import { Notifications } from "@/components/Notifications";
 
 export default function RootLayout({
   children,
@@ -11,9 +9,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="min-h-screen bg-secondary flex flex-col pb-20">
+    <div className="min-h-screen bg-white flex flex-col">
       <Navbar />
-      <div className="flex-1 py-6 lg:py-12 flex justify-center">
+      <div className="container max-w-7xl mx-auto py-6 lg:py-12">
         <Suspense fallback={<div>Loading...</div>}>
           {children}
         </Suspense>

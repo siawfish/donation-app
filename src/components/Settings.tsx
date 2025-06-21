@@ -66,12 +66,12 @@ export default function Settings() {
     const { user } = useAuth();
     const [action, setAction] = useQueryState('action')
     return (
-        <div className="container mx-auto px-6 md:px-8 space-y-6"> 
+        <div className="container max-w-7xl mx-auto px-6 space-y-6"> 
             <div>
                 <h2 className="text-xl font-semibold">{`${user?.displayName?.split(' ')[0]}'s Settings`}</h2>
                 <p className="text-muted-foreground">Manage your account settings and preferences.</p>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-[78%_20%] gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-[75%_25%] gap-6">
                 <div className="space-y-6 lg:border-r lg:pr-6">
                     <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                         {SettingsOptions.map((option, index) => (

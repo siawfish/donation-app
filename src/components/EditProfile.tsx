@@ -20,6 +20,7 @@ import { Label } from './ui/label';
 import { firestore } from "@/firebase/auth/firebase"
 import { collection, doc, getDoc } from 'firebase/firestore';
 import { recordActivity } from '@/app/app/actions/activities';
+import { useRouter } from 'next/navigation';
 
 const donorValidationSchema = Yup.object().shape({
     name: Yup.string()
@@ -53,7 +54,7 @@ export default function EditProfile() {
     const isOpen = action === "edit_profile"
     const { user } = useAuth()
     const [_, startTransition] = useTransition()
-
+    const router = useRouter()
     const fetchUser = useCallback(async function fetchUser() {
         if (!user?.uid) return
         // fetch user from firestore
@@ -65,8 +66,9 @@ export default function EditProfile() {
     }, [user])
 
     useEffect(() => {
+        if(!isOpen) return
         fetchUser()
-    }, [fetchUser])
+    }, [fetchUser, isOpen])
 
     const handleImageUpload = async (file: File, setFieldValue: (field: string, value: any) => void) => {
         if (!file) return;
@@ -246,19 +248,24 @@ export default function EditProfile() {
                                         type="button"
                                         variant="outline" 
                                         className="w-[180px] border-primary !text-primary rounded-full hover:bg-transparent py-6"
-                                        onClick={() => setAction(null)}
-                                        disabled={isSubmitting}
+                                        onClick={() => {
+                                            setAction(null)
+                                            router.refresh()
+                                        }}
+                                        disabled={isSubmitting || _}
                                     >
                                         Cancel
                                     </CustomButton>
                                     <CustomButton 
                                         type="submit"
                                         variant="default" 
+                                        isLoading={isSubmitting || _}
+                                        onClick={() => handleSubmit(values)}
                                         className="w-[180px] rounded-full py-6"
-                                        disabled={isSubmitting}
+                                        disabled={isSubmitting || _}
                                         icon={<SaveIcon className="w-4 h-4" />}
                                     >
-                                        {isSubmitting ? 'Saving...' : 'Save'}
+                                        {isSubmitting || _ ? 'Saving...' : 'Save'}
                                     </CustomButton>
                                 </div>
                             </div>

@@ -4,7 +4,7 @@ import { ItemType } from "@/app/types";
 import { PaginatedData } from "@/app/types";
 import { CustomPagination } from "@/components/CustomPagination";
 import ImageCard from "@/components/ui/image-card";
-import { TabsContent } from "@/components/ui/tabs";
+import { TabsContent } from "@/components/ui/tabs"; 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React from "react";
@@ -17,7 +17,7 @@ interface MyItemsProps {
 export default function MyItems({donations}: MyItemsProps) {
     const pathname = usePathname();
     return (
-        <TabsContent value={pathname}>
+        <div>
             {
                 donations?.items?.length > 0 ? (
                     <div className="p-1 flex flex-col">
@@ -52,6 +52,6 @@ export default function MyItems({donations}: MyItemsProps) {
                     />
                 )
             }
-        </TabsContent>
+        </div>
     )
 }
