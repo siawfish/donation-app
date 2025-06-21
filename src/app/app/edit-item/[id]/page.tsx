@@ -1,5 +1,6 @@
 import AddDonation from '@/components/AddDonation'
-import { addItem, getCategories, getItem, updateItem } from '../../actions/items';
+import { addItem, getItem, updateItem } from '../../actions/items';
+import { getCategories } from '../../actions/categories';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {

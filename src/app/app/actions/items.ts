@@ -66,26 +66,6 @@ export async function updateItem(item: ItemType, id: string): Promise<ResponseDa
     }
 }
 
-export async function getCategories(): Promise<ResponseData<CategoryType[] | null>> {
-    'use server';
-    try {
-        const categories = await db.collection('categories').get();
-        const categoriesData = categories.docs.map((doc) => doc.data() as CategoryType);
-        return {
-            success: true,
-            message: "Categories fetched successfully",
-            data: categoriesData
-        }
-    } catch (error: any) {
-        const message = FirebaseErrors[error.code] || error.message;
-        return {
-            success: false,
-            message: message,
-            data: null
-        }
-    }
-}
-
 export async function getMyItems({
     query,
     queryBy = "name",
