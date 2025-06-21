@@ -8,8 +8,8 @@ import { useQueryState } from 'nuqs'
 export default function Messaging() {
     const [rid] = useQueryState('rid')
     return (
-        <div className="container mx-auto space-y-6 px-0 lg:px-6 lg:max-w-[1200px]">
-            <div className="flex bg-background h-full max-h-[calc(100vh-12rem)] lg:h-[calc(100vh-15rem)] rounded-md">
+        <div className="container mx-auto space-y-6 px-4 max-w-7xl">
+            <div className="flex bg-background h-full max-h-[calc(100vh-12rem)] lg:h-[calc(100vh-15rem)] rounded-md border">
                 <div className={`${rid ? 'hidden md:block' : 'w-full'} md:w-1/3 border-r`}>
                     <MessageList />
                 </div>

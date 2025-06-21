@@ -100,8 +100,8 @@ export default function RegisterPage({
     }
 
     return (
-        <div className="container bg-gray-100 flex flex-col md:flex-row">
-        <div className="md:w-1/2 bg-white p-8 flex flex-col justify-center">
+        <div className="container max-w-7xl mx-auto bg-gray-100 flex flex-col md:flex-row">
+        <div className="md:w-1/2 p-8 flex flex-col justify-center">
             <h1 className="text-4xl font-bold text-gray-800 mb-6">Find What You Need,<br /> When You Need It For Free</h1>
             <p className="text-xl text-gray-600 mb-8">Join our platform to discover items based on categories, location, and condition donated by amazing people. It&apos;s never been easier to find exactly what you&apos;re looking for.</p>
             <ul className="space-y-4">

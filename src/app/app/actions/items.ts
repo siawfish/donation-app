@@ -1,5 +1,3 @@
-"use server";
-
 import { CategoryType, ItemType, PaginatedData, RequestStatus, RequestType, ResponseData, WishlistType } from "@/app/types";
 import { FirebaseErrors } from "@/firebase/errors";
 import { db } from "@/firebase/init";
@@ -8,6 +6,7 @@ import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
 
 export async function addItem(item: ItemType): Promise<ResponseData<string | null>> {
+    'use server';
     try {
         const tokens = await getTokens(await cookies(), authConfig);
   
@@ -39,6 +38,8 @@ export async function addItem(item: ItemType): Promise<ResponseData<string | nul
 }
 
 export async function updateItem(item: ItemType, id: string): Promise<ResponseData<ItemType | null>> {
+    'use server';
+
     try {
         const tokens = await getTokens(await cookies(), authConfig);
   
@@ -66,6 +67,7 @@ export async function updateItem(item: ItemType, id: string): Promise<ResponseDa
 }
 
 export async function getCategories(): Promise<ResponseData<CategoryType[] | null>> {
+    'use server';
     try {
         const categories = await db.collection('categories').get();
         const categoriesData = categories.docs.map((doc) => doc.data() as CategoryType);
@@ -95,6 +97,7 @@ export async function getMyItems({
     page?: number,
     limit?: number
 }): Promise<ResponseData<PaginatedData<ItemType[]> | null>> {
+    'use server';
     try {
         const tokens = await getTokens(await cookies(), authConfig);
   
@@ -146,6 +149,7 @@ export async function getMyItems({
 }
 
 export async function getPopularItems(): Promise<ResponseData<ItemType[] | null>> {
+    'use server';
     try {
         const items = await db.collection('items').where('donatedTo', '==', null).orderBy('views', 'desc').limit(8).get();
         return {
@@ -177,6 +181,7 @@ export async function getMyDonations({
     page?: number,
     limit?: number
 }): Promise<ResponseData<PaginatedData<ItemType[]> | null>> {
+    'use server';
     try {
         const tokens = await getTokens(await cookies(), authConfig);
   
@@ -234,6 +239,7 @@ export async function getReceivedDonations({
     page?: number,
     limit?: number
 }): Promise<ResponseData<PaginatedData<ItemType[]> | null>> {
+    'use server';
     try {
         const tokens = await getTokens(await cookies(), authConfig);
   
@@ -289,6 +295,7 @@ export async function getMyRequests({
     page?: number,
     limit?: number
 }): Promise<ResponseData<PaginatedData<ItemType[]> | null>> {
+    'use server';
     try {
         const tokens = await getTokens(await cookies(), authConfig);
   
@@ -333,6 +340,8 @@ export async function getMyRequests({
         const totalQuery = await queryRef.count().get();
         const total = totalQuery.data().count;
 
+        console.log('------------>', items);
+
         return {
             success: true,
             message: "Items fetched successfully", 
@@ -360,6 +369,7 @@ export async function getListings({
     page?: number,
     limit?: number
 }): Promise<ResponseData<PaginatedData<ItemType[]> | null>> {
+    'use server';
     try {
         let queryRef = db.collection('items').where('donatedTo', '==', null);
 
@@ -411,6 +421,7 @@ export async function getWishlist({
     page?: number,
     limit?: number
 }): Promise<ResponseData<PaginatedData<ItemType[]> | null>> {
+    'use server';
     try {
         const tokens = await getTokens(await cookies(), authConfig);
   
@@ -468,6 +479,7 @@ export async function getWishlist({
 }
 
 export async function getItem(id: string): Promise<ResponseData<ItemType | null>> {
+    'use server';
     try {
         const itemDoc = await db.collection('items').doc(id).get();
         return {

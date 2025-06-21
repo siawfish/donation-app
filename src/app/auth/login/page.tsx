@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function Login() {
     return (
-        <div className="bg-secondary">
+        <div className="bg-white">
             <div className="container mx-auto">
                 <LoginForm loginAction={loginAction} />
             </div>

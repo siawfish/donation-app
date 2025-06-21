@@ -17,7 +17,7 @@ interface MyDonationsProps {
 export default function MyDonations({donations}: MyDonationsProps) {
     const pathname = usePathname();
     return (
-        <TabsContent value={pathname}>
+        <div>
             {
                 donations?.items?.length > 0 ? (
                     <div className="p-1 flex flex-col">
@@ -52,6 +52,6 @@ export default function MyDonations({donations}: MyDonationsProps) {
                     />
                 )
             }
-        </TabsContent>
+        </div>
     )
 }

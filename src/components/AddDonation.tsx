@@ -20,6 +20,7 @@ import { toast } from "sonner"
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 
 const INITIAL_VALUES: ItemType = {
+  id: "",
   name: "",
   categories: [],
   condition: null,
@@ -113,10 +114,7 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
       toast.loading("Saving item...", { description: "Please wait while we save your item...", id: "saving-item" });
       
       const data: ItemType = {
-        name: values.name,
-        description: values.description,
-        categories: values.categories,
-        condition: values.condition,
+        ...values,
         assets,
         views: values.views || 0
       }
@@ -131,7 +129,7 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
           if (!success) throw new Error(message);
           toast.success("Item added successfully", { description: "You can now view your item in your dashboard.", id: "saving-item" });
         }
-        router.push("/app/donor/my-items");
+        router.push("/app/my-items");
       });
 
     } catch (error: any) {
@@ -161,7 +159,7 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
           touched,
           isValid,
         }) => (
-          <Form className="container max-w-6xl mx-auto px-4 lg:py-12" onSubmit={handleSubmit}>
+          <Form className="container max-w-6xl mx-auto lg:py-12" onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-y-4">
               <div className="flex flex-col justify-center gap-6 lg:mr-4">
                 <div>
@@ -179,6 +177,7 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
                     error={touched.name && errors.name ? errors.name : undefined}
                     disabled={isSubmitting || _}
                   />
+                  <input type="hidden" name="id" value={values.id} />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <MultiSelectInput
                       containerClassName="w-full"
@@ -241,7 +240,7 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
               />
             </div>
             <div className="flex justify-end mt-6 gap-4">
-              <Link href="/app/donor/my-items">
+              <Link href="/app/my-items">
                 <CustomButton
                   variant="outline"
                   className="w-[150px] rounded-full text-lg py-6"

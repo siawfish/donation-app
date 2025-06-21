@@ -333,7 +333,7 @@ export default function ItemContent() {
                                     </>
                                 ) : (
                                     <div className="absolute bottom-0 left-0 right-0 px-4 bg-white py-6 flex justify-between md:justify-end gap-2">
-                                        <Link href={`/app/donor/edit-item/${id}`}>
+                                        <Link href={`/app/edit-item/${id}`}>
                                             <CustomButton 
                                                 variant="outline" 
                                                 className="w-[180px] border-primary !text-primary rounded-full hover:bg-transparent py-6"

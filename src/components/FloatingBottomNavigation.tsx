@@ -6,10 +6,8 @@ import { usePathname } from "next/navigation";
 
 const getIsActive = (pathname: string, href: string) => {
     return pathname === href || 
-        (href === '/app/donor/my-items' && 
-        (pathname === '/app/donor/my-donations' || pathname === '/app/donor/add-item' || pathname.includes('/app/donor/edit-item'))) ||
-        (href === '/app/user/pending-requests' && 
-        (pathname === '/app/user/donations' || pathname === '/app/user/wishlist'));
+        (href === '/app/my-items' && 
+        (pathname === '/app/my-donations' || pathname === '/app/add-item' || pathname === '/app/pending-requests' || pathname === '/app/donations' || pathname === '/app/wishlist' || pathname.includes('/app/edit-item')))
 }
 
 export default function FloatingBottomNavigation() {
@@ -22,7 +20,7 @@ export default function FloatingBottomNavigation() {
             label: "Dashboard"
         },
         {
-            href: "/app/pending-requests",
+            href: "/app/my-items",
             icon: ListTodo,
             label: "Listings"
         },

@@ -17,7 +17,7 @@ interface MyRequestsProps {
 export default function MyRequests({requests}: MyRequestsProps) {
     const pathname = usePathname();
     return (
-        <TabsContent value={pathname}>
+        <div>
             {
                 requests?.items?.length > 0 ? (
                     <div className="p-1 flex flex-col">
@@ -53,6 +53,6 @@ export default function MyRequests({requests}: MyRequestsProps) {
                     />
                 )
             }
-        </TabsContent>
+        </div>
     )
 }
