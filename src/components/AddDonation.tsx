@@ -1,6 +1,6 @@
 'use client'
 
-import { SaveIcon } from "lucide-react"
+import { SaveIcon, MapPin } from "lucide-react"
 import CustomButton from "./Button"
 import CustomInput from "./CustomInput"
 import CustomTextarea from "./CustomTextarea"
@@ -9,7 +9,7 @@ import { Form, Formik } from "formik"
 import * as yup from "yup"
 import { AssetType, CategoryType, ItemType, ResponseData } from "@/app/types"
 import { useEffect, useState, useTransition } from "react"
-import { storage } from "@/firebase/auth/firebase"
+import { storage, firestore } from "@/firebase/auth/firebase"
 import MultiSelectInput from "./MultiSelectInput"
 import SelectInput from "./SelectInput"
 import { Conditions } from "@/lib/utils"
@@ -17,7 +17,12 @@ import Link from "next/link"
 import { useAuth } from "@/firebase/auth/AuthContext"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
+import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage"
+import { doc, getDoc } from "firebase/firestore"
+import dynamic from "next/dynamic"
+
+// SSR-safe map import
+const LocationPicker = dynamic(() => import("./LocationPicker"), { ssr: false })
 
 const INITIAL_VALUES: ItemType = {
   id: "",
@@ -26,13 +31,16 @@ const INITIAL_VALUES: ItemType = {
   condition: null,
   description: "",
   assets: [],
-  views: 0
+  views: 0,
+  lat: undefined,
+  lng: undefined,
+  locationName: "",
 }
 
-interface AddDonationProps { 
-  addItem: (item: ItemType) => Promise<ResponseData<string | null>>, 
+interface AddDonationProps {
+  addItem: (item: ItemType) => Promise<ResponseData<string | null>>
   editItem?: (item: ItemType, id: string) => Promise<ResponseData<ItemType | null>>
-  categories: CategoryType[] 
+  categories: CategoryType[]
   defaultValues?: ItemType
 }
 
@@ -47,21 +55,22 @@ const validationSchema = yup.object({
   condition: yup.string().required("Condition is required"),
   description: yup.string().required("Description is required"),
   assets: yup.array().of(
-    yup.mixed().test('is-valid-asset', 'Invalid asset format', function(value) {
+    yup.mixed().test('is-valid-asset', 'Invalid asset format', function (value) {
       return (
-        (value instanceof File) || 
+        (value instanceof File) ||
         (typeof value === 'object' && value !== null && 'url' in value && 'type' in value)
-      );
+      )
     })
-  ).min(1, "Upload at least one asset"),
+  ).min(1, "Upload at least one photo"),
 })
 
 export default function AddDonation({ addItem, editItem, categories, defaultValues }: AddDonationProps) {
-  const [initialValues, setInitialValues] = useState(INITIAL_VALUES);
-  const router = useRouter();
-  const { user } = useAuth();
-  const [_, startTransition] = useTransition();
+  const [initialValues, setInitialValues] = useState(INITIAL_VALUES)
+  const router = useRouter()
+  const { user } = useAuth()
+  const [_, startTransition] = useTransition()
 
+  // Pre-fill location from the user's profile
   useEffect(() => {
     if (defaultValues) {
       setInitialValues({
@@ -69,73 +78,75 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
         assets: defaultValues.assets.map((asset, i) => ({
           ...asset,
           preview: asset.url,
-          id: `image-${i+1}`,
+          id: `image-${i + 1}`,
           type: asset.type
         }))
-      });
+      })
+      return
     }
-  }, [defaultValues]);
+
+    // Fetch user's saved location to pre-populate the map
+    if (user?.uid) {
+      getDoc(doc(firestore, "users", user.uid)).then((snap) => {
+        if (snap.exists()) {
+          const data = snap.data()
+          if (data?.lat && data?.lng) {
+            setInitialValues((prev) => ({
+              ...prev,
+              lat: data.lat,
+              lng: data.lng,
+              locationName: data.preferedLocation ?? "",
+            }))
+          }
+        }
+      }).catch(() => {/* silently ignore */})
+    }
+  }, [defaultValues, user?.uid])
 
   const saveAssets = async (assets: (File | AssetType)[]) => {
-    const storageRef = ref(storage, `donor/${user?.uid}`);
+    const storageRef = ref(storage, `donor/${user?.uid}`)
     const promises = assets.map(async (asset) => {
-      if ('url' in asset && asset.url) {
-        return asset;
-      }
-      
-      const file = asset as File;
-      const fileType = file.type.split("/")[0];
-      const fileName = `${fileType}/${Date.now()}_${file.name}`;
-      const assetRef = ref(storageRef, fileName);
-      
+      if ('url' in asset && asset.url) return asset
+      const file = asset as File
+      const fileType = file.type.split("/")[0]
+      const fileName = `${fileType}/${Date.now()}_${file.name}`
+      const assetRef = ref(storageRef, fileName)
       try {
-        const uploadResult = await uploadBytesResumable(assetRef, file);
-        const url = await getDownloadURL(uploadResult.ref);
-        return {
-          id: uploadResult.ref.fullPath,
-          url,
-          type: file.type
-        };
+        const uploadResult = await uploadBytesResumable(assetRef, file)
+        const url = await getDownloadURL(uploadResult.ref)
+        return { id: uploadResult.ref.fullPath, url, type: file.type }
       } catch (error) {
-        console.error('Error uploading file:', error);
-        throw new Error(`Failed to upload ${file.name}`);
+        throw new Error(`Failed to upload ${file.name}`)
       }
-    });
-    return await Promise.all(promises);
+    })
+    return await Promise.all(promises)
   }
 
-  const handleSubmit = async (values: ItemType, { setSubmitting }: { setSubmitting: (isSubmitting: boolean) => void }) => {
+  const handleSubmit = async (values: ItemType, { setSubmitting }: { setSubmitting: (v: boolean) => void }) => {
     try {
-      if (!user) {
-        throw new Error("You seem to be unauthorized. If this persists, please log out and log back in.");
-      }
-      toast.loading("Uploading assets...", { description: "Please wait while we upload your assets...", id: "saving-item" });
-      const assets = await saveAssets(values.assets);
-      toast.loading("Saving item...", { description: "Please wait while we save your item...", id: "saving-item" });
-      
-      const data: ItemType = {
-        ...values,
-        assets,
-        views: values.views || 0
-      }
+      if (!user) throw new Error("You seem to be unauthorized. Please log out and log back in.")
+      toast.loading("Uploading photos…", { description: "Please wait…", id: "saving-item" })
+      const assets = await saveAssets(values.assets)
+      toast.loading("Saving item…", { description: "Almost done…", id: "saving-item" })
+
+      const data: ItemType = { ...values, assets, views: values.views || 0 }
 
       startTransition(async () => {
         if (defaultValues && editItem) {
-          const { success, message } = await editItem(data, defaultValues.id!);
-          if (!success) throw new Error(message);
-          toast.success("Item updated successfully", { description: "Your item has been updated.", id: "saving-item" });
+          const { success, message } = await editItem(data, defaultValues.id!)
+          if (!success) throw new Error(message)
+          toast.success("Item updated!", { description: "Your item has been updated.", id: "saving-item" })
         } else {
-          const { success, message } = await addItem(data);
-          if (!success) throw new Error(message);
-          toast.success("Item added successfully", { description: "You can now view your item in your dashboard.", id: "saving-item" });
+          const { success, message } = await addItem(data)
+          if (!success) throw new Error(message)
+          toast.success("Item listed!", { description: "Your item is now live on Givny.", id: "saving-item" })
         }
-        router.push("/app/my-items");
-      });
-
+        router.push("/app/my-items")
+      })
     } catch (error: any) {
-      toast.error("Something went wrong", { description: error.message, id: "saving-item" });
+      toast.error("Something went wrong", { description: error.message, id: "saving-item" })
     } finally {
-      setSubmitting(false);
+      setSubmitting(false)
     }
   }
 
@@ -146,122 +157,170 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
       onSubmit={handleSubmit}
       enableReinitialize
     >
-      {
-        ({
-          values,
-          handleChange,
-          isSubmitting,
-          setFieldValue,
-          handleBlur,
-          setFieldTouched,
-          handleSubmit,
-          errors,
-          touched,
-          isValid,
-        }) => (
-          <Form className="container max-w-6xl mx-auto lg:py-12" onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-y-4">
-              <div className="flex flex-col justify-center gap-6 lg:mr-4">
-                <div>
-                  <h1 className="text-3xl font-bold">{defaultValues ? "Edit Item" : "Add an Item"}</h1>
-                  <p className="text-muted-foreground">{defaultValues ? "Update your item details." : "Complete form to add a new item."}</p>
-                </div>
-                <div className="flex flex-col justify-center gap-4 flex-1">
-                  <CustomInput
-                    label="Item Name"
-                    onBlur={handleBlur}
-                    name="name"
-                    value={values.name}
-                    onChange={handleChange}
-                    placeholder="Enter item name..."
-                    error={touched.name && errors.name ? errors.name : undefined}
-                    disabled={isSubmitting || _}
-                  />
-                  <input type="hidden" name="id" value={values.id} />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <MultiSelectInput
-                      containerClassName="w-full"
-                      label="Category"
-                      options={categories.map((category) => ({
-                        label: category.name,
-                        value: category.id
-                      }))}
-                      values={values.categories.map(c => typeof c === 'string' ? c : c.id)}
-                      onChange={(values) => {
-                        const selectedCategories = values.map(value => {
-                          const category = categories.find(c => c.id === value);
-                          return category || { id: value, name: '' };
-                        });
-                        setFieldValue("categories", selectedCategories);
-                      }}
-                      error={touched.categories && errors.categories ? errors.categories as string : undefined}
-                      onTouched={() => setFieldTouched("categories", true)}
-                      disabled={isSubmitting || _}
-                    />
-                    <SelectInput
-                      containerClassName="w-full"
-                      label="Condition"
-                      options={Conditions}
-                      value={values.condition || ''}
-                      onChange={(value) => setFieldValue("condition", value)}
-                      error={touched.condition && errors.condition ? errors.condition : undefined}
-                      onTouched={() => setFieldTouched("condition", true)}
-                      disabled={isSubmitting || _}
-                    />
-                  </div>
-                  <CustomTextarea
-                    label="Item Description"
-                    error={touched.description && errors.description ? errors.description : undefined}
-                    onBlur={handleBlur}
-                    name="description"
-                    value={values.description}
-                    onChange={handleChange}
-                    disabled={isSubmitting || _}
-                  />
-                </div>
-              </div>
-              <DragAndDrop 
-                files={values.assets.map(asset => ({
-                  ...asset,
-                  lastModified: Date.now(),
-                  name: asset.id,
-                  webkitRelativePath: '',
-                  size: 0,
-                  type: asset.type,
-                  arrayBuffer: async () => new ArrayBuffer(0),
-                  slice: (start?: number, end?: number) => new Blob(),
-                  stream: () => new ReadableStream(),
-                  text: async () => ''
-                }))}
-                onChange={(files) => setFieldValue("assets", files)}
-                error={touched.assets && errors.assets ? errors.assets as string : undefined}
-                onTouched={() => setFieldTouched("assets", true)}
-                disabled={isSubmitting || _}
-              />
-            </div>
-            <div className="flex justify-end mt-6 gap-4">
-              <Link href="/app/my-items">
-                <CustomButton
-                  variant="outline"
-                  className="w-[150px] rounded-full text-lg py-6"
+      {({
+        values,
+        handleChange,
+        isSubmitting,
+        setFieldValue,
+        handleBlur,
+        setFieldTouched,
+        handleSubmit,
+        errors,
+        touched,
+        isValid,
+      }) => (
+        <Form className="w-full max-w-5xl mx-auto px-4 py-8" onSubmit={handleSubmit}>
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">
+              {defaultValues ? "Edit item" : "List an item"}
+            </h1>
+            <p className="text-gray-500 mt-1 text-sm">
+              {defaultValues
+                ? "Update your item details below."
+                : "Fill in the details and pin your location — takes less than 2 minutes."}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* ── Left column: item details ── */}
+            <div className="flex flex-col gap-5">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col gap-5">
+                <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Item details</h2>
+
+                <CustomInput
+                  label="Item name"
+                  onBlur={handleBlur}
+                  name="name"
+                  value={values.name}
+                  onChange={handleChange}
+                  placeholder="e.g. Baby stroller, Ikea bookshelf…"
+                  error={touched.name && errors.name ? errors.name : undefined}
                   disabled={isSubmitting || _}
-                >
-                  Cancel
-                </CustomButton>
-              </Link>
-              <CustomButton
-                className="w-[150px] rounded-full text-lg py-6"
-                icon={<SaveIcon className="w-4 h-4" />}
-                disabled={!isValid}
-                isLoading={isSubmitting || _}
-                type="submit"
-              >
-                Save
-              </CustomButton>
+                />
+
+                <input type="hidden" name="id" value={values.id} />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <MultiSelectInput
+                    containerClassName="w-full"
+                    label="Category"
+                    options={categories.map((c) => ({ label: c.name, value: c.id }))}
+                    values={values.categories.map(c => typeof c === 'string' ? c : c.id)}
+                    onChange={(vals) => {
+                      const selected = vals.map(v => categories.find(c => c.id === v) || { id: v, name: '' })
+                      setFieldValue("categories", selected)
+                    }}
+                    error={touched.categories && errors.categories ? errors.categories as string : undefined}
+                    onTouched={() => setFieldTouched("categories", true)}
+                    disabled={isSubmitting || _}
+                  />
+                  <SelectInput
+                    containerClassName="w-full"
+                    label="Condition"
+                    options={Conditions}
+                    value={values.condition || ''}
+                    onChange={(v) => setFieldValue("condition", v)}
+                    error={touched.condition && errors.condition ? errors.condition : undefined}
+                    onTouched={() => setFieldTouched("condition", true)}
+                    disabled={isSubmitting || _}
+                  />
+                </div>
+
+                <CustomTextarea
+                  label="Description"
+                  error={touched.description && errors.description ? errors.description : undefined}
+                  onBlur={handleBlur}
+                  name="description"
+                  value={values.description}
+                  onChange={handleChange}
+                  placeholder="Describe the item — size, colour, any wear…"
+                  disabled={isSubmitting || _}
+                />
+              </div>
+
+              {/* Photos */}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Photos</h2>
+                <DragAndDrop
+                  files={values.assets.map(asset => ({
+                    ...asset,
+                    lastModified: Date.now(),
+                    name: asset.id,
+                    webkitRelativePath: '',
+                    size: 0,
+                    type: asset.type,
+                    arrayBuffer: async () => new ArrayBuffer(0),
+                    slice: () => new Blob(),
+                    stream: () => new ReadableStream(),
+                    text: async () => ''
+                  }))}
+                  onChange={(files) => setFieldValue("assets", files)}
+                  error={touched.assets && errors.assets ? errors.assets as string : undefined}
+                  onTouched={() => setFieldTouched("assets", true)}
+                  disabled={isSubmitting || _}
+                />
+              </div>
             </div>
-          </Form>
-        )
-      }
+
+            {/* ── Right column: location ── */}
+            <div className="flex flex-col gap-5">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <div className="flex items-center gap-2 mb-1">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Pickup location</h2>
+                </div>
+                <p className="text-xs text-gray-400 mb-4">
+                  Pin where people can collect this item. Only the neighbourhood is shown publicly.
+                </p>
+                <LocationPicker
+                  lat={values.lat}
+                  lng={values.lng}
+                  locationName={values.locationName}
+                  onChange={(lat, lng, locationName) => {
+                    setFieldValue("lat", lat)
+                    setFieldValue("lng", lng)
+                    setFieldValue("locationName", locationName)
+                  }}
+                  disabled={isSubmitting || _}
+                />
+              </div>
+
+              {/* Tip card */}
+              <div className="rounded-2xl bg-primary-light border border-primary/10 p-5 text-sm text-primary leading-relaxed">
+                <p className="font-semibold mb-1">📦 Listing tips</p>
+                <ul className="list-disc list-inside space-y-1 text-primary/80">
+                  <li>Add clear photos — front, back, any defects</li>
+                  <li>Be specific about condition (scratches, missing parts)</li>
+                  <li>Pin a nearby meeting spot, not your exact door</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Action bar */}
+          <div className="flex items-center justify-end gap-4 mt-8 pt-6 border-t border-gray-100">
+            <Link href="/app/my-items">
+              <CustomButton
+                variant="outline"
+                className="rounded-full px-8 py-3"
+                disabled={isSubmitting || _}
+              >
+                Cancel
+              </CustomButton>
+            </Link>
+            <CustomButton
+              className="rounded-full px-8 py-3 min-w-[140px]"
+              icon={<SaveIcon className="w-4 h-4" />}
+              disabled={!isValid || isSubmitting || _}
+              isLoading={isSubmitting || _}
+              type="submit"
+            >
+              {defaultValues ? "Save changes" : "Publish listing"}
+            </CustomButton>
+          </div>
+        </Form>
+      )}
     </Formik>
   )
 }

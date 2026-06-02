@@ -16,9 +16,14 @@ export default async function Explore({
 }) {
     const page = searchParams.page ? Number(searchParams.page) : 1;
     const q = searchParams.q as string | undefined;
-    
-    const [{data}, categories] = await Promise.all([getListings({page, query:q}), getCategories()])
+    const radiusParam = searchParams.radius as string | undefined;
+    const maxDistanceKm = radiusParam ? Number(radiusParam) : undefined;
+
+    const [{ data }, categories] = await Promise.all([
+        getListings({ page, query: q, maxDistanceKm }),
+        getCategories(),
+    ]);
     return (
         <Donations categories={categories.data!} donations={data!} />
-    )
+    );
 }

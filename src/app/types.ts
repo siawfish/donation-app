@@ -12,18 +12,20 @@ export interface UserType {
     id: string;
     name: string;
     email: string;
-    phone: string;
-    address: string;
-    city: string;
-    state: string;
-    zip: string;
-    country: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+    country?: string;
     lastLogin: string;
     createdAt: string;
     updatedAt: string;
     profileUrl?: string;
-    preferedCategories: CategoryType[];
+    preferedCategories: string[];
     preferedLocation: string;
+    lat?: number;
+    lng?: number;
 }
 
 export interface ResponseData<T> {
@@ -45,6 +47,12 @@ export interface ItemType {
     donatedTo?: string;
     donatedOn?: string;
     views?: number;
+    // Location — stamped from donor's profile at listing time
+    lat?: number;
+    lng?: number;
+    locationName?: string;
+    // Computed at query time, never stored in Firestore
+    distance?: number;
 }
 
 export interface WishlistType {

@@ -81,8 +81,14 @@ export default function Chatbox() {
         id: docSnap.id
       } as RequestType
       setRequest(requestData)
+
+      // Determine who the OTHER person is (not the current user)
+      const otherId = requestData.createdBy === user?.uid
+        ? requestData.donorId            // I'm the requester → other = donor
+        : requestData.createdBy as string // I'm the donor    → other = requester
+
       Promise.allSettled([
-        getRecipient(requestData?.createdBy as string),
+        getRecipient(otherId),
         getItem(requestData?.itemId as string)
       ])
     } catch (error) {
@@ -90,7 +96,7 @@ export default function Chatbox() {
         description: FirebaseErrors[error as keyof typeof FirebaseErrors] || 'An error occurred'
       })
     }
-  }, [getRecipient, getItem])
+  }, [getRecipient, getItem, user?.uid])
 
   const groupMessagesByDate = (messages: MessageType[]) => {
     const groups: { [key: string]: MessageType[] } = {}
@@ -129,13 +135,21 @@ export default function Chatbox() {
     
     const unsubscribe = onSnapshot(q, async (snapshot) => {
       try {
-        const messagesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as MessageType)
+        const messagesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }) as MessageType)
         setMessages(messagesData)
         if (snapshot.docs.length > 0) {
           setFirstMessage(snapshot.docs[0])
           setLastMessage(snapshot.docs[snapshot.docs.length - 1])
         }
         setHasMore(snapshot.docs.length === 20)
+
+        // Mark unread messages from the other person as read
+        const unreadDocs = snapshot.docs.filter(
+          d => d.data().read === false && d.data().senderId !== user?.uid
+        )
+        await Promise.all(
+          unreadDocs.map(d => updateDoc(d.ref, { read: true }))
+        )
       } catch (error) {
         toast.error("An error occurred while fetching messages", {
           description: FirebaseErrors[error as keyof typeof FirebaseErrors] || 'An error occurred'
@@ -195,7 +209,9 @@ export default function Chatbox() {
         content: newMessage.trim(),
         media: mediaUrls,
         senderId: user.uid,
+        recipientId: recipient?.id ?? null,
         requestId: rid,
+        read: false,
         createdAt: serverTimestamp()
       })
 

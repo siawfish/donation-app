@@ -17,16 +17,12 @@ export function LandingPage() {
         <Suspense>
           <Hero getTrendingCategoriesAction={getTrendingCategoriesAction} getCategoriesAction={getCategoriesAction} />
         </Suspense>
-        
-        {/* How It Works Section */}
+
         <HowItWorks />
-        
-        {/* Popular Listings Section */}
-        <section className="w-full bg-white py-12 md:py-16 md:min-h-screen flex items-center">
-          <Suspense>
-            <PopularListings />
-          </Suspense>
-        </section>        
+
+        <Suspense>
+          <PopularListings />
+        </Suspense>
       </main>
       <Footer />
     </div>

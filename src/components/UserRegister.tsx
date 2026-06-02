@@ -1,373 +1,293 @@
-'use client'
+"use client";
 
-import { useState, useTransition } from 'react'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import CustomInput from './CustomInput'
-import { Progress } from "@/components/ui/progress"
-import CustomButton from './Button'
-import { ArrowRightIcon, SendIcon } from 'lucide-react'
-import MultiSelectInput from './MultiSelectInput'
-import { Form, Formik } from 'formik'
-import { CategoryType, ResponseData, UserRegisterPayload, UserType } from '@/app/types'
-import * as yup from 'yup'
-import { toast } from 'sonner'
-import { useRouter } from 'next/navigation'
+import { useState, useTransition } from "react";
+import { Progress } from "@/components/ui/progress";
+import CustomButton from "./Button";
+import { ArrowRightIcon, SendIcon } from "lucide-react";
+import MultiSelectInput from "./MultiSelectInput";
+import { Form, Formik } from "formik";
+import { CategoryType, ResponseData, UserRegisterPayload, UserType } from "@/app/types";
+import * as yup from "yup";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import CustomInput from "./CustomInput";
+import Link from "next/link";
+import dynamic from "next/dynamic";
+
+// Leaflet must be loaded client-side only
+const LocationPicker = dynamic(() => import("./LocationPicker"), { ssr: false });
 
 const steps = [
-  { title: 'Basic Information', description: 'Enter your personal information' },
-  { title: 'Preferred Categories & Location', description: 'Select prefered categories and locations you would like to be notified about' },
-  { title: 'Set Password', description: 'Set a password to secure your account' },
-]
+  { title: "Create your account", description: "Just the basics to get you started" },
+  { title: "Your area", description: "Pin your location and choose what you care about" },
+  { title: "Set a password", description: "Keep your account secure" },
+];
 
 const initialValues = {
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
-    city: "",
-    state: "",
-    zip: "",
-    country: "",
-    preferedLocation: "",
-    preferedCategories: [],
-    password: "",
-    confirmPassword: ""
-}
+  name: "",
+  email: "",
+  lat: 0,
+  lng: 0,
+  preferedLocation: "",
+  preferedCategories: [] as string[],
+  password: "",
+  confirmPassword: "",
+};
 
-const validationSchema = yup.object().shape({
+const schemas = [
+  yup.object().shape({
     name: yup.string().min(1, "Name is required").required("Name is required"),
     email: yup.string().email("Invalid email address").required("Email is required"),
-    phone: yup.number().lessThan(10000000000, "Phone number must be 10 digits").required("Phone number is required"),
-    address: yup.string().min(1, "Address is required").required("Address is required"),
-    city: yup.string().min(1, "City is required").required("City is required"),
-    state: yup.string().min(1, "State is required").required("State is required"),
-    zip: yup.string().min(1, "Zip code is required").required("Zip code is required"),
-    country: yup.string().min(1, "Country is required").required("Country is required"),
-    preferedCategories: yup.array(yup.string()).required("At least one category is required"),
-    preferedLocation: yup.string().min(1, "Location is required").required("Location is required"),
-    password: yup.string().min(8, "Password must be at least 8 characters long").required("Password is required"),
-    confirmPassword: yup.string().oneOf([yup.ref('password')], "Passwords do not match").required("Confirm password is required"),
-})
+  }),
+  yup.object().shape({
+    preferedLocation: yup.string().min(1, "Please pick a location on the map").required("Location is required"),
+    preferedCategories: yup.array(yup.string()).min(1, "Pick at least one category").required(),
+  }),
+  yup.object().shape({
+    password: yup.string().min(8, "At least 8 characters").required("Password is required"),
+    confirmPassword: yup.string().oneOf([yup.ref("password")], "Passwords don't match").required("Please confirm your password"),
+  }),
+];
 
 export default function RegisterPage({
-    categories,
-    registerUserAction
+  categories,
+  registerUserAction,
 }: {
-    categories: CategoryType[];
-    registerUserAction: (payload: UserRegisterPayload) => Promise<ResponseData<UserType | null>>
+  categories: CategoryType[];
+  registerUserAction: (payload: UserRegisterPayload) => Promise<ResponseData<UserType | null>>;
 }) {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [_, startTransaction] = useTransition();
+  const router = useRouter();
 
-    const [currentStep, setCurrentStep] = useState(1)
-    const [_, startTransaction] = useTransition()
-    const router = useRouter();
+  const handleSubmit = (
+    values: typeof initialValues,
+    { setSubmitting }: { setSubmitting: (v: boolean) => void }
+  ) => {
+    startTransaction(async () => {
+      const payload: UserRegisterPayload = {
+        name: values.name,
+        email: values.email,
+        preferedLocation: values.preferedLocation,
+        preferedCategories: values.preferedCategories,
+        lat: values.lat,
+        lng: values.lng,
+        password: values.password,
+        id: "",
+        lastLogin: "",
+        createdAt: "",
+        updatedAt: "",
+      };
+      const { success, message } = await registerUserAction(payload);
+      if (!success) {
+        toast.error("Registration failed", { description: message });
+      } else {
+        router.push("/app");
+        toast.success("Welcome to Givny!");
+      }
+      setSubmitting(false);
+    });
+  };
 
-    const handleNext = () => {
-        if (currentStep < steps.length) setCurrentStep(currentStep + 1)
-    }
-
-    const handlePrevious = () => {
-        if (currentStep > 1) setCurrentStep(currentStep - 1)
-    }
-
-    const handleSubmit = (values: typeof initialValues, { setSubmitting }: { setSubmitting: (isSubmitting: boolean) => void }) => {
-        startTransaction(async () => {
-            const payload: UserRegisterPayload = {
-                name: values.name,
-                email: values.email,
-                phone: values.phone,
-                address: values.address,
-                city: values.city,
-                state: values.state,
-                zip: values.zip,
-                country: values.country,
-                preferedLocation: values.preferedLocation,
-                preferedCategories: values.preferedCategories,
-                password: values.password,
-                id: "",
-                lastLogin: "",
-                createdAt: "",
-                updatedAt: "",
-            }
-            const { success, message} = await registerUserAction(payload);
-            if (!success) {
-                toast.error("Failed to register user", {description: message});
-            } else {
-                router.push("/app");
-                toast.success("User registered successfully", {description: "You can proceed to login"});
-            }
-            setSubmitting(false);
-        })
-    }
-
-    return (
-        <div className="container max-w-7xl mx-auto bg-gray-100 flex flex-col md:flex-row">
-        <div className="md:w-1/2 p-8 flex flex-col justify-center">
-            <h1 className="text-4xl font-bold text-gray-800 mb-6">Find What You Need,<br /> When You Need It For Free</h1>
-            <p className="text-xl text-gray-600 mb-8">Join our platform to discover items based on categories, location, and condition donated by amazing people. It&apos;s never been easier to find exactly what you&apos;re looking for.</p>
-            <ul className="space-y-4">
-            <li className="flex items-center text-gray-700">
-                <svg className="w-6 h-6 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                Wide range of categories
-            </li>
-            <li className="flex items-center text-gray-700">
-                <svg className="w-6 h-6 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                Location-based searches
-            </li>
-            <li className="flex items-center text-gray-700">
-                <svg className="w-6 h-6 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                Filter by item condition
-            </li>
-            </ul>
+  return (
+    <div className="min-h-screen flex flex-col md:flex-row">
+      {/* Left brand panel */}
+      <div className="md:w-5/12 bg-primary flex flex-col justify-between p-10 md:p-14 relative overflow-hidden">
+        <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-white opacity-5" />
+        <div className="absolute bottom-16 -left-8 w-40 h-40 rounded-full bg-white opacity-5" />
+        <div className="relative z-10">
+          <span className="text-white text-2xl font-bold">Givny</span>
         </div>
-        <div className="md:w-1/2 bg-gray-100 pt-8 md:p-8 flex items-center justify-center">
-            <Formik
-                initialValues={initialValues}
-                validationSchema={validationSchema}
-                onSubmit={handleSubmit}
-            >
-                {
-                    ({
-                        values,
-                        handleChange,
-                        handleSubmit,
-                        handleBlur,
-                        setFieldValue,
-                        setFieldTouched,
-                        touched,
-                        errors,
-                        isValid,
-                        isSubmitting,
-                        dirty
-                    }) => (
-                        <Form onSubmit={(e) => {
-                            e.preventDefault();
-                            handleSubmit(e);
-                            if (Object.keys(errors).length > 0) {
-                                toast("Form Submission Error", {
-                                    description: "Please check the form for errors and try again."
-                                });
-                            }
-                        }}>
-                            <Card className="w-full max-w-lg">
-                                <CardHeader>
-                                    <CardTitle className="text-lg font-bold text-gray-800">{steps[currentStep - 1].title} - Step {currentStep} of {steps.length}</CardTitle>
-                                    <Progress value={(currentStep / steps.length) * 100} className="w-full h-[8px]" />
-                                    <p className="text-sm text-gray-500 max-w-[80%]">{steps[currentStep - 1].description}</p>
-                                </CardHeader>
-                                <CardContent>
-                                    <form onSubmit={handleSubmit}>
-                                    {currentStep === 1 && (
-                                        <div className="">
-                                        <CustomInput 
-                                            name="name"
-                                            label="Full Name"
-                                            placeholder="Enter full name"
-                                            containerClassName="px-0 pt-0 pb-6"
-                                            onChange={handleChange}
-                                            value={values.name}
-                                            onBlur={handleBlur}
-                                            error={touched.name && errors.name ? errors.name : undefined}
-                                            disabled={isSubmitting}
-                                        />
-                                        <div className="flex flex-row flex-wrap md:flex-nowrap gap-4">
-                                            <CustomInput 
-                                                name="email"
-                                                label="Email"
-                                                placeholder="Enter email address"
-                                                containerClassName="px-0 pt-0 pb-6 w-full"
-                                                onChange={handleChange}
-                                                value={values.email}
-                                                onBlur={handleBlur}
-                                                error={touched.email && errors.email ? errors.email : undefined}
-                                                disabled={isSubmitting}
-                                            />
-                                            <CustomInput 
-                                                name="phone"
-                                                label="Phone Number"
-                                                placeholder="Enter phone number"
-                                                containerClassName="px-0 pt-0 pb-6 w-full"
-                                                onChange={handleChange}
-                                                value={values.phone}
-                                                onBlur={handleBlur}
-                                                error={touched.phone && errors.phone ? errors.phone : undefined}
-                                                disabled={isSubmitting}
-                                            />
-                                        </div>
-                                        <div className="flex flex-row flex-wrap md:flex-nowrap gap-4">
-                                                <CustomInput 
-                                                    containerClassName="px-0 pt-0 pb-6 w-full"
-                                                    label="Street Address" 
-                                                    id="address" 
-                                                    type="tel" 
-                                                    placeholder="Enter your street address" 
-                                                    name="address"
-                                                    onChange={handleChange}
-                                                    value={values.address}
-                                                    onBlur={handleBlur}
-                                                    error={touched.address && errors.address ? errors.address : undefined}
-                                                    disabled={isSubmitting}
-                                                />
-                                                <CustomInput 
-                                                    label="Country" 
-                                                    id="country" 
-                                                    placeholder="Select your country" 
-                                                    name="country" 
-                                                    containerClassName="px-0 pt-0 pb-6 w-full"
-                                                    onChange={handleChange}
-                                                    value={values.country}
-                                                    onBlur={handleBlur}
-                                                    error={touched.country && errors.country ? errors.country : undefined}
-                                                    disabled={isSubmitting}
-                                                />
-                                            </div>
-                                            <div className="flex flex-row flex-wrap md:flex-nowrap gap-4">
-                                                <CustomInput 
-                                                    label="City" 
-                                                    id="city" 
-                                                    placeholder="Enter your city" 
-                                                    name="city" 
-                                                    containerClassName="px-0 pt-0 pb-6 w-full"
-                                                    onChange={handleChange}
-                                                    value={values.city}
-                                                    onBlur={handleBlur}
-                                                    error={touched.city && errors.city ? errors.city : undefined}
-                                                    disabled={isSubmitting}
-                                                />
-                                                <CustomInput 
-                                                    label="State" 
-                                                    id="state" 
-                                                    placeholder="Enter your state" 
-                                                    name="state" 
-                                                    containerClassName="px-0 pt-0 pb-6 w-full"
-                                                    onChange={handleChange}
-                                                    value={values.state}
-                                                    onBlur={handleBlur}
-                                                    error={touched.state && errors.state ? errors.state : undefined}
-                                                    disabled={isSubmitting}
-                                                />
-                                                <CustomInput 
-                                                    label="Zip Code" 
-                                                    id="zip" 
-                                                    placeholder="Enter your zip code" 
-                                                    name="zip" 
-                                                    containerClassName="px-0 pt-0 pb-6 w-full"
-                                                    onChange={handleChange}
-                                                    value={values.zip}
-                                                    onBlur={handleBlur}
-                                                    error={touched.zip && errors.zip ? errors.zip : undefined}
-                                                    disabled={isSubmitting}
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {currentStep === 2 && (
-                                        <div>
-                                            <MultiSelectInput
-                                                label="Categories"
-                                                placeholder="Select categories"
-                                                options={categories.map(category => ({
-                                                    label: category.name,
-                                                    value: category.id
-                                                }))}
-                                                values={values.preferedCategories}
-                                                onChange={(value) => setFieldValue('preferedCategories', value)}
-                                                containerClassName="px-0 pt-0 pb-6"
-                                                error={touched.preferedCategories && errors.preferedCategories ? errors.preferedCategories as string : undefined}
-                                                onTouched={() => setFieldTouched('preferedCategories', true)}
-                                                disabled={isSubmitting}
-                                            />
-                                            <CustomInput
-                                                label="Location"
-                                                placeholder="Enter your preferred location"
-                                                name="preferedLocation"
-                                                containerClassName="px-0 pt-0 pb-6"
-                                                onChange={handleChange}
-                                                value={values.preferedLocation}
-                                                onBlur={handleBlur}
-                                                error={touched.preferedLocation && errors.preferedLocation ? errors.preferedLocation : undefined}
-                                                disabled={isSubmitting}
-                                            />
-                                            <p className="text-sm text-gray-500">
-                                                This will help us find items near you. We use this information to show you items and opportunities that are within your preferred area. Please provide a specific location (e.g., city, neighborhood, or postal code) to get the most relevant results.
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    {currentStep === 3 && (
-                                        <div>
-                                        <CustomInput 
-                                            name="password"
-                                            label="Password"
-                                            type="password"
-                                            placeholder="Enter your password"
-                                            containerClassName="px-0 pt-0 pb-6"
-                                            onChange={handleChange}
-                                            value={values.password}
-                                            onBlur={handleBlur}
-                                            error={touched.password && errors.password ? errors.password : undefined}
-                                            disabled={isSubmitting}
-                                        />
-                                        <CustomInput 
-                                            name="confirmPassword"
-                                            label="Confirm Password"
-                                            type="password"
-                                            placeholder="Confirm your password"
-                                            containerClassName="px-0 pt-0 pb-6"
-                                            onChange={handleChange}
-                                            value={values.confirmPassword}
-                                            onBlur={handleBlur}
-                                            error={touched.confirmPassword && errors.confirmPassword ? errors.confirmPassword : undefined}
-                                            disabled={isSubmitting}
-                                        />
-                                        <p className="text-sm text-gray-500">
-                                            Your password must be at least 8 characters long and include a mix of letters, numbers, and special characters.
-                                        </p>
-                                        </div>
-                                    )}
-                                    </form>
-                                </CardContent>
-                                <CardFooter className="flex justify-between flex-wrap gap-4">
-                                    {currentStep > 1 && (
-                                        <CustomButton 
-                                            variant="outline" 
-                                            onClick={handlePrevious} 
-                                            className="py-6 w-full lg:max-w-[150px] rounded-full text-base"
-                                            type="button"
-                                            disabled={isSubmitting}
-                                        >
-                                            Previous
-                                        </CustomButton>
-                                    )}
-                                    {currentStep < steps.length ? (
-                                        <CustomButton 
-                                            onClick={handleNext} 
-                                            className="py-6 w-full lg:max-w-[150px] rounded-full text-base"
-                                            icon={<ArrowRightIcon className="w-4 h-4" />}
-                                            type="button"
-                                            disabled={!dirty}
-                                            isLoading={isSubmitting}
-                                        >
-                                            Next
-                                        </CustomButton>
-                                    ) : (
-                                        <CustomButton 
-                                            disabled={!isValid}
-                                            className="py-6 w-full lg:max-w-[150px] rounded-full text-base"
-                                            icon={<SendIcon className="w-4 h-4" />}
-                                            type="submit"
-                                            isLoading={isSubmitting}
-                                        >
-                                            Submit
-                                        </CustomButton>
-                                    )}
-                                </CardFooter>
-                                </Card>
-                        </Form>
-                    )
-                }
-            </Formik>
+        <div className="relative z-10 space-y-6 py-8">
+          <h1 className="text-4xl font-bold text-white leading-snug">
+            Find what you need,<br />give what you don&apos;t.
+          </h1>
+          <p className="text-white/70 text-lg leading-relaxed max-w-sm">
+            Join thousands of community members sharing items for free. No cost, no catch.
+          </p>
+          <ul className="flex flex-col gap-3 pt-2">
+            {["Location-based item discovery", "Wide range of categories", "100% free — always"].map((item) => (
+              <li key={item} className="flex items-center gap-3">
+                <div className="w-5 h-5 rounded-full bg-white/20 flex-shrink-0 flex items-center justify-center">
+                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                    <path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                <span className="text-white/80 text-sm">{item}</span>
+              </li>
+            ))}
+          </ul>
         </div>
+        <p className="text-white/30 text-xs relative z-10">© {new Date().getFullYear()} Givny. All rights reserved.</p>
+      </div>
+
+      {/* Right form panel */}
+      <div className="md:w-7/12 bg-white flex flex-col justify-center px-6 py-10 md:px-14">
+        <div className="w-full max-w-lg mx-auto">
+          {/* Step header */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              {steps.map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${i <= currentStep ? "bg-primary" : "bg-gray-200"}`}
+                />
+              ))}
+            </div>
+            <p className="text-xs font-medium text-primary mb-1">
+              Step {currentStep + 1} of {steps.length}
+            </p>
+            <h2 className="text-2xl font-bold text-gray-900">{steps[currentStep].title}</h2>
+            <p className="text-sm text-gray-500 mt-1">{steps[currentStep].description}</p>
+          </div>
+
+          <Formik
+            initialValues={initialValues}
+            validationSchema={schemas[currentStep]}
+            onSubmit={currentStep < steps.length - 1 ? () => {} : handleSubmit}
+            validateOnBlur
+          >
+            {({ values, handleChange, handleBlur, setFieldValue, setFieldTouched, touched, errors, isSubmitting, validateForm }) => (
+              <Form className="space-y-5">
+                {/* Step 1 — Account */}
+                {currentStep === 0 && (
+                  <>
+                    <CustomInput
+                      label="Full Name"
+                      name="name"
+                      placeholder="Jane Doe"
+                      value={values.name}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.name && errors.name ? errors.name : undefined}
+                      disabled={isSubmitting}
+                    />
+                    <CustomInput
+                      label="Email Address"
+                      name="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={values.email}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.email && errors.email ? errors.email : undefined}
+                      disabled={isSubmitting}
+                    />
+                  </>
+                )}
+
+                {/* Step 2 — Location + Categories */}
+                {currentStep === 1 && (
+                  <>
+                    <LocationPicker
+                      lat={values.lat || undefined}
+                      lng={values.lng || undefined}
+                      locationName={values.preferedLocation}
+                      disabled={isSubmitting}
+                      onChange={(lat, lng, name) => {
+                        setFieldValue("lat", lat);
+                        setFieldValue("lng", lng);
+                        setFieldValue("preferedLocation", name);
+                      }}
+                    />
+                    {touched.preferedLocation && errors.preferedLocation && (
+                      <p className="text-xs text-red-500 -mt-1">{errors.preferedLocation}</p>
+                    )}
+                    <MultiSelectInput
+                      label="What categories interest you?"
+                      placeholder="Select categories…"
+                      options={categories.map((c) => ({ label: c.name, value: c.id }))}
+                      values={values.preferedCategories}
+                      onChange={(v) => setFieldValue("preferedCategories", v)}
+                      error={touched.preferedCategories && errors.preferedCategories ? errors.preferedCategories as string : undefined}
+                      onTouched={() => setFieldTouched("preferedCategories", true)}
+                      disabled={isSubmitting}
+                    />
+                  </>
+                )}
+
+                {/* Step 3 — Password */}
+                {currentStep === 2 && (
+                  <>
+                    <CustomInput
+                      label="Password"
+                      name="password"
+                      type="password"
+                      placeholder="Min. 8 characters"
+                      value={values.password}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.password && errors.password ? errors.password : undefined}
+                      disabled={isSubmitting}
+                    />
+                    <CustomInput
+                      label="Confirm Password"
+                      name="confirmPassword"
+                      type="password"
+                      placeholder="Repeat your password"
+                      value={values.confirmPassword}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.confirmPassword && errors.confirmPassword ? errors.confirmPassword : undefined}
+                      disabled={isSubmitting}
+                    />
+                  </>
+                )}
+
+                {/* Navigation */}
+                <div className="flex items-center justify-between pt-2">
+                  {currentStep > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStep((s) => s - 1)}
+                      className="text-sm text-gray-500 hover:text-gray-700 font-medium"
+                      disabled={isSubmitting}
+                    >
+                      ← Back
+                    </button>
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      Already have an account?{" "}
+                      <Link href="/auth/login" className="text-primary font-medium hover:underline">
+                        Sign in
+                      </Link>
+                    </p>
+                  )}
+
+                  {currentStep < steps.length - 1 ? (
+                    <CustomButton
+                      type="button"
+                      icon={<ArrowRightIcon className="w-4 h-4" />}
+                      className="rounded-full px-6 py-5 text-white"
+                      onClick={async () => {
+                        const errs = await validateForm();
+                        const stepFields: Record<number, string[]> = {
+                          0: ["name", "email"],
+                          1: ["preferedLocation", "preferedCategories"],
+                        };
+                        const hasErr = stepFields[currentStep]?.some((f) => (errs as any)[f]);
+                        stepFields[currentStep]?.forEach((f) => setFieldTouched(f, true));
+                        if (!hasErr) setCurrentStep((s) => s + 1);
+                      }}
+                    >
+                      Continue
+                    </CustomButton>
+                  ) : (
+                    <CustomButton
+                      type="submit"
+                      icon={<SendIcon className="w-4 h-4" />}
+                      className="rounded-full px-6 py-5 text-white"
+                      isLoading={isSubmitting}
+                    >
+                      Create account
+                    </CustomButton>
+                  )}
+                </div>
+              </Form>
+            )}
+          </Formik>
+        </div>
+      </div>
     </div>
-  )
+  );
 }
