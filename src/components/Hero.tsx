@@ -36,6 +36,7 @@ export default function Hero({
         setLoading(false);
       }
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

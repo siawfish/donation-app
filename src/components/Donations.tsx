@@ -154,7 +154,7 @@ export default function Donations({ donations, categories }: DonationsProps) {
             <span>Filtering by:</span>
             {q && (
               <span className="inline-flex items-center gap-1 bg-primary-light text-primary px-2.5 py-1 rounded-full font-medium">
-                "{q}"
+                &quot;{q}&quot;
                 <button onClick={clearSearch}><X className="w-3 h-3" /></button>
               </span>
             )}

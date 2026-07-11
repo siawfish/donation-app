@@ -101,6 +101,7 @@ export default function LocationPicker({ lat, lng, locationName, onChange, disab
         mapInstanceRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const detectLocation = () => {
