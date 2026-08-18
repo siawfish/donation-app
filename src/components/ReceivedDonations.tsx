@@ -46,8 +46,8 @@ export default function ReceivedDonations({donations}: ReceivedDonationsProps) {
                     </div>
                 ) : (
                     <EmptyState 
-                        title="No donations found" 
-                        description="You have not received any donations yet" 
+                        title="Nothing picked up yet" 
+                        description="Things you collect from neighbours will show up here" 
                     />
                 )
             }

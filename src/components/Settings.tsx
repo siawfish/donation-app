@@ -53,7 +53,7 @@ const SettingsOptions = [
 ];
 
 const SettingsCard = ({ icon, title, description, onClick }: SettingsCardProps) => (
-  <div onClick={onClick} className="bg-white p-4 lg:p-6 border border-secondary rounded-lg hover:bg-primary-foreground hover:border-primary transition-all cursor-pointer">
+  <div onClick={onClick} className="card-hover bg-white p-5 lg:p-6 border border-gray-200/70 rounded-3xl hover:border-forest/30 transition-all cursor-pointer">
     <div className="space-y-4">
       <div className="text-primary">{icon}</div>
       <h3 className="font-semibold text-sm lg:text-lg">{title}</h3>
@@ -66,10 +66,11 @@ export default function Settings() {
     const { user } = useAuth();
     const [action, setAction] = useQueryState('action')
     return (
-        <div className="container max-w-7xl mx-auto px-6 space-y-6"> 
+        <div className="space-y-8">
             <div>
-                <h2 className="text-xl font-semibold">{`${user?.displayName?.split(' ')[0]}'s Settings`}</h2>
-                <p className="text-muted-foreground">Manage your account settings and preferences.</p>
+                <p className="text-xs font-bold tracking-[0.2em] uppercase text-primary mb-2">Settings</p>
+                <h2 className="text-3xl md:text-4xl font-bold text-ink tracking-tight">{`${user?.displayName?.split(' ')[0]}'s settings`}</h2>
+                <p className="text-gray-500 text-sm mt-1.5">Manage your account settings and preferences.</p>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-[75%_25%] gap-6">
                 <div className="space-y-6 lg:border-r lg:pr-6">

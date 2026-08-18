@@ -497,7 +497,7 @@ export default function Chatbox() {
             <CustomAlert
               variant="success"
               title="Request Completed" 
-              description="This request has been completed and the item has been successfully donated"
+              description="All done — this item has found its new home."
               containerClassName="p-4 border-t"
             />
           </div>

@@ -34,7 +34,7 @@ export function ProfileHeader() {
                     Explore Donations
                 </CustomButton>
             </Link>
-            <Link href="/app/donor/add-item" className="lg:hidden">
+            <Link href="/app/add-item" className="lg:hidden">
                 <CustomButton 
                     className="!text-primary border-none bg-[transparent] rounded-full justify-start w-[90px] p-0" 
                     variant="outline"

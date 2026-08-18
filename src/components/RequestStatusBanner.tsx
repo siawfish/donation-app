@@ -33,14 +33,14 @@ export function RequestStatusBanner({ onStatusChange }: RequestStatusBannerProps
     if (type === RequestStatus.CANCELLED) {
       return {
         title: "Cancel Request",
-        description: "This will cancel the donation request. Are you sure?",
+        description: "This cancels the handover. Are you sure?",
         action: "Cancel Request",
         status: RequestStatus.CANCELLED
       }
     }
     return {
       title: "Complete Request",
-      description: "This will mark the donation as completed. This action cannot be undone. Are you sure?",
+      description: "This marks the item as handed over. This cannot be undone. Are you sure?",
       action: "Complete Request",
       status: RequestStatus.COMPLETED
     }

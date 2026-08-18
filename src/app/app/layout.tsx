@@ -9,16 +9,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-canvas flex flex-col">
       <Navbar />
-      <div className="container max-w-7xl mx-auto py-6 lg:py-12">
+      <div className="container max-w-7xl mx-auto px-4 py-6 lg:py-10 pb-32">
         <Suspense fallback={<div>Loading...</div>}>
           {children}
         </Suspense>
       </div>
       {/* Item Details */}
       <ItemDetails />
-      <FloatingBottomNavigation />
+      <Suspense>
+        <FloatingBottomNavigation />
+      </Suspense>
     </div>
   );
 }

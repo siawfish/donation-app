@@ -28,6 +28,14 @@ const config: Config = {
   			]
   		},
   		colors: {
+  			canvas: 'var(--canvas)',
+  			ink: 'var(--ink)',
+  			forest: {
+  				DEFAULT: 'var(--forest)',
+  				dark: 'var(--forest-2)'
+  			},
+  			lime: 'var(--lime)',
+  			sand: 'var(--sand)',
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',

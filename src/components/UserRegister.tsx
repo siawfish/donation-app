@@ -52,9 +52,13 @@ const schemas = [
 export default function RegisterPage({
   categories,
   registerUserAction,
+  referredBy,
+  inviterName,
 }: {
   categories: CategoryType[];
   registerUserAction: (payload: UserRegisterPayload) => Promise<ResponseData<UserType | null>>;
+  referredBy?: string;
+  inviterName?: string | null;
 }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [_, startTransaction] = useTransition();
@@ -73,6 +77,7 @@ export default function RegisterPage({
         lat: values.lat,
         lng: values.lng,
         password: values.password,
+        referredBy,
         id: "",
         lastLogin: "",
         createdAt: "",
@@ -90,27 +95,26 @@ export default function RegisterPage({
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Left brand panel */}
-      <div className="md:w-5/12 bg-primary flex flex-col justify-between p-10 md:p-14 relative overflow-hidden">
-        <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-white opacity-5" />
-        <div className="absolute bottom-16 -left-8 w-40 h-40 rounded-full bg-white opacity-5" />
+    <div className="min-h-screen flex flex-col md:flex-row bg-canvas">
+      {/* Left brand panel — hidden on mobile so the form comes first */}
+      <div className="hidden md:flex md:w-5/12 p-3 md:sticky md:top-0 md:h-screen">
+      <div className="forest-panel w-full rounded-[2rem] flex flex-col justify-between p-10 md:p-14 relative overflow-hidden">
         <div className="relative z-10">
-          <span className="text-white text-2xl font-bold">Givny</span>
+          <span className="text-white text-2xl font-bold tracking-tight">Givny</span>
         </div>
         <div className="relative z-10 space-y-6 py-8">
-          <h1 className="text-4xl font-bold text-white leading-snug">
-            Find what you need,<br />give what you don&apos;t.
+          <h1 className="text-4xl md:text-5xl font-bold text-white leading-[1.05] tracking-tight">
+            Find what you need,<br /><span className="text-lime">give what you don&apos;t.</span>
           </h1>
-          <p className="text-white/70 text-lg leading-relaxed max-w-sm">
+          <p className="text-white/60 text-lg leading-relaxed max-w-sm">
             Join thousands of community members sharing items for free. No cost, no catch.
           </p>
           <ul className="flex flex-col gap-3 pt-2">
             {["Location-based item discovery", "Wide range of categories", "100% free — always"].map((item) => (
               <li key={item} className="flex items-center gap-3">
-                <div className="w-5 h-5 rounded-full bg-white/20 flex-shrink-0 flex items-center justify-center">
+                <div className="w-5 h-5 rounded-full bg-lime flex-shrink-0 flex items-center justify-center">
                   <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                    <path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M1 4l2.5 2.5L9 1" stroke="#0C3B2E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
                 <span className="text-white/80 text-sm">{item}</span>
@@ -120,24 +124,47 @@ export default function RegisterPage({
         </div>
         <p className="text-white/30 text-xs relative z-10">© {new Date().getFullYear()} Givny. All rights reserved.</p>
       </div>
+      </div>
 
       {/* Right form panel */}
-      <div className="md:w-7/12 bg-white flex flex-col justify-center px-6 py-10 md:px-14">
+      <div className="md:w-7/12 bg-canvas flex flex-col justify-center px-6 py-10 md:px-14">
         <div className="w-full max-w-lg mx-auto">
+          {/* Mobile brand */}
+          <div className="md:hidden mb-8 text-center">
+            <span className="text-2xl font-bold text-forest tracking-tight">Givny</span>
+          </div>
+
+          {/* Invite banner */}
+          {referredBy && (
+            <div className="mb-6 flex items-center gap-3 bg-lime rounded-2xl px-4 py-3.5">
+              <span className="text-xl leading-none">🎁</span>
+              <p className="text-sm text-forest leading-snug">
+                {inviterName ? (
+                  <><span className="font-bold">{inviterName}</span> invited you to Givny.</>
+                ) : (
+                  <span className="font-bold">You&apos;ve been invited to Givny.</span>
+                )}{" "}
+                <span className="text-forest/70">
+                  Join and you both earn points toward your first badge.
+                </span>
+              </p>
+            </div>
+          )}
+
           {/* Step header */}
           <div className="mb-6">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-5">
               {steps.map((_, i) => (
                 <div
                   key={i}
-                  className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${i <= currentStep ? "bg-primary" : "bg-gray-200"}`}
+                  className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${i <= currentStep ? "bg-forest" : "bg-gray-200"}`}
                 />
               ))}
             </div>
-            <p className="text-xs font-medium text-primary mb-1">
+            <p className="text-xs font-bold tracking-[0.2em] uppercase text-primary mb-2">
               Step {currentStep + 1} of {steps.length}
             </p>
-            <h2 className="text-2xl font-bold text-gray-900">{steps[currentStep].title}</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-ink tracking-tight">{steps[currentStep].title}</h2>
             <p className="text-sm text-gray-500 mt-1">{steps[currentStep].description}</p>
           </div>
 
@@ -258,7 +285,7 @@ export default function RegisterPage({
                     <CustomButton
                       type="button"
                       icon={<ArrowRightIcon className="w-4 h-4" />}
-                      className="rounded-full px-6 py-5 text-white"
+                      className="rounded-full px-6 py-5 text-white !bg-forest hover:!bg-forest-dark"
                       onClick={async () => {
                         const errs = await validateForm();
                         const stepFields: Record<number, string[]> = {
@@ -276,7 +303,7 @@ export default function RegisterPage({
                     <CustomButton
                       type="submit"
                       icon={<SendIcon className="w-4 h-4" />}
-                      className="rounded-full px-6 py-5 text-white"
+                      className="rounded-full px-6 py-5 text-white !bg-forest hover:!bg-forest-dark"
                       isLoading={isSubmitting}
                     >
                       Create account

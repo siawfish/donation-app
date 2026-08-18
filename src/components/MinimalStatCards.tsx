@@ -1,138 +1,155 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { ListTodo, Gift, Clock } from 'lucide-react'
-import { FirebaseErrors } from "@/firebase/errors"
-import { useAuth } from "@/firebase/auth/AuthContext"
-import { firestore } from "@/firebase/auth/firebase"
-import { collection, where, query, onSnapshot } from "firebase/firestore"
-import { toast } from "sonner"
+import Link from "next/link";
+import { ListTodo, Gift, Clock, MessageCircle, ArrowUpRight } from "lucide-react";
+import { FirebaseErrors } from "@/firebase/errors";
+import { useAuth } from "@/firebase/auth/AuthContext";
+import { firestore } from "@/firebase/auth/firebase";
+import { collection, where, query, onSnapshot } from "firebase/firestore";
+import { RequestStatus } from "@/app/types";
+import { toast } from "sonner";
 
 export function MinimalStatCards() {
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
-        listings: 0,
-        pendingRequests: 0,
-        donations: 0
+        activeListings: 0,
+        myOpenRequests: 0,
+        donated: 0,
+        unread: 0,
     });
 
     useEffect(() => {
         if (!user) return;
-        setLoading(true);
-        
-        // Listings count
-        const itemsQuery = query(
-            collection(firestore, "items"),
-            where("createdBy", "==", user.uid)
-        );
-        const unsubItems = onSnapshot(itemsQuery, (snapshot) => {
-            setStats(prev => ({ ...prev, listings: snapshot.size }));
+
+        const ready = () => setLoading(false);
+        const onError = (e: any) => {
+            toast.error(FirebaseErrors[e.code] || "Couldn't load your stats");
             setLoading(false);
-        }, (error) => {
-            toast.error(FirebaseErrors[error.code] || "Error fetching listings");
-            setLoading(false);
-        });
-
-        // Pending requests
-        const requestsQuery = query(
-            collection(firestore, "requests"),
-            where("createdBy", "==", user.uid),
-            where("status", "==", "pending")
-        );
-        const unsubPending = onSnapshot(requestsQuery, (snapshot) => {
-            setStats(prev => ({ ...prev, pendingRequests: snapshot.size }));
-        }, (error) => {
-            toast.error(FirebaseErrors[error.code] || "Error fetching requests");
-        });
-
-        // Completed donations
-        const donationsQuery = query(
-            collection(firestore, "requests"),
-            where("donorId", "==", user.uid),
-            where("status", "==", "completed")
-        );
-        const unsubDonations = onSnapshot(donationsQuery, (snapshot) => {
-            setStats(prev => ({ ...prev, donations: snapshot.size }));
-        }, (error) => {
-            toast.error(FirebaseErrors[error.code] || "Error fetching donations");
-        });
-
-        return () => {
-            unsubItems();
-            unsubPending();
-            unsubDonations();
         };
+
+        const unsubs = [
+            // Live listings only — exclude items already donated
+            onSnapshot(
+                query(
+                    collection(firestore, "items"),
+                    where("createdBy", "==", user.uid),
+                    where("donatedTo", "==", null)
+                ),
+                (s) => { setStats((p) => ({ ...p, activeListings: s.size })); ready(); },
+                onError
+            ),
+            // Requests I have made that are still awaiting a decision
+            onSnapshot(
+                query(
+                    collection(firestore, "requests"),
+                    where("createdBy", "==", user.uid),
+                    where("status", "==", RequestStatus.PENDING)
+                ),
+                (s) => { setStats((p) => ({ ...p, myOpenRequests: s.size })); ready(); },
+                onError
+            ),
+            // Items I have successfully given away
+            onSnapshot(
+                query(
+                    collection(firestore, "requests"),
+                    where("donorId", "==", user.uid),
+                    where("status", "==", RequestStatus.COMPLETED)
+                ),
+                (s) => { setStats((p) => ({ ...p, donated: s.size })); ready(); },
+                onError
+            ),
+            // Unread messages addressed to me
+            onSnapshot(
+                query(
+                    collection(firestore, "messages"),
+                    where("recipientId", "==", user.uid),
+                    where("read", "==", false)
+                ),
+                (s) => { setStats((p) => ({ ...p, unread: s.size })); ready(); },
+                onError
+            ),
+        ];
+
+        return () => unsubs.forEach((u) => u());
     }, [user]);
 
+    const cards = [
+        {
+            title: "Active listings",
+            value: stats.activeListings,
+            icon: ListTodo,
+            hint: "Items still available",
+            href: "/app/my-items",
+        },
+        {
+            title: "My requests",
+            value: stats.myOpenRequests,
+            icon: Clock,
+            hint: "Awaiting a reply",
+            href: "/app/pending-requests",
+        },
+        {
+            title: "Passed on",
+            value: stats.donated,
+            icon: Gift,
+            hint: "Given a second life",
+            href: "/app/my-donations",
+            feature: true,
+        },
+        {
+            title: "Unread messages",
+            value: stats.unread,
+            icon: MessageCircle,
+            hint: "In your inbox",
+            href: "/app/messages",
+        },
+    ];
+
     if (loading) {
-        return <MinimalStatCardsSkeleton />;
+        return (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+                {[...Array(4)].map((_, i) => (
+                    <div key={i} className="h-32 rounded-3xl bg-sand animate-pulse" />
+                ))}
+            </div>
+        );
     }
 
     return (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-            <StatCard 
-                title="My Listings" 
-                value={stats.listings.toString()} 
-                icon={ListTodo}
-                description="Active items you've posted"
-            />
-            <StatCard 
-                title="Pending Requests" 
-                value={stats.pendingRequests.toString()} 
-                icon={Clock}
-                description="Awaiting responses"
-            />
-            <StatCard 
-                title="Donations Made" 
-                value={stats.donations.toString()} 
-                icon={Gift}
-                description="Items you've donated"
-            />
-        </div>
-    )
-}
-
-function MinimalStatCardsSkeleton() {
-    return (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-            {[...Array(3)].map((_, i) => (
-                <Card key={i} className="animate-pulse">
-                    <CardHeader className="space-y-0 pb-2">
-                        <div className="flex items-center space-x-2">
-                            <div className="w-4 h-4 bg-gray-200 rounded" />
-                            <div className="h-4 bg-gray-200 rounded w-24" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            {cards.map(({ title, value, icon: Icon, hint, href, feature }) => (
+                <Link key={title} href={href} className="group">
+                    <div
+                        className={`card-hover h-full rounded-3xl p-4 md:p-5 relative ${
+                            feature
+                                ? "bg-lime"
+                                : "bg-white border border-gray-200/70 group-hover:border-forest/30"
+                        }`}
+                    >
+                        <div className="flex items-start justify-between mb-3">
+                            <div
+                                className={`w-9 h-9 rounded-2xl flex items-center justify-center ${
+                                    feature ? "bg-forest text-lime" : "bg-primary-light text-primary"
+                                }`}
+                            >
+                                <Icon className="w-4 h-4" />
+                            </div>
+                            <ArrowUpRight
+                                className={`w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all ${
+                                    feature ? "text-forest" : "text-forest"
+                                }`}
+                            />
                         </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="h-8 bg-gray-200 rounded w-16 mb-2" />
-                        <div className="h-3 bg-gray-200 rounded w-32" />
-                    </CardContent>
-                </Card>
+                        <div className={`text-3xl md:text-4xl font-bold ${feature ? "text-forest" : "text-ink"}`}>
+                            {value}
+                        </div>
+                        <p className={`text-xs font-bold mt-1 ${feature ? "text-forest" : "text-ink"}`}>{title}</p>
+                        <p className={`text-[11px] mt-0.5 ${feature ? "text-forest/60" : "text-gray-400"}`}>{hint}</p>
+                    </div>
+                </Link>
             ))}
         </div>
-    )
+    );
 }
-
-function StatCard({ title, value, icon: Icon, description }: { 
-    title: string, 
-    value: string, 
-    icon: any, 
-    description: string 
-}) {
-    return (
-        <Card className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Icon className="w-4 h-4" />
-                    {title}
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="text-3xl font-bold">{value}</div>
-                <p className="text-xs text-muted-foreground mt-1">{description}</p>
-            </CardContent>
-        </Card>
-    )
-} 

@@ -172,10 +172,13 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
         <Form className="w-full max-w-5xl mx-auto px-4 py-8" onSubmit={handleSubmit}>
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">
+            <p className="text-xs font-bold tracking-[0.2em] uppercase text-primary mb-2">
+              {defaultValues ? "Edit listing" : "New listing"}
+            </p>
+            <h1 className="text-3xl md:text-4xl font-bold text-ink tracking-tight">
               {defaultValues ? "Edit item" : "List an item"}
             </h1>
-            <p className="text-gray-500 mt-1 text-sm">
+            <p className="text-gray-500 mt-1.5 text-sm">
               {defaultValues
                 ? "Update your item details below."
                 : "Fill in the details and pin your location — takes less than 2 minutes."}
@@ -185,7 +188,7 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* ── Left column: item details ── */}
             <div className="flex flex-col gap-5">
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col gap-5">
+              <div className="bg-white rounded-3xl border border-gray-200/70 p-6 flex flex-col gap-5">
                 <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Item details</h2>
 
                 <CustomInput
@@ -240,7 +243,7 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
               </div>
 
               {/* Photos */}
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <div className="bg-white rounded-3xl border border-gray-200/70 p-6">
                 <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Photos</h2>
                 <DragAndDrop
                   files={values.assets.map(asset => ({
@@ -265,7 +268,7 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
 
             {/* ── Right column: location ── */}
             <div className="flex flex-col gap-5">
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <div className="bg-white rounded-3xl border border-gray-200/70 p-6">
                 <div className="flex items-center gap-2 mb-1">
                   <MapPin className="w-4 h-4 text-primary" />
                   <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Pickup location</h2>
@@ -287,9 +290,9 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
               </div>
 
               {/* Tip card */}
-              <div className="rounded-2xl bg-primary-light border border-primary/10 p-5 text-sm text-primary leading-relaxed">
-                <p className="font-semibold mb-1">📦 Listing tips</p>
-                <ul className="list-disc list-inside space-y-1 text-primary/80">
+              <div className="rounded-3xl bg-lime p-6 text-sm text-forest leading-relaxed">
+                <p className="font-bold mb-1">📦 Listing tips</p>
+                <ul className="list-disc list-inside space-y-1 text-forest/80">
                   <li>Add clear photos — front, back, any defects</li>
                   <li>Be specific about condition (scratches, missing parts)</li>
                   <li>Pin a nearby meeting spot, not your exact door</li>
@@ -299,18 +302,18 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
           </div>
 
           {/* Action bar */}
-          <div className="flex items-center justify-end gap-4 mt-8 pt-6 border-t border-gray-100">
-            <Link href="/app/my-items">
+          <div className="flex items-center justify-end gap-3 sm:gap-4 mt-8 pt-6 border-t border-gray-200/60">
+            <Link href="/app/my-items" className="flex-1 sm:flex-none">
               <CustomButton
                 variant="outline"
-                className="rounded-full px-8 py-3"
+                className="w-full sm:w-auto rounded-full px-8 py-3"
                 disabled={isSubmitting || _}
               >
                 Cancel
               </CustomButton>
             </Link>
             <CustomButton
-              className="rounded-full px-8 py-3 min-w-[140px]"
+              className="flex-1 sm:flex-none rounded-full px-8 py-3 sm:min-w-[140px] !bg-forest hover:!bg-forest-dark"
               icon={<SaveIcon className="w-4 h-4" />}
               disabled={!isValid || isSubmitting || _}
               isLoading={isSubmitting || _}

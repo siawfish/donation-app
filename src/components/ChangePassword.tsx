@@ -93,7 +93,7 @@ export default function ChangePassword() {
                                     <CustomButton 
                                         type="button"
                                         variant="outline" 
-                                        className="w-[180px] border-primary !text-primary rounded-full hover:bg-transparent py-6"
+                                        className="flex-1 sm:flex-none sm:w-[180px] border-forest !text-forest rounded-full hover:bg-transparent py-6"
                                         onClick={() => setAction(null)}
                                     >
                                         Cancel
@@ -101,7 +101,7 @@ export default function ChangePassword() {
                                     <CustomButton 
                                         type="submit"
                                         variant="default" 
-                                        className="w-[180px] rounded-full py-6"
+                                        className="flex-1 sm:flex-none sm:w-[180px] rounded-full py-6 !bg-forest hover:!bg-forest-dark"
                                         disabled={isSubmitting}
                                         icon={<SaveIcon className="w-4 h-4" />}
                                     >

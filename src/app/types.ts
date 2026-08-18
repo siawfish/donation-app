@@ -26,6 +26,8 @@ export interface UserType {
     preferedLocation: string;
     lat?: number;
     lng?: number;
+    /** uid of the member whose invite link brought this user in */
+    referredBy?: string;
 }
 
 export interface ResponseData<T> {

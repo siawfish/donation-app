@@ -23,7 +23,7 @@ function sortByDistance(
     userLng: number,
     maxKm?: number
 ): ItemType[] {
-    const withDist = items.map((item) => ({
+    let withDist = items.map((item) => ({
         ...item,
         distance:
             item.lat != null && item.lng != null
@@ -31,7 +31,9 @@ function sortByDistance(
                 : undefined,
     }));
     if (maxKm != null) {
-        withDist.filter((i) => i.distance == null || i.distance <= maxKm);
+        // Items with no coordinates are dropped here: an explicit radius is a
+        // request for things nearby, and we can't claim an unlocated item qualifies.
+        withDist = withDist.filter((i) => i.distance != null && i.distance <= maxKm);
     }
     return withDist.sort((a, b) => {
         if (a.distance == null && b.distance == null) return 0;
@@ -194,21 +196,24 @@ export async function getPopularItems(): Promise<ResponseData<ItemType[] | null>
             if (tokens) userLocation = await getUserLocation(tokens.decodedToken.uid);
         } catch {}
 
+        // Ordering by `views` alone keeps this on the automatic single-field index.
+        // Adding `where('donatedTo','==',null)` would require a composite index, so
+        // already-donated items are filtered out in memory instead.
         const snapshot = await db
             .collection('items')
-            .where('donatedTo', '==', null)
             .orderBy('views', 'desc')
-            .limit(userLocation ? 50 : 8) // fetch more when we have location so we can proximity-sort
+            .limit(userLocation ? 100 : 40)
             .get();
 
-        let items: ItemType[] = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id } as ItemType));
+        let items: ItemType[] = snapshot.docs
+            .map((doc) => ({ ...doc.data(), id: doc.id } as ItemType))
+            .filter((item) => !item.donatedTo);
 
         if (userLocation) {
             items = sortByDistance(items, userLocation.lat, userLocation.lng);
-            items = items.slice(0, 8);
         }
 
-        return { success: true, message: "Items fetched successfully", data: items };
+        return { success: true, message: "Items fetched successfully", data: items.slice(0, 8) };
     } catch (error: any) {
         const message = FirebaseErrors[error.code] || error.message;
         return { success: false, message: message, data: null };
@@ -403,15 +408,19 @@ export async function getMyRequests({
     }
 }
 
+/** Size of the pool pulled before in-memory filtering. See note in getListings. */
+const LISTINGS_POOL = 300;
+
 export async function getListings({
     query,
-    queryBy = "name",
+    categoryId,
     page = 1,
-    limit = 8,
+    limit = 12,
     maxDistanceKm,
 }: {
     query?: string;
-    queryBy?: "name" | "condition" | "categories";
+    /** category id from the chips row */
+    categoryId?: string;
     page?: number;
     limit?: number;
     maxDistanceKm?: number;
@@ -425,42 +434,57 @@ export async function getListings({
             if (tokens) userLocation = await getUserLocation(tokens.decodedToken.uid);
         } catch {}
 
-        let queryRef = db.collection('items').where('donatedTo', '==', null);
+        // One pool, filtered in memory, rather than branching on whether the
+        // viewer has a location. Firestore can't do any of what this page needs \u2014
+        // case-insensitive substring search, matching a category id inside an
+        // array of objects, or distance \u2014 so splitting the work between the query
+        // and memory only produced two code paths that behaved differently.
+        // A single equality filter also keeps this off any composite index.
+        //
+        // At the platform's current size the pool covers the whole catalogue. If
+        // it outgrows LISTINGS_POOL, search should move to a dedicated index
+        // (Algolia/Typesense) rather than a bigger pool.
+        const snapshot = await db
+            .collection('items')
+            .where('donatedTo', '==', null)
+            .limit(LISTINGS_POOL)
+            .get();
 
-        if (query) {
-            if (queryBy === "categories") {
-                queryRef = queryRef.where(queryBy, 'array-contains', query);
-            } else {
-                queryRef = queryRef.where(queryBy, '>=', query).where(queryBy, '<=', query + '\uf8ff');
-            }
+        let items: ItemType[] = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id } as ItemType));
+
+        // Text search \u2014 substring and case-insensitive across name and description.
+        // The previous Firestore range query only matched a case-sensitive prefix
+        // of `name`, so "sofa" missed an item titled "Sofa".
+        if (query?.trim()) {
+            const needle = query.trim().toLowerCase();
+            items = items.filter(
+                (item) =>
+                    item.name?.toLowerCase().includes(needle) ||
+                    item.description?.toLowerCase().includes(needle)
+            );
+        }
+
+        if (categoryId) {
+            items = items.filter((item) =>
+                item.categories?.some((category) => category?.id === categoryId)
+            );
         }
 
         if (userLocation) {
-            // Fetch a large pool so we can sort/filter by distance in memory
-            const snapshot = await queryRef.limit(300).get();
-            let items = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id } as ItemType));
-
-            // Sort by proximity; optionally filter by radius
             items = sortByDistance(items, userLocation.lat, userLocation.lng, maxDistanceKm);
-
-            const total = items.length;
-            const paginated = items.slice((page - 1) * limit, page * limit);
-            return { success: true, message: "Items fetched successfully", data: { items: paginated, total, page, limit } };
+        } else {
+            // No location to rank against \u2014 newest first.
+            items.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
         }
 
-        // Fallback: no location \u2014 use DB-level ordering + pagination
-        const startAt = (page - 1) * limit;
-        const querySnapshot = await queryRef
-            .orderBy(queryBy === "categories" ? "name" : queryBy)
-            .startAt(startAt)
-            .limit(limit)
-            .get();
+        const total = items.length;
+        const paginated = items.slice((page - 1) * limit, page * limit);
 
-        const items = querySnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id } as ItemType));
-        const totalQuery = await queryRef.count().get();
-        const total = totalQuery.data().count;
-
-        return { success: true, message: "Items fetched successfully", data: { items, total, page, limit } };
+        return {
+            success: true,
+            message: "Items fetched successfully",
+            data: { items: paginated, total, page, limit },
+        };
     } catch (error: any) {
         const message = FirebaseErrors[error.code] || error.message;
         return { success: false, message: message, data: null };

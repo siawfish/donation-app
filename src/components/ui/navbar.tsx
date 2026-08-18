@@ -18,6 +18,7 @@ import {
   HomeIcon,
   SettingsIcon,
   LogOutIcon,
+  Trophy,
   X,
 } from "lucide-react";
 import Logo from "../Logo";
@@ -39,6 +40,7 @@ export default function Navbar() {
 
   const profileLinks = [
     { id: "dashboard", href: "/app", label: "Dashboard", icon: <HomeIcon className="h-4 w-4" /> },
+    { id: "rewards", href: "/app/rewards", label: "Your rewards", icon: <Trophy className="h-4 w-4" /> },
     { id: "settings", href: "/app/settings", label: "Settings", icon: <SettingsIcon className="h-4 w-4" /> },
     { id: "signout", href: "#", label: "Sign out", icon: <LogOutIcon className="h-4 w-4" /> },
   ];
@@ -63,80 +65,104 @@ export default function Navbar() {
     }
   };
 
-  const listHref = user ? "/app/add-item" : "/auth/register";
-
   return (
-    <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center gap-3 md:gap-4">
+    <header className="sticky top-0 z-50 w-full bg-canvas/90 backdrop-blur-md border-b border-gray-200/40">
+      <div className="max-w-[1400px] mx-auto px-4 h-16 grid grid-cols-[auto_1fr_auto] items-center gap-3 md:gap-6">
 
         {/* ── Logo ── */}
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 flex items-center">
           <Logo />
         </div>
 
-        {/* ── Search bar (desktop) ── */}
-        <form
-          onSubmit={handleSearch}
-          className="hidden md:flex flex-1 max-w-xl items-center bg-gray-50 border border-gray-200 rounded-xl overflow-hidden focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10 transition-all"
-        >
-          <Search className="w-4 h-4 text-gray-400 ml-3.5 flex-shrink-0" />
-          <input
-            ref={inputRef}
-            type="text"
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-            placeholder="Search items…"
-            className="flex-1 bg-transparent text-sm text-gray-800 placeholder-gray-400 outline-none px-3 py-2.5"
-          />
-          {searchValue && (
-            <button type="button" onClick={() => setSearchValue("")} className="mr-1 p-1 rounded-lg hover:bg-gray-200 transition-colors">
-              <X className="w-3.5 h-3.5 text-gray-400" />
+        {/* ── Search bar (desktop) — centered zone ── */}
+        <div className="hidden md:flex justify-center">
+          <form
+            onSubmit={handleSearch}
+            className="flex w-full max-w-xl items-center bg-white border border-gray-200/80 rounded-full overflow-hidden focus-within:border-forest focus-within:ring-2 focus-within:ring-forest/10 transition-all shadow-sm"
+          >
+            <Search className="w-4 h-4 text-gray-400 ml-4 flex-shrink-0" />
+            <input
+              ref={inputRef}
+              type="text"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              placeholder="Search items…"
+              className="flex-1 bg-transparent text-sm text-ink placeholder-gray-400 outline-none px-3 py-2.5 min-w-0"
+            />
+            {searchValue && (
+              <button type="button" onClick={() => setSearchValue("")} className="mr-1 p-1 rounded-full hover:bg-gray-100 transition-colors">
+                <X className="w-3.5 h-3.5 text-gray-400" />
+              </button>
+            )}
+            <button type="submit" className="bg-forest hover:bg-forest-dark text-white text-xs font-semibold px-5 py-2.5 m-1 rounded-full transition-colors flex-shrink-0">
+              Search
             </button>
-          )}
-          <button type="submit" className="bg-primary hover:bg-primary/90 text-white text-xs font-semibold px-4 py-2.5 transition-colors flex-shrink-0">
-            Search
-          </button>
-        </form>
+          </form>
+        </div>
+
+        {/* Spacer keeps grid shape on mobile (search is icon-only there) */}
+        <div className="md:hidden" />
 
         {/* ── Right actions ── */}
-        <div className="ml-auto md:ml-0 flex items-center gap-2">
+        <div className="flex items-center justify-end gap-1.5 md:gap-2">
 
           {/* Mobile: search icon */}
           <button
-            className="md:hidden p-2 rounded-xl hover:bg-gray-100 transition-colors"
+            className="md:hidden p-2 rounded-full hover:bg-sand transition-colors"
             onClick={() => { setMobileSearchOpen(true); setTimeout(() => inputRef.current?.focus(), 50); }}
           >
             <Search className="w-5 h-5 text-gray-600" />
           </button>
 
-          {/* List an item — always visible */}
-          <Link href={listHref}>
-            <button className="flex items-center gap-1.5 bg-primary hover:bg-primary/90 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
-              <PackagePlus className="w-4 h-4" />
-              <span className="hidden sm:inline">List an item</span>
-            </button>
+          {/* Public leaderboard */}
+          <Link
+            href="/leaderboard"
+            title="Community leaderboard"
+            className="hidden lg:inline-flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-forest px-3 py-2 rounded-full hover:bg-sand transition-colors"
+          >
+            <Trophy className="w-4 h-4" />
+            Leaderboard
           </Link>
+
+          {/* ── List an item — THE main CTA ── */}
+          {user ? (
+            <Link href="/app/add-item">
+              <button className="flex items-center gap-1.5 bg-lime hover:brightness-95 text-forest text-sm font-bold px-4 md:px-5 py-2.5 rounded-full transition-all">
+                <PackagePlus className="w-4 h-4" />
+                <span className="hidden sm:inline">List an item</span>
+              </button>
+            </Link>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-1.5 bg-lime hover:brightness-95 text-forest text-sm font-bold px-4 md:px-5 py-2.5 rounded-full transition-all">
+                  <PackagePlus className="w-4 h-4" />
+                  <span className="hidden sm:inline">List an item</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 rounded-2xl p-3">
+                <p className="text-sm font-bold text-ink px-1 pb-1">Ready to give something away?</p>
+                <p className="text-xs text-gray-500 px-1 pb-3">Sign in or create a free account to list your item.</p>
+                <div className="flex flex-col gap-2">
+                  <Link
+                    href="/auth/login?redirect=/app/add-item"
+                    className="w-full text-center text-sm font-semibold text-white bg-forest hover:bg-forest-dark px-4 py-2.5 rounded-full transition-colors"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/auth/register"
+                    className="w-full text-center text-sm font-semibold text-forest border border-forest/30 hover:bg-sand px-4 py-2.5 rounded-full transition-colors"
+                  >
+                    Create a free account
+                  </Link>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           {/* Notifications (logged-in only) */}
           {user && <NotificationsButton />}
-
-          {/* Auth: logged-out */}
-          {!user && (
-            <>
-              <Link
-                href="/auth/login"
-                className="hidden md:inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 px-3 py-2 rounded-xl hover:bg-gray-100 transition-colors"
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/auth/register"
-                className="hidden md:inline-flex items-center text-sm font-semibold text-primary border border-primary px-4 py-2 rounded-xl hover:bg-primary-light transition-colors"
-              >
-                Join free
-              </Link>
-            </>
-          )}
 
           {/* Auth: logged-in avatar */}
           {user && (
@@ -178,16 +204,16 @@ export default function Navbar() {
                   <Menu className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-56 rounded-2xl">
                 <DropdownMenuItem asChild>
                   <Link href="/explore" className="cursor-pointer">Browse items</Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/leaderboard" className="cursor-pointer">Leaderboard</Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/auth/login" className="cursor-pointer">Sign in</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/auth/register" className="cursor-pointer font-semibold text-primary">Join free</Link>
+                  <Link href="/auth/login" className="cursor-pointer font-semibold text-forest">Sign in / Join free</Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -197,8 +223,8 @@ export default function Navbar() {
 
       {/* ── Mobile search overlay ── */}
       {mobileSearchOpen && (
-        <div className="md:hidden px-4 pb-3 pt-1 border-t border-gray-100 bg-white">
-          <form onSubmit={handleSearch} className="flex items-center bg-gray-50 border border-gray-200 rounded-xl overflow-hidden focus-within:border-primary">
+        <div className="md:hidden px-4 pb-3 pt-1 border-t border-gray-200/50 bg-canvas">
+          <form onSubmit={handleSearch} className="flex items-center bg-white border border-gray-200/80 rounded-full overflow-hidden focus-within:border-forest">
             <Search className="w-4 h-4 text-gray-400 ml-3 flex-shrink-0" />
             <input
               ref={inputRef}

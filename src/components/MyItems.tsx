@@ -31,9 +31,11 @@ export default function MyItems({donations}: MyItemsProps) {
                             {donations.items.map((donation) => (
                                 <Link key={donation.id} href={`${pathname}?id=${donation.id}`}>
                                     <ImageCard
-                                        image={donation.assets[0].url}
+                                        image={donation.assets?.[0]?.url || ""}
                                         title={donation.name}
                                         description={donation.description}
+                                        distance={donation.distance}
+                                        locationName={donation.locationName}
                                     />
                                 </Link>
                             ))}

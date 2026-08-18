@@ -68,7 +68,7 @@ export default function TermsOfUse() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-medium text-gray-900 mb-4">Donations & Exchanges</h2>
+              <h2 className="text-2xl font-medium text-gray-900 mb-4">Passing Items On</h2>
               <p className="text-gray-700 leading-relaxed">
                 Users can create listings for items they no longer need by providing accurate descriptions, 
                 photos, and item conditions. All items exchanged through the Platform must be free, and selling 

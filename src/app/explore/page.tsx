@@ -5,25 +5,40 @@ import { getListings } from "../app/actions/items";
 import { getCategories } from "../app/actions/categories";
 
 export const metadata: Metadata = {
-  title: "Explore listings",
-  description: "Filter and find the perfect listing for you",
+  title: "Browse what's nearby — Givny",
+  description:
+    "Free items from neighbours near you, sorted by distance. Find something you need and give it a second life.",
 };
+
+// Route files may only export Next's reserved names, so this stays local.
+const PAGE_SIZE = 12;
 
 export default async function Explore({
     searchParams,
 }: {
     searchParams: { [key: string]: string | string[] | undefined }
 }) {
-    const page = searchParams.page ? Number(searchParams.page) : 1;
-    const q = searchParams.q as string | undefined;
-    const radiusParam = searchParams.radius as string | undefined;
-    const maxDistanceKm = radiusParam ? Number(radiusParam) : undefined;
+    const q = typeof searchParams.q === "string" ? searchParams.q : undefined;
+    const cid = typeof searchParams.cid === "string" ? searchParams.cid : undefined;
+    const radius = typeof searchParams.radius === "string" ? searchParams.radius : undefined;
+    const maxDistanceKm = radius ? Number(radius) : undefined;
 
     const [{ data }, categories] = await Promise.all([
-        getListings({ page, query: q, maxDistanceKm }),
+        getListings({
+            page: 1,
+            limit: PAGE_SIZE,
+            query: q,
+            categoryId: cid,
+            maxDistanceKm,
+        }),
         getCategories(),
     ]);
+
     return (
-        <Donations categories={categories.data!} donations={data!} />
+        <Donations
+            categories={categories.data ?? []}
+            initial={data ?? { items: [], total: 0, page: 1, limit: PAGE_SIZE }}
+            loadListings={getListings}
+        />
     );
 }

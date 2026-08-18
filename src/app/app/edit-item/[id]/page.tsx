@@ -4,7 +4,7 @@ import { getCategories } from '../../actions/categories';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "Edit donation",
+  title: "Edit listing",
   description: "Edit a listing on the platform",
 };
 

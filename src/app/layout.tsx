@@ -12,8 +12,9 @@ import { authConfig } from "@/firebase/config/server-config";
 import Script from 'next/script';
 
 export const metadata: Metadata = {
-  title: "Givny",
-  description: "Discover Givny.com, a platform connecting donors and seekers of pre-loved items. Easily list items you want to give away or browse available listings by category, location, and more. Create an account to manage your profile, save items, and connect with listers through messages. Whether you’re donating or finding something new, Givny makes it simple and community-driven.",
+  title: "Givny — give your things a second life",
+  description:
+    "Givny is a free community marketplace for passing things on. Find what you need from neighbours nearby, or give something you no longer use a second life. No money, no fees, ever — just less waste and more use out of what already exists.",
 };
 
 export default async function RootLayout({

@@ -47,8 +47,8 @@ export default function MyDonations({donations}: MyDonationsProps) {
                     </div>
                 ) : (
                     <EmptyState 
-                        title="No donations found" 
-                        description="You have not made any donations yet" 
+                        title="Nothing passed on yet" 
+                        description="Items you hand over will show up here" 
                     />
                 )
             }

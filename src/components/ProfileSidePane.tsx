@@ -25,7 +25,7 @@ export function ProfileSidePane() {
                 Explore Donations
               </CustomButton>
             </Link>
-            <Link href="/app/donor/add-item">
+            <Link href="/app/add-item">
               <CustomButton 
                 className="!text-primary border-none bg-[transparent] rounded-full justify-start w-[105px]" 
                 variant="outline"

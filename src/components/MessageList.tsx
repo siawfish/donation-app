@@ -67,11 +67,12 @@ export default function MessageList() {
           where('requestId', '==', request.id),
           orderBy('createdAt', 'desc')
         )
+        // Sender is filtered in memory below: adding a `!=` to these equality
+        // filters would require a composite index and throw without one.
         const unreadQ = query(
           collection(firestore, 'messages'),
           where('requestId', '==', request.id),
-          where('read', '==', false),
-          where('senderId', '!=', user.uid) // only count messages from the other person
+          where('read', '==', false)
         )
 
         const [otherDoc, itemDoc, lastMsgSnap, unreadSnap] = await Promise.all([
@@ -86,7 +87,8 @@ export default function MessageList() {
           otherPerson: { ...otherDoc.data(), id: otherDoc.id } as UserType,
           item: { ...itemDoc.data(), id: itemDoc.id } as ItemType,
           lastMessage: lastMsgSnap.docs[0]?.data()?.content || 'Start a conversation',
-          unreadCount: unreadSnap.size,
+          // Only count messages the other person sent
+          unreadCount: unreadSnap.docs.filter((d) => d.data().senderId !== user.uid).length,
         }
       } catch {
         return null

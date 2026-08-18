@@ -1,29 +1,28 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const Links = [
     {
-        label: "Listed Items",
+        label: "Up for grabs",
         value: "/app/my-items"
     },
     {
-        label: "Donated Items",
+        label: "Passed on",
         value: "/app/my-donations"
     },
     {
-        label: "Pending Requests",
+        label: "Asked for",
         value: "/app/pending-requests"
     },
     {
-        label: "Received Donations",
+        label: "Picked up",
         value: "/app/donations"
     },
     {
-        label: "My Wishlist",
+        label: "Saved",
         value: "/app/wishlist"
     }
 ]
@@ -36,30 +35,30 @@ export default function ProfileTabs({
     const pathname = usePathname();
     const router = useRouter();
     const isMobile = useIsMobile();
-    
+
     if (isMobile) {
         return (
-            <div className="flex flex-col min-h-screen">
+            <div className="flex flex-col min-h-screen bg-canvas">
                 {/* Mobile horizontal tabs */}
-                <div className="border-b border-border p-2 sticky top-0 z-10">
-                    <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
+                <div className="p-2 sticky top-16 z-10 bg-canvas/95 backdrop-blur-md">
+                    <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
                         {Links.map((link) => (
-                            <Button
+                            <button
                                 key={link.value}
                                 className={cn(
-                                    "whitespace-nowrap text-xs px-3 py-2 min-w-fit",
-                                    pathname === link.value 
-                                        ? "bg-primary text-white" 
-                                        : "bg-primary-light text-primary hover:bg-accent hover:text-accent-foreground"
+                                    "whitespace-nowrap text-xs font-semibold px-4 py-2 rounded-full min-w-fit border transition-colors",
+                                    pathname === link.value
+                                        ? "bg-forest text-white border-forest"
+                                        : "bg-white text-gray-600 border-gray-200 hover:border-forest/40"
                                 )}
                                 onClick={() => router.push(link.value)}
                             >
                                 {link.label}
-                            </Button>
+                            </button>
                         ))}
                     </div>
                 </div>
-                
+
                 {/* Main content */}
                 <main className="flex-1 p-4">
                     {children}
@@ -67,30 +66,32 @@ export default function ProfileTabs({
             </div>
         )
     }
-    
+
     return (
-        <div className="flex gap-6 min-h-[calc(100vh-150px)] relative">
+        <div className="flex gap-8 min-h-[calc(100vh-150px)] relative">
             {/* Desktop Sidebar */}
-            <aside className="w-64 bg-card border-r border-border p-4 sticky top-0 bottom-0">
-                <nav className="space-y-2">
-                    {Links.map((link) => (
-                        <Button
-                            key={link.value}
-                            variant={pathname === link.value ? "default" : "ghost"}
-                            className={cn(
-                                "w-full justify-start text-left",
-                                pathname === link.value 
-                                    ? "bg-primary text-white" 
-                                    : "hover:bg-accent hover:text-accent-foreground"
-                            )}
-                            onClick={() => router.push(link.value)}
-                        >
-                            {link.label}
-                        </Button>
-                    ))}
-                </nav>
+            <aside className="w-64 p-2 sticky top-20 h-fit">
+                <div className="bg-white border border-gray-200/70 rounded-3xl p-3">
+                    <p className="text-xs font-bold tracking-[0.15em] uppercase text-gray-400 px-3 pt-2 pb-3">My activity</p>
+                    <nav className="space-y-1">
+                        {Links.map((link) => (
+                            <button
+                                key={link.value}
+                                className={cn(
+                                    "w-full justify-start text-left text-sm font-semibold px-4 py-2.5 rounded-full transition-colors",
+                                    pathname === link.value
+                                        ? "bg-forest text-white"
+                                        : "text-gray-600 hover:bg-sand hover:text-ink"
+                                )}
+                                onClick={() => router.push(link.value)}
+                            >
+                                {link.label}
+                            </button>
+                        ))}
+                    </nav>
+                </div>
             </aside>
-            
+
             {/* Main content */}
             <main className="flex-1 p-4">
                 {children}
