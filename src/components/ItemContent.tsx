@@ -23,6 +23,7 @@ import { useSearchParams } from "next/navigation"
 import { ConfirmDialog } from "./ConfirmDialog"
 import { sendRequest } from "@/app/app/actions/requests"
 import { formatDistance } from "@/lib/distance"
+import DeliveryEstimate from "./DeliveryEstimate"
 import { VerifiedBadge } from "./verification/VerifiedBadge"
 
 /** Status shown in the decision column, derived from request + item state. */
@@ -281,6 +282,10 @@ export default function ItemContent() {
                                     <p className="text-xs opacity-80 mt-0.5 leading-relaxed">{standing.body}</p>
                                 </div>
                             )}
+
+                            {/* Sits with the decision, not the description: the cost of
+                                getting it home is part of whether to ask at all. */}
+                            {!isMine && <DeliveryEstimate item={item} />}
 
                             {item.description && (
                                 <div>

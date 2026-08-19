@@ -1,3 +1,5 @@
+import type { ParcelSize } from "@/lib/delivery";
+
 export enum ConditionType {
     GOOD = "good",
     FAIR = "fair",
@@ -58,6 +60,8 @@ export interface ItemType {
     lat?: number;
     lng?: number;
     locationName?: string;
+    /** Size band used to estimate delivery cost. Matches Flip's `weight` field. */
+    parcelSize?: ParcelSize;
     // Computed at query time, never stored in Firestore
     distance?: number;
 }

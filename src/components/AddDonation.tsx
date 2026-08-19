@@ -13,6 +13,7 @@ import { storage, firestore } from "@/firebase/auth/firebase"
 import MultiSelectInput from "./MultiSelectInput"
 import SelectInput from "./SelectInput"
 import { Conditions } from "@/lib/utils"
+import { PARCEL_SIZES } from "@/lib/delivery"
 import Link from "next/link"
 import { useAuth } from "@/firebase/auth/AuthContext"
 import { awaitClientAuth } from "@/firebase/auth/clientAuth"
@@ -36,6 +37,7 @@ const INITIAL_VALUES: ItemType = {
   lat: undefined,
   lng: undefined,
   locationName: "",
+  parcelSize: undefined,
 }
 
 interface AddDonationProps {
@@ -61,6 +63,10 @@ const validationSchema = yup.object({
   ).min(1, "Pick at least one category"),
   condition: yup.string().required("Choose a condition"),
   description: yup.string().required("Add a short description"),
+  parcelSize: yup
+    .string()
+    .oneOf(["small", "medium", "large"])
+    .required("Pick a size so people can estimate collection cost"),
   // `mixed` rather than `array().of()` on purpose: `.of()` reports errors as an
   // array (which rendered as the wrong message), and yup's array cast can clone
   // items — which would quietly turn File objects into plain ones again.
@@ -81,7 +87,7 @@ const validationSchema = yup.object({
  */
 const STEPS = [
   { id: "photos", label: "Photos", icon: Camera, fields: ["assets"] as const },
-  { id: "details", label: "Details", icon: FileText, fields: ["name", "categories", "condition", "description"] as const },
+  { id: "details", label: "Details", icon: FileText, fields: ["name", "categories", "condition", "description", "parcelSize"] as const },
   { id: "pickup", label: "Pickup", icon: MapPin, fields: [] as const },
 ]
 
@@ -346,6 +352,49 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
                   error={stepError("description")}
                   disabled={busy}
                 />
+
+                {/* Size drives the delivery estimate people see before they ask
+                    for it. Framed by what it takes to carry, since nobody knows
+                    their sofa in kilograms. */}
+                <div>
+                  <label className="block text-sm font-semibold text-ink mb-1">How big is it?</label>
+                  <p className="text-xs text-gray-500 mb-3">
+                    Lets people work out what collection would cost them.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {PARCEL_SIZES.map((s) => {
+                      const active = values.parcelSize === s.id
+                      return (
+                        <button
+                          key={s.id}
+                          type="button"
+                          disabled={busy}
+                          aria-pressed={active}
+                          onClick={() => {
+                            formik.setFieldValue("parcelSize", s.id)
+                            setFieldTouched("parcelSize", true)
+                          }}
+                          className={`text-left p-3.5 rounded-2xl border transition-colors disabled:opacity-50 ${
+                            active
+                              ? "border-forest bg-forest text-white"
+                              : "border-gray-200 bg-white hover:border-forest/40"
+                          }`}
+                        >
+                          <span className="block text-sm font-bold">{s.label}</span>
+                          <span className={`block text-xs mt-0.5 ${active ? "text-lime" : "text-gray-500"}`}>
+                            {s.hint}
+                          </span>
+                          <span className={`block text-[11px] mt-1.5 leading-snug ${active ? "text-white/70" : "text-gray-400"}`}>
+                            {s.example}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {stepError("parcelSize") && (
+                    <p className="text-xs text-red-500 mt-2">{stepError("parcelSize")}</p>
+                  )}
+                </div>
               </section>
             )}
 
