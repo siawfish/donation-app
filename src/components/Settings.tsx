@@ -6,6 +6,7 @@ import { UserCog, Lock, FileText, Shield, UserX, HelpCircle } from 'lucide-react
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import EditProfile from './EditProfile';
+import { PushOptIn } from "./pwa/PushOptIn";
 import { useQueryState } from 'nuqs';
 import ChangePassword from './ChangePassword';
 import ConfirmDeleteAccount from './ConfirmDeleteAccount';
@@ -112,6 +113,7 @@ export default function Settings() {
                     </Card>
                 </div>
             </div>
+            <PushOptIn />
             <EditProfile />
             <ChangePassword />
             <ConfirmDeleteAccount />

@@ -6,6 +6,7 @@ import { db } from "@/firebase/init";
 import { authConfig } from "@/firebase/config/server-config";
 import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
+import { sendActivityPush } from "./push";
 
 export async function recordActivity(activity: ActivityType): Promise<ResponseData<string | null>> {
     try {
@@ -20,6 +21,17 @@ export async function recordActivity(activity: ActivityType): Promise<ResponseDa
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         });
+
+        // Push rides along with the in-app notification, so there is one place
+        // that decides someone should be told something. Never notify people
+        // about their own actions, and never let a failed send break this.
+        if (activity.recipientId && activity.recipientId !== tokens.decodedToken.uid) {
+            await sendActivityPush({
+                recipientId: activity.recipientId,
+                action: activity.action,
+            });
+        }
+
         return {
             success: true,
             message: "Activity recorded successfully",
