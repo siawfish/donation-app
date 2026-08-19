@@ -23,6 +23,7 @@ import { useSearchParams } from "next/navigation"
 import { ConfirmDialog } from "./ConfirmDialog"
 import { sendRequest } from "@/app/app/actions/requests"
 import { formatDistance } from "@/lib/distance"
+import { VerifiedBadge } from "./verification/VerifiedBadge"
 
 /** Status shown in the decision column, derived from request + item state. */
 type Standing =
@@ -299,8 +300,12 @@ export default function ItemContent() {
                                         <AvatarImage src={donor?.profileUrl} alt={donor?.name} />
                                     </Avatar>
                                     <div className="min-w-0">
-                                        <p className="text-base font-bold text-ink truncate">{donor?.name}</p>
+                                        <p className="text-base font-bold text-ink truncate flex items-center gap-1.5">
+                                            {donor?.name}
+                                            {donor?.verified && <VerifiedBadge />}
+                                        </p>
                                         <p className="text-xs text-gray-400 truncate">
+                                            {donor?.verified ? "Identity verified · " : ""}
                                             {donor?.preferedLocation || "Community member"}
                                         </p>
                                     </div>

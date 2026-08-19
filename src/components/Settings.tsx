@@ -9,6 +9,7 @@ import EditProfile from './EditProfile';
 import { useQueryState } from 'nuqs';
 import ChangePassword from './ChangePassword';
 import ConfirmDeleteAccount from './ConfirmDeleteAccount';
+import { VerificationPanel } from './verification/VerificationPanel';
 
 interface SettingsCardProps {
   icon: React.ReactNode;
@@ -72,6 +73,10 @@ export default function Settings() {
                 <h2 className="text-3xl md:text-4xl font-bold text-ink tracking-tight">{`${user?.displayName?.split(' ')[0]}'s settings`}</h2>
                 <p className="text-gray-500 text-sm mt-1.5">Manage your account settings and preferences.</p>
             </div>
+
+            {/* Trust sits above account admin: it's the thing that changes how
+                other members respond to you, not just how your account behaves. */}
+            <VerificationPanel />
             <div className="grid grid-cols-1 lg:grid-cols-[75%_25%] gap-6">
                 <div className="space-y-6 lg:border-r lg:pr-6">
                     <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { getMyAdminRole } from "@/app/app/actions/admin";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -19,6 +20,7 @@ import {
   SettingsIcon,
   LogOutIcon,
   Trophy,
+  ShieldCheck,
   X,
 } from "lucide-react";
 import Logo from "../Logo";
@@ -38,9 +40,22 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Only used to decide whether to show the Admin link. Every admin route and
+  // action re-checks server-side, so this is presentation, not protection.
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    if (!user) return setIsAdmin(false);
+    let active = true;
+    getMyAdminRole()
+      .then((role) => { if (active) setIsAdmin(!!role) })
+      .catch(() => {/* not an admin */});
+    return () => { active = false };
+  }, [user]);
+
   const profileLinks = [
     { id: "dashboard", href: "/app", label: "Dashboard", icon: <HomeIcon className="h-4 w-4" /> },
     { id: "rewards", href: "/app/rewards", label: "Your rewards", icon: <Trophy className="h-4 w-4" /> },
+    ...(isAdmin ? [{ id: "admin", href: "/app/admin", label: "Admin", icon: <ShieldCheck className="h-4 w-4" /> }] : []),
     { id: "settings", href: "/app/settings", label: "Settings", icon: <SettingsIcon className="h-4 w-4" /> },
     { id: "signout", href: "#", label: "Sign out", icon: <LogOutIcon className="h-4 w-4" /> },
   ];

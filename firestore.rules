@@ -1,0 +1,103 @@
+rules_version = '2';
+
+// Firestore rules for Givny.
+//
+// Deploy with:  firebase deploy --only firestore:rules
+//
+// NOTE: these are written to match how the app actually reads data today — the
+// dashboard, messages and stat cards all query Firestore directly from the
+// browser, so those collections need client read access. Anything that must not
+// be forged (verification state, donation records) is writable only through
+// server actions using the Admin SDK, which bypasses these rules entirely.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // Public catalogue.
+    match /items/{itemId} {
+      allow read: if true;
+      allow create: if signedIn() && request.resource.data.createdBy == request.auth.uid;
+      allow update, delete: if signedIn() && resource.data.createdBy == request.auth.uid;
+    }
+
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if false;              // seeded server-side
+    }
+
+    // Profiles are shown publicly (name, avatar, verified badge).
+    match /users/{uid} {
+      allow read: if true;
+      // `verified` is deliberately excluded — only the Admin SDK may set it,
+      // otherwise anyone could award themselves a trust badge.
+      // `verified` and `suspended` are excluded — otherwise a member could award
+      // themselves a trust badge or lift their own suspension.
+      allow update: if isOwner(uid)
+                    && !request.resource.data.diff(resource.data).affectedKeys()
+                         .hasAny(['verified', 'verifiedAt', 'referredBy', 'suspended']);
+      allow create: if isOwner(uid);
+      allow delete: if false;
+    }
+
+    match /requests/{requestId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.createdBy == request.auth.uid;
+      allow update: if signedIn()
+                    && (resource.data.createdBy == request.auth.uid
+                        || resource.data.donorId == request.auth.uid);
+      allow delete: if false;
+    }
+
+    match /messages/{messageId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.senderId == request.auth.uid;
+      allow update: if signedIn();        // marking as read
+      allow delete: if false;
+    }
+
+    match /activities/{activityId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update: if signedIn();        // marking as read
+      allow delete: if false;
+    }
+
+    match /wishlist/{entryId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.createdBy == request.auth.uid;
+      allow delete: if signedIn() && resource.data.createdBy == request.auth.uid;
+      allow update: if false;
+    }
+
+    match /views/{viewId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update, delete: if false;
+    }
+
+    // Identity verification — no client access whatsoever. Every read and write
+    // goes through server actions.
+    match /verifications/{uid} {
+      allow read, write: if false;
+    }
+
+    // Admin roles — the security boundary for the whole admin backend. If a
+    // client could write here it could grant itself super admin, so this is
+    // sealed and only reachable through the Admin SDK.
+    match /adminRoles/{uid} {
+      allow read, write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

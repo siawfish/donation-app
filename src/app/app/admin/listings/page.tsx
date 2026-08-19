@@ -1,0 +1,25 @@
+import { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { getMyAdminRole } from "@/app/app/actions/admin";
+import { can } from "@/lib/roles";
+import { ListingsTable } from "@/components/admin/ListingsTable";
+
+export const metadata: Metadata = { title: "Listings — Givny admin" };
+
+export default async function AdminListingsPage() {
+    const role = await getMyAdminRole();
+    if (!can(role, "listings.view")) redirect("/app/admin");
+
+    return (
+        <div className="space-y-4 pb-6">
+            <div>
+                <h2 className="text-xl font-bold text-ink tracking-tight">Listings</h2>
+                <p className="text-sm text-gray-500">
+                    Removing a listing also deletes its requests, saves and views so nothing is
+                    left pointing at a missing item.
+                </p>
+            </div>
+            <ListingsTable />
+        </div>
+    );
+}

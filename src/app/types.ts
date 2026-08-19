@@ -28,6 +28,11 @@ export interface UserType {
     lng?: number;
     /** uid of the member whose invite link brought this user in */
     referredBy?: string;
+    /** Identity confirmed via Ghana Card. Only the flag and date are retained. */
+    verified?: boolean;
+    verifiedAt?: string;
+    /** Set by an admin; blocks access to the signed-in app. */
+    suspended?: boolean;
 }
 
 export interface ResponseData<T> {

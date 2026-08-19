@@ -14,6 +14,7 @@ import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import StatusBadge from "./StatusBadge";
 import EmptyState from "./EmptyState";
+import { VerifiedBadge } from "./verification/VerifiedBadge";
 
 type ConversationEntry = {
   request: RequestType;
@@ -177,7 +178,10 @@ export default function MessageList() {
                 </Avatar>
                 <div className="flex-1 min-w-0 flex flex-col gap-0.5">
                   <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-semibold text-sm truncate">{otherPerson?.name}</h3>
+                    <h3 className="font-semibold text-sm truncate flex items-center gap-1.5">
+                      {otherPerson?.name}
+                      {otherPerson?.verified && <VerifiedBadge size="xs" />}
+                    </h3>
                     <StatusBadge requestStatus={request.status as RequestStatus} />
                   </div>
                   <div className="flex items-center justify-between gap-2">

@@ -1,0 +1,62 @@
+rules_version = '2';
+
+// Firebase Storage rules for Givny.
+//
+// Deploy with:  firebase deploy --only storage
+//
+// The important rule here is `verifications/`: those objects are photographs of
+// national ID cards. They are write-only from the client — nobody can read them
+// back over the client SDK, including the person who uploaded them. Reviewers
+// see them through short-lived signed URLs minted server-side by the Admin SDK,
+// which bypasses these rules, and the object is deleted once a decision is made.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function withinSizeLimit() {
+      return request.resource.size < 8 * 1024 * 1024;
+    }
+
+    // Listing photos — shown to everyone browsing, so public read.
+    match /donor/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(uid) && isImage() && withinSizeLimit();
+    }
+
+    // Profile avatars — public read, owner write.
+    match /profiles/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(uid) && isImage() && withinSizeLimit();
+    }
+
+    // Chat attachments — signed-in only, never public.
+    match /messages/{requestId}/{allPaths=**} {
+      allow read: if signedIn();
+      allow write: if signedIn() && withinSizeLimit();
+    }
+
+    // Identity documents — WRITE ONLY. No client read path exists at all.
+    match /verifications/{uid}/{allPaths=**} {
+      allow read: if false;
+      allow create: if isOwner(uid) && isImage() && withinSizeLimit();
+      allow update, delete: if false;   // server-side cleanup only
+    }
+
+    // Anything not matched above is denied.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
