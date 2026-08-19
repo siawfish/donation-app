@@ -21,12 +21,14 @@ const coordLabel = (lat: number, lng: number) => `${lat.toFixed(4)}, ${lng.toFix
 /**
  * Turn coordinates into a short place name.
  *
- * Nominatim answers `{ error: "Unable to geocode" }` — with no `address` key at
- * all — for points it can't resolve, which includes open water and remote
- * areas. Reading `data.address.suburb` there throws, and the previous bare
- * catch turned that into a silent fallback: the member's saved location name
- * became raw coordinates without anyone noticing. Every field is now checked
- * before it is read, and the caller is told whether the lookup really worked.
+ * Goes through our own /api/geocode rather than Nominatim directly: their usage
+ * policy wants an identifying User-Agent that a browser cannot set, and caps
+ * callers at about one request per second across the whole application — which
+ * no amount of per-tab restraint can guarantee. The route also caches, so most
+ * pins never reach Nominatim at all.
+ *
+ * The route always answers with this shape, including on 429 and upstream
+ * failure, so there is no error path here beyond the network itself.
  */
 async function reverseGeocode(
   lat: number,
@@ -34,30 +36,11 @@ async function reverseGeocode(
   signal?: AbortSignal
 ): Promise<{ name: string; resolved: boolean }> {
   try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=14`,
-      { headers: { "Accept-Language": "en" }, signal }
-    );
-
-    // 429 is the one to expect: Nominatim's public endpoint allows ~1 request a
-    // second, and an impatient tapper will exceed that.
-    if (!res.ok) return { name: coordLabel(lat, lng), resolved: false };
-
+    const res = await fetch(`/api/geocode?lat=${lat}&lng=${lng}`, { signal });
     const data = await res.json();
-    const addr = data?.address;
-
-    if (addr) {
-      const parts = [
-        addr.suburb || addr.neighbourhood || addr.village || addr.hamlet || addr.road,
-        addr.city || addr.town || addr.county || addr.state,
-      ].filter(Boolean);
-      if (parts.length) return { name: parts.slice(0, 2).join(", "), resolved: true };
+    if (typeof data?.name === "string") {
+      return { name: data.name, resolved: data.resolved === true };
     }
-
-    if (typeof data?.display_name === "string" && data.display_name) {
-      return { name: data.display_name.split(",").slice(0, 2).join(",").trim(), resolved: true };
-    }
-
     return { name: coordLabel(lat, lng), resolved: false };
   } catch {
     // Includes AbortError, which the caller discards anyway.
