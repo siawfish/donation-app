@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { FacebookIcon, InstagramIcon, TwitterIcon, ArrowUpRight } from "lucide-react";
 
-const links = {
+type FooterLink = { label: string; href: string; badge?: string };
+
+const links: Record<string, FooterLink[]> = {
   Explore: [
     { label: "Browse nearby", href: "/explore" },
     { label: "Near me", href: "/explore?radius=5" },
@@ -12,6 +14,13 @@ const links = {
     { label: "Sign in", href: "/auth/login" },
     { label: "Join free", href: "/auth/register" },
     { label: "List an item", href: "/app/add-item" },
+  ],
+  Company: [
+    { label: "Journal", href: "/blog" },
+    { label: "About", href: "/about" },
+    { label: "Team", href: "/team" },
+    // Flagged rather than buried: a careers link only works if someone notices it.
+    { label: "Careers", href: "/careers", badge: "We're hiring" },
   ],
   Legal: [
     { label: "Terms of Service", href: "/terms-of-use" },
@@ -42,7 +51,7 @@ export default function Footer() {
           </div>
 
           {/* Link columns */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-10 py-12">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-8 gap-y-10 py-12">
             <div className="col-span-2 md:col-span-1">
               <span className="text-2xl font-bold tracking-tight">Givny</span>
               <p className="mt-3 text-sm text-white/50 leading-relaxed max-w-xs">
@@ -67,8 +76,17 @@ export default function Footer() {
                 <ul className="space-y-2.5">
                   {items.map((item) => (
                     <li key={item.label}>
-                      <Link href={item.href} className="text-sm text-white/60 hover:text-white transition-colors">
+                      <Link
+                        href={item.href}
+                        className="text-sm text-white/60 hover:text-white transition-colors inline-flex items-center gap-2 flex-wrap"
+                      >
                         {item.label}
+                        {item.badge && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-lime/15 border border-lime/30 px-2 py-0.5 text-[10px] font-bold text-lime whitespace-nowrap">
+                            <span className="w-1.5 h-1.5 rounded-full bg-lime animate-pulse" />
+                            {item.badge}
+                          </span>
+                        )}
                       </Link>
                     </li>
                   ))}

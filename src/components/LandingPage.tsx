@@ -5,13 +5,16 @@ import Hero from "./Hero"
 import { HomeListings } from "./home/HomeListings"
 import { getCategories } from "@/app/app/actions/categories"
 import { getHomeFeed } from "@/app/app/actions/items"
+import { HomeJournal } from "./home/HomeJournal"
+import { listPublishedPosts } from "@/app/app/actions/blog"
 
 export async function LandingPage() {
   // Both resolved on the server so the first paint already contains listings —
   // and the hero can size its message to what's actually in stock.
-  const [{ data: feed }, categories] = await Promise.all([
+  const [{ data: feed }, categories, posts] = await Promise.all([
     getHomeFeed(),
     getCategories(),
+    listPublishedPosts(),
   ])
 
   const categoryList = categories.data ?? []
@@ -35,6 +38,8 @@ export async function LandingPage() {
         {feed && <HomeListings feed={feed} categories={categoryList} />}
 
         <HowItWorks />
+
+        <HomeJournal posts={posts.slice(0, 3)} />
       </main>
       <Footer />
     </div>

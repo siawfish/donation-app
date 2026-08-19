@@ -21,6 +21,7 @@ import {
   LogOutIcon,
   Trophy,
   ShieldCheck,
+  BookOpen,
   X,
 } from "lucide-react";
 import Logo from "../Logo";
@@ -56,6 +57,7 @@ export default function Navbar() {
     { id: "dashboard", href: "/app", label: "Dashboard", icon: <HomeIcon className="h-4 w-4" /> },
     { id: "rewards", href: "/app/rewards", label: "Your rewards", icon: <Trophy className="h-4 w-4" /> },
     ...(isAdmin ? [{ id: "admin", href: "/app/admin", label: "Admin", icon: <ShieldCheck className="h-4 w-4" /> }] : []),
+    { id: "journal", href: "/blog", label: "Journal", icon: <BookOpen className="h-4 w-4" /> },
     { id: "settings", href: "/app/settings", label: "Settings", icon: <SettingsIcon className="h-4 w-4" /> },
     { id: "signout", href: "#", label: "Sign out", icon: <LogOutIcon className="h-4 w-4" /> },
   ];
@@ -139,6 +141,16 @@ export default function Navbar() {
           >
             <Trophy className="w-4 h-4" />
             Leaderboard
+          </Link>
+
+          {/* Journal */}
+          <Link
+            href="/blog"
+            title="Stories from the Givny community"
+            className="hidden lg:inline-flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-forest px-3 py-2 rounded-full hover:bg-sand transition-colors"
+          >
+            <BookOpen className="w-4 h-4" />
+            Journal
           </Link>
 
           {/* ── List an item — THE main CTA ── */}
@@ -227,6 +239,15 @@ export default function Navbar() {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/leaderboard" className="cursor-pointer">Leaderboard</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/blog" className="cursor-pointer">Journal</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/careers" className="cursor-pointer flex items-center justify-between gap-2">
+                    <span>Careers</span>
+                    <span className="text-[10px] font-bold text-forest bg-lime px-1.5 py-0.5 rounded-full">Hiring</span>
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
