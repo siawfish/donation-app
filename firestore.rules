@@ -133,6 +133,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Ambassador programme. Membership, targets and stipends are set by admins,
+    // and an ambassador's own numbers are derived server-side from data they
+    // cannot edit — so there is no client path to either collection.
+    match /ambassadors/{uid}       { allow read, write: if false; }
+    match /ambassadorActivities/{id} { allow read, write: if false; }
+
     // Push registrations. A token is a capability to notify a device, so it is
     // written only through the server action after the session is checked.
     match /pushTokens/{token} {

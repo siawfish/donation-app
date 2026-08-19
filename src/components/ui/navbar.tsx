@@ -22,6 +22,7 @@ import {
   Trophy,
   ShieldCheck,
   BookOpen,
+  Megaphone,
   X,
 } from "lucide-react";
 import Logo from "../Logo";
@@ -57,6 +58,7 @@ export default function Navbar() {
     { id: "dashboard", href: "/app", label: "Dashboard", icon: <HomeIcon className="h-4 w-4" /> },
     { id: "rewards", href: "/app/rewards", label: "Your rewards", icon: <Trophy className="h-4 w-4" /> },
     ...(isAdmin ? [{ id: "admin", href: "/app/admin", label: "Admin", icon: <ShieldCheck className="h-4 w-4" /> }] : []),
+    { id: "ambassador", href: "/app/ambassador", label: "Ambassador", icon: <Megaphone className="h-4 w-4" /> },
     { id: "journal", href: "/blog", label: "Journal", icon: <BookOpen className="h-4 w-4" /> },
     { id: "settings", href: "/app/settings", label: "Settings", icon: <SettingsIcon className="h-4 w-4" /> },
     { id: "signout", href: "#", label: "Sign out", icon: <LogOutIcon className="h-4 w-4" /> },
