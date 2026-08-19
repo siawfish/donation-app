@@ -26,7 +26,10 @@ service firebase.storage {
     }
 
     function withinSizeLimit() {
-      return request.resource.size < 8 * 1024 * 1024;
+      // Inclusive, to match the client's "up to 8 MB": react-dropzone accepts a
+      // file of exactly 8 MB, and a stricter rule here would reject an upload
+      // the picker had already allowed.
+      return request.resource.size <= 8 * 1024 * 1024;
     }
 
     // Listing photos — shown to everyone browsing, so public read.

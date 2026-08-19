@@ -25,7 +25,14 @@ service cloud.firestore {
     match /items/{itemId} {
       allow read: if true;
       allow create: if signedIn() && request.resource.data.createdBy == request.auth.uid;
-      allow update, delete: if signedIn() && resource.data.createdBy == request.auth.uid;
+      // Owners may edit their listing. Anyone signed in may bump `views` and
+      // nothing else — the detail page counts a view on someone else's item, so
+      // an owner-only update rule would silently stop view counting.
+      allow update: if signedIn()
+                    && (resource.data.createdBy == request.auth.uid
+                        || request.resource.data.diff(resource.data)
+                             .affectedKeys().hasOnly(['views']));
+      allow delete: if signedIn() && resource.data.createdBy == request.auth.uid;
     }
 
     match /categories/{categoryId} {
