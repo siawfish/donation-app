@@ -13,10 +13,9 @@ export default async function VerificationsPage() {
     if (!can(role, "verifications.review")) redirect("/app/admin");
 
     return (
-        <div className="space-y-4 pb-6">
+        <div className="space-y-3">
             <div>
-                <h2 className="text-xl font-bold text-ink tracking-tight">Verification review</h2>
-                <p className="text-sm text-gray-500">
+                <p className="text-[13px] text-gray-500">
                     Check the name and photo match the account, then decide. The card image is
                     deleted either way — approving and rejecting both destroy it.
                 </p>

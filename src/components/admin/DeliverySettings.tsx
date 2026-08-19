@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Truck, Loader2, AlertTriangle, Check } from "lucide-react";
+import { Loader2, AlertTriangle, Check } from "lucide-react";
 import { toast } from "sonner";
 import { updateDeliverySettings } from "@/app/app/actions/settings";
 import { FeatureSettings } from "@/lib/settings";
 import { bandsForSize, formatCedis, PARCEL_SIZES } from "@/lib/delivery";
+import { Badge, Button, Input, Num, Panel, Table, TableWrap, Td, Th, Tr } from "./ui";
 
 export function DeliverySettings({ initial }: { initial: FeatureSettings }) {
     const [settings, setSettings] = useState(initial);
@@ -23,20 +24,26 @@ export function DeliverySettings({ initial }: { initial: FeatureSettings }) {
     };
 
     return (
-        <div className="space-y-5">
-            {/* The master switch. */}
-            <div className="bg-white border border-gray-200/70 rounded-3xl p-5">
+        <div className="space-y-4">
+            <Panel
+                title="Delivery estimates"
+                description="Shows members what having an item delivered would cost, on every listing."
+                actions={
+                    <Badge tone={settings.deliveryEnabled ? "good" : "neutral"}>
+                        {settings.deliveryEnabled ? "Live" : "Off"}
+                    </Badge>
+                }
+            >
                 <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                        <p className="text-sm font-bold text-ink flex items-center gap-2">
-                            <Truck className="w-4 h-4 text-primary" /> Delivery estimates
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1.5 leading-relaxed max-w-prose">
-                            Shows members what having an item delivered would cost, on every
-                            listing. Turning this off hides the estimate everywhere — it does
-                            not cancel anything already arranged.
-                        </p>
-                    </div>
+                    <p className="text-[13px] text-gray-500 leading-relaxed max-w-prose">
+                        Turning this off hides the estimate everywhere. It does not cancel anything
+                        already arranged.
+                        {settings.updatedAt && (
+                            <span className="block text-[11px] text-gray-400 mt-1">
+                                Last changed {new Date(settings.updatedAt).toLocaleString()}
+                            </span>
+                        )}
+                    </p>
 
                     <button
                         role="switch"
@@ -49,122 +56,97 @@ export function DeliverySettings({ initial }: { initial: FeatureSettings }) {
                                 settings.deliveryEnabled ? "Delivery estimates hidden" : "Delivery estimates are live"
                             )
                         }
-                        className={`relative w-14 h-8 rounded-full flex-shrink-0 transition-colors disabled:opacity-50 ${
+                        className={`relative w-11 h-6 rounded-full flex-shrink-0 transition-colors disabled:opacity-50 ${
                             settings.deliveryEnabled ? "bg-forest" : "bg-gray-300"
                         }`}
                     >
                         <span
-                            className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow transition-all ${
-                                settings.deliveryEnabled ? "left-7" : "left-1"
+                            className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${
+                                settings.deliveryEnabled ? "left-[22px]" : "left-0.5"
                             }`}
                         />
                     </button>
                 </div>
+            </Panel>
 
-                <p className="mt-4 text-xs font-bold">
-                    {settings.deliveryEnabled ? (
-                        <span className="text-primary">● Live — members can see estimates</span>
-                    ) : (
-                        <span className="text-gray-400">● Off — no estimates are shown</span>
-                    )}
-                </p>
-
-                {settings.updatedAt && (
-                    <p className="text-[11px] text-gray-400 mt-1">
-                        Last changed {new Date(settings.updatedAt).toLocaleString()}
-                    </p>
-                )}
-            </div>
-
-            {/* Rates have to be confirmed separately, so nobody can turn the
-                feature on and unknowingly publish invented prices. */}
-            <div className="bg-white border border-gray-200/70 rounded-3xl p-5">
-                <p className="text-sm font-bold text-ink">Rates</p>
-                <p className="text-xs text-gray-500 mt-1.5 leading-relaxed max-w-prose">
-                    The price bands live in the code (<code className="text-[11px]">src/lib/delivery.ts</code>).
-                    Once they match your partner&rsquo;s real tariff, confirm them here to remove
-                    the &ldquo;sample rates&rdquo; warning members currently see.
-                </p>
-
+            {/* Rates are confirmed separately, so nobody can turn the feature on
+                and unknowingly publish invented prices. */}
+            <Panel
+                flush
+                title="Rates"
+                description="Price bands live in src/lib/delivery.ts."
+                actions={
+                    <Button
+                        variant={settings.deliveryRatesConfirmed ? "default" : "primary"}
+                        disabled={pending}
+                        onClick={() =>
+                            save(
+                                { deliveryRatesConfirmed: !settings.deliveryRatesConfirmed },
+                                settings.deliveryRatesConfirmed
+                                    ? "Rates marked unconfirmed"
+                                    : "Rates confirmed"
+                            )
+                        }
+                    >
+                        {pending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                        {settings.deliveryRatesConfirmed ? "Mark unconfirmed" : "These rates are correct"}
+                    </Button>
+                }
+            >
                 {!settings.deliveryRatesConfirmed && (
-                    <p className="mt-3 text-xs leading-relaxed text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 flex gap-2">
+                    <p className="flex gap-2 px-4 py-2.5 text-xs leading-relaxed text-amber-800 bg-amber-50 border-b border-amber-200">
                         <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-px" />
                         <span>
-                            Rates are unconfirmed. Estimates carry a visible notice telling
-                            members these are sample figures.
+                            Rates are unconfirmed, so estimates carry a visible notice telling members
+                            these are sample figures. Confirm once they match your partner&rsquo;s tariff.
                         </span>
                     </p>
                 )}
 
-                <div className="mt-4 overflow-x-auto">
-                    <table className="w-full text-xs min-w-[380px]">
+                <TableWrap>
+                    <Table>
                         <thead>
-                            <tr className="text-gray-400 text-left">
-                                <th className="font-semibold pb-2">Distance</th>
+                            <tr>
+                                <Th>Distance</Th>
                                 {PARCEL_SIZES.map((s) => (
-                                    <th key={s.id} className="font-semibold pb-2 text-right">{s.label}</th>
+                                    <Th key={s.id} align="right">{s.label}</Th>
                                 ))}
                             </tr>
                         </thead>
                         <tbody>
                             {bandsForSize("small").map((band, i) => (
-                                <tr key={band.label} className="border-t border-gray-100">
-                                    <td className="py-2 text-ink font-medium">{band.label}</td>
+                                <Tr key={band.label}>
+                                    <Td className="font-medium text-ink">{band.label}</Td>
                                     {PARCEL_SIZES.map((s) => (
-                                        <td key={s.id} className="py-2 text-right tabular-nums text-gray-600">
-                                            {formatCedis(bandsForSize(s.id)[i].price)}
-                                        </td>
+                                        <Td key={s.id} align="right" className="text-gray-600">
+                                            <Num>{formatCedis(bandsForSize(s.id)[i].price)}</Num>
+                                        </Td>
                                     ))}
-                                </tr>
+                                </Tr>
                             ))}
                         </tbody>
-                    </table>
-                </div>
+                    </Table>
+                </TableWrap>
+            </Panel>
 
-                <button
-                    disabled={pending}
-                    onClick={() =>
-                        save(
-                            { deliveryRatesConfirmed: !settings.deliveryRatesConfirmed },
-                            settings.deliveryRatesConfirmed
-                                ? "Rates marked unconfirmed — the sample-rates notice is back"
-                                : "Rates confirmed — the sample-rates notice is gone"
-                        )
-                    }
-                    className={`mt-4 inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-full border transition-colors disabled:opacity-50 ${
-                        settings.deliveryRatesConfirmed
-                            ? "border-gray-200 text-gray-600 hover:border-forest/40"
-                            : "bg-forest text-white border-forest hover:bg-forest-dark"
-                    }`}
-                >
-                    {pending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                    {settings.deliveryRatesConfirmed ? "Mark as unconfirmed" : "These rates are correct"}
-                </button>
-            </div>
-
-            {/* Partner name — a commercial arrangement, not a code constant. */}
-            <div className="bg-white border border-gray-200/70 rounded-3xl p-5">
-                <p className="text-sm font-bold text-ink">Delivery partner</p>
-                <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
-                    Shown to members beside the estimate.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                    <input
+            <Panel title="Delivery partner" description="Shown to members beside the estimate.">
+                <div className="flex flex-wrap gap-2">
+                    <Input
                         value={partner}
                         onChange={(e) => setPartner(e.target.value)}
                         maxLength={60}
                         aria-label="Delivery partner name"
-                        className="flex-1 min-w-[200px] bg-white border border-gray-200/80 rounded-full px-4 py-2.5 text-sm text-ink outline-none focus:border-forest transition-colors"
+                        className="flex-1 min-w-[200px]"
                     />
-                    <button
+                    <Button
+                        variant="primary"
                         disabled={pending || !partner.trim() || partner === settings.deliveryPartner}
                         onClick={() => save({ deliveryPartner: partner }, "Partner name updated")}
-                        className="bg-lime text-forest text-xs font-bold px-5 py-2.5 rounded-full hover:brightness-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                         Save
-                    </button>
+                    </Button>
                 </div>
-            </div>
+            </Panel>
         </div>
     );
 }

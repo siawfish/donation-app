@@ -1,32 +1,35 @@
 import { Milestone } from "@/app/app/actions/analytics";
 import { Check } from "lucide-react";
+import { Num } from "./ui";
 
 export function MilestoneList({ milestones }: { milestones: Milestone[] }) {
     return (
-        <div className="space-y-5">
+        <div className="space-y-3.5">
             {milestones.map((m) => {
                 const pct = Math.min(100, Math.round((m.current / m.target) * 100));
                 const done = m.current >= m.target;
                 return (
                     <div key={m.id}>
-                        <div className="flex items-baseline justify-between gap-3 mb-1.5">
-                            <p className="text-sm font-bold text-ink">{m.label}</p>
-                            <p className="text-xs text-gray-400 tabular-nums flex-shrink-0">
-                                <span className="text-ink font-bold">{m.current.toLocaleString()}</span>
+                        <div className="flex items-baseline justify-between gap-3 mb-1">
+                            <p className="text-[13px] font-medium text-ink flex items-center gap-1.5">
+                                {done && <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />}
+                                {m.label}
+                            </p>
+                            <p className="text-[11px] text-gray-400 flex-shrink-0">
+                                <Num className="text-ink font-semibold">{m.current.toLocaleString()}</Num>
                                 {" / "}
-                                {m.target.toLocaleString()}
+                                <Num>{m.target.toLocaleString()}</Num>
                             </p>
                         </div>
-                        <div className="h-2 w-full rounded-full bg-sand overflow-hidden">
+                        {/* Square-ended bars, so progress reads as a measurement
+                            rather than a decoration. */}
+                        <div className="h-1.5 w-full rounded-sm bg-gray-100 overflow-hidden">
                             <div
-                                className={`h-full rounded-full transition-all ${done ? "bg-lime" : "bg-forest"}`}
+                                className={`h-full transition-all ${done ? "bg-emerald-500" : "bg-forest"}`}
                                 style={{ width: `${pct}%` }}
                             />
                         </div>
-                        <p className="text-[11px] text-gray-400 mt-1.5 flex items-center gap-1">
-                            {done && <Check className="w-3 h-3 text-primary" />}
-                            {m.hint}
-                        </p>
+                        <p className="text-[11px] text-gray-400 mt-1">{m.hint}</p>
                     </div>
                 );
             })}

@@ -15,10 +15,9 @@ export default async function AdminSettingsPage() {
     const features = await getFeatures();
 
     return (
-        <div className="space-y-5">
+        <div className="space-y-3">
             <div>
-                <h2 className="text-xl font-bold text-ink">Features</h2>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-[13px] text-gray-500">
                     Switch parts of the platform on and off without a deploy.
                 </p>
             </div>

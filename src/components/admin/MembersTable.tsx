@@ -1,12 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState, useTransition } from "react";
+import Link from "next/link";
 import { Search, Ban, RotateCcw, Loader2, BadgeCheck, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { AdminUserRow, listMembers, setMemberSuspended } from "@/app/app/actions/admin";
 import { AdminRole, ROLE_LABELS } from "@/lib/roles";
-import { getInitials } from "@/lib/utils";
-import EmptyState from "../EmptyState";
+import {
+    Badge, Button, EmptyRow, Initials, Input, Num, Panel,
+    SkeletonRows, Table, TableWrap, Td, Th, Tr,
+} from "./ui";
 
 export function MembersTable({ canSuspend }: { canSuspend: boolean }) {
     const [rows, setRows] = useState<AdminUserRow[]>([]);
@@ -15,6 +18,8 @@ export function MembersTable({ canSuspend }: { canSuspend: boolean }) {
     const [loading, setLoading] = useState(true);
     const [busy, setBusy] = useState<string | null>(null);
     const [, startTransition] = useTransition();
+
+    const cols = canSuspend ? 7 : 6;
 
     const load = useCallback(async (q: string) => {
         const res = await listMembers({ search: q });
@@ -46,93 +51,106 @@ export function MembersTable({ canSuspend }: { canSuspend: boolean }) {
     };
 
     return (
-        <div className="space-y-4">
-            <div className="flex items-center gap-2 bg-white border border-gray-200/80 rounded-full px-5 py-3 shadow-sm focus-within:border-forest transition-colors">
-                <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                <input
-                    value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
-                    placeholder="Search by name or email…"
-                    aria-label="Search members"
-                    className="flex-1 bg-transparent text-sm text-ink placeholder-gray-400 outline-none"
-                />
-                <span className="text-xs text-gray-400 flex-shrink-0 tabular-nums">{rows.length}</span>
-            </div>
-
-            {loading ? (
-                <div className="space-y-2">
-                    {[...Array(5)].map((_, i) => <div key={i} className="h-16 rounded-2xl bg-sand animate-pulse" />)}
+        <Panel
+            flush
+            title={`${rows.length} member${rows.length === 1 ? "" : "s"}`}
+            actions={
+                <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <Input
+                        value={draft}
+                        onChange={(e) => setDraft(e.target.value)}
+                        placeholder="Name or email…"
+                        aria-label="Search members"
+                        className="pl-7 w-56"
+                    />
                 </div>
-            ) : rows.length === 0 ? (
-                <EmptyState title="No members found" description="Try a different search." containerClassName="min-h-[200px]" />
-            ) : (
-                <div className="bg-white border border-gray-200/70 rounded-3xl overflow-hidden">
-                    {rows.map((row, i) => (
-                        <div
-                            key={row.id}
-                            className={`flex items-center gap-3 md:gap-4 px-4 md:px-5 py-3.5 ${
-                                i !== rows.length - 1 ? "border-b border-gray-100" : ""
-                            } ${row.suspended ? "bg-red-50/50" : ""}`}
-                        >
-                            <span className="w-10 h-10 rounded-full bg-forest text-lime text-xs font-bold flex items-center justify-center flex-shrink-0">
-                                {getInitials(row.name || "?")}
-                            </span>
-
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm font-bold text-ink truncate flex items-center gap-1.5">
-                                    {row.name || "Unnamed"}
-                                    {row.verified && <BadgeCheck className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
-                                    {row.role && (
-                                        <span className="inline-flex items-center gap-1 bg-forest text-lime text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0">
-                                            <ShieldCheck className="w-2.5 h-2.5" />
-                                            {ROLE_LABELS[row.role as AdminRole]}
-                                        </span>
+            }
+        >
+            <TableWrap>
+                <Table>
+                    <thead>
+                        <tr>
+                            <Th>Member</Th>
+                            <Th width="110px">Status</Th>
+                            <Th align="right" width="80px">Listed</Th>
+                            <Th align="right" width="90px">Rehomed</Th>
+                            <Th align="right" width="90px">Role</Th>
+                            <Th align="right" width="70px">CRM</Th>
+                            {canSuspend && <Th align="right" width="110px" />}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {loading ? (
+                            <SkeletonRows cols={cols} />
+                        ) : rows.length === 0 ? (
+                            <EmptyRow colSpan={cols}>No members match that search.</EmptyRow>
+                        ) : (
+                            rows.map((row) => (
+                                <Tr key={row.id} muted={row.suspended}>
+                                    <Td>
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            <Initials name={row.name} />
+                                            <div className="min-w-0">
+                                                <p className="font-semibold text-ink truncate">{row.name || "Unnamed"}</p>
+                                                <p className="text-xs text-gray-500 truncate">{row.email}</p>
+                                            </div>
+                                        </div>
+                                    </Td>
+                                    <Td>
+                                        <div className="flex flex-wrap gap-1">
+                                            {row.verified && (
+                                                <Badge tone="good"><BadgeCheck className="w-2.5 h-2.5" /> Verified</Badge>
+                                            )}
+                                            {row.suspended && <Badge tone="bad">Suspended</Badge>}
+                                            {!row.verified && !row.suspended && (
+                                                <span className="text-gray-300">—</span>
+                                            )}
+                                        </div>
+                                    </Td>
+                                    <Td align="right"><Num>{row.listingsCount}</Num></Td>
+                                    <Td align="right"><Num>{row.rehomedCount}</Num></Td>
+                                    <Td align="right">
+                                        {row.role ? (
+                                            <Badge tone="forest">
+                                                <ShieldCheck className="w-2.5 h-2.5" />
+                                                {ROLE_LABELS[row.role as AdminRole]}
+                                            </Badge>
+                                        ) : (
+                                            <span className="text-gray-300">—</span>
+                                        )}
+                                    </Td>
+                                    <Td align="right">
+                                        <Link href={`/app/admin/crm/${row.id}`}>
+                                            <Button size="xs">Open</Button>
+                                        </Link>
+                                    </Td>
+                                    {canSuspend && (
+                                        <Td align="right">
+                                            <Button
+                                                size="xs"
+                                                variant={row.suspended ? "default" : "danger"}
+                                                onClick={() => toggleSuspend(row)}
+                                                disabled={busy === row.id || !!row.role}
+                                                title={row.role ? "Remove their admin access first" : undefined}
+                                            >
+                                                {busy === row.id ? (
+                                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                                ) : row.suspended ? (
+                                                    <RotateCcw className="w-3 h-3" />
+                                                ) : (
+                                                    <Ban className="w-3 h-3" />
+                                                )}
+                                                {row.suspended ? "Reinstate" : "Suspend"}
+                                            </Button>
+                                        </Td>
                                     )}
-                                    {row.suspended && (
-                                        <span className="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0">
-                                            Suspended
-                                        </span>
-                                    )}
-                                </p>
-                                <p className="text-xs text-gray-400 truncate">{row.email}</p>
-                            </div>
-
-                            <div className="hidden sm:flex items-center gap-5 text-xs text-gray-400 flex-shrink-0">
-                                <span className="text-center">
-                                    <span className="block text-sm font-bold text-ink tabular-nums">{row.listingsCount}</span>
-                                    listed
-                                </span>
-                                <span className="text-center">
-                                    <span className="block text-sm font-bold text-ink tabular-nums">{row.rehomedCount}</span>
-                                    rehomed
-                                </span>
-                            </div>
-
-                            {canSuspend && (
-                                <button
-                                    onClick={() => toggleSuspend(row)}
-                                    disabled={busy === row.id || !!row.role}
-                                    title={row.role ? "Remove their admin access first" : undefined}
-                                    className={`inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-full border transition-colors flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed ${
-                                        row.suspended
-                                            ? "border-gray-200 text-forest hover:border-forest/40"
-                                            : "border-gray-200 text-gray-600 hover:border-red-300 hover:text-red-500"
-                                    }`}
-                                >
-                                    {busy === row.id ? (
-                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                    ) : row.suspended ? (
-                                        <RotateCcw className="w-3.5 h-3.5" />
-                                    ) : (
-                                        <Ban className="w-3.5 h-3.5" />
-                                    )}
-                                    <span className="hidden md:inline">{row.suspended ? "Reinstate" : "Suspend"}</span>
-                                </button>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            )}
-        </div>
+                                </Tr>
+                            ))
+                        )}
+                    </tbody>
+                </Table>
+            </TableWrap>
+        </Panel>
     );
 }

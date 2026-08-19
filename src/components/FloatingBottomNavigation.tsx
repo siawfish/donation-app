@@ -18,6 +18,9 @@ export default function FloatingBottomNavigation() {
     // with their own action bar, and two stacked bars collide.
     if (pathname === "/app/messages" && searchParams.get("rid")) return null;
     if (pathname === "/app/add-item" || pathname.startsWith("/app/edit-item")) return null;
+    // The admin console is a different job with its own navigation, and this bar
+    // floats over the bottom rows of every dense table in it.
+    if (pathname.startsWith("/app/admin")) return null;
 
     const links = [
         {

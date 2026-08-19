@@ -3,6 +3,7 @@ import { getAnalytics } from "@/app/app/actions/analytics";
 import { KpiGrid } from "@/components/admin/KpiGrid";
 import { TrendChart } from "@/components/admin/TrendChart";
 import { MilestoneList } from "@/components/admin/MilestoneList";
+import { Num, Panel } from "@/components/admin/ui";
 
 export const metadata: Metadata = { title: "Admin overview — Givny" };
 
@@ -11,58 +12,52 @@ export default async function AdminOverview() {
 
     if (!success || !data) {
         return (
-            <div className="bg-white border border-gray-200/70 rounded-3xl p-6">
-                <p className="text-sm text-gray-500">{message || "Couldn't load analytics."}</p>
-            </div>
+            <Panel>
+                <p className="text-[13px] text-gray-500">{message || "Couldn't load analytics."}</p>
+            </Panel>
         );
     }
 
     return (
-        <div className="space-y-8 pb-6">
-            <section>
-                <h2 className="text-xl font-bold text-ink tracking-tight mb-1">How the platform is doing</h2>
-                <p className="text-sm text-gray-500 mb-4">
+        <div className="space-y-4">
+            <div>
+                <KpiGrid kpis={data.kpis} />
+                <p className="text-[11px] text-gray-400 mt-1.5">
                     Compared with the previous 30 days. Items rehomed is the number worth watching —
                     everything else is a means to it.
                 </p>
-                <KpiGrid kpis={data.kpis} />
-            </section>
+            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-5">
-                <section className="bg-white border border-gray-200/70 rounded-3xl p-5 md:p-6">
-                    <h2 className="text-lg font-bold text-ink tracking-tight">Last six months</h2>
-                    <p className="text-sm text-gray-500 mb-5">Signups, listings and handovers per month.</p>
+            <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-4 items-start">
+                <Panel title="Last six months" description="Signups, listings and handovers per month.">
                     <TrendChart points={data.trend} />
-                </section>
+                </Panel>
 
-                <section className="bg-white border border-gray-200/70 rounded-3xl p-5 md:p-6">
-                    <h2 className="text-lg font-bold text-ink tracking-tight">Milestones</h2>
-                    <p className="text-sm text-gray-500 mb-5">Each target steps up once you pass it.</p>
+                <Panel title="Milestones" description="Each target steps up once you pass it.">
                     <MilestoneList milestones={data.milestones} />
-                </section>
+                </Panel>
             </div>
 
             {data.topCategories.length > 0 && (
-                <section className="bg-white border border-gray-200/70 rounded-3xl p-5 md:p-6">
-                    <h2 className="text-lg font-bold text-ink tracking-tight mb-4">What people list</h2>
-                    <div className="space-y-2.5">
+                <Panel title="What people list">
+                    <div className="space-y-2">
                         {data.topCategories.map((c) => {
                             const max = data.topCategories[0].count || 1;
                             return (
                                 <div key={c.name} className="flex items-center gap-3">
-                                    <span className="w-40 text-sm text-ink truncate flex-shrink-0">{c.name}</span>
-                                    <div className="flex-1 h-2.5 rounded-full bg-sand overflow-hidden">
+                                    <span className="w-36 text-[13px] text-ink truncate flex-shrink-0">{c.name}</span>
+                                    <div className="flex-1 h-1.5 rounded-sm bg-gray-100 overflow-hidden">
                                         <div
-                                            className="h-full rounded-full bg-primary"
+                                            className="h-full bg-forest"
                                             style={{ width: `${Math.round((c.count / max) * 100)}%` }}
                                         />
                                     </div>
-                                    <span className="w-8 text-right text-sm font-bold text-ink tabular-nums">{c.count}</span>
+                                    <Num className="w-8 text-right text-[13px] font-semibold text-ink">{c.count}</Num>
                                 </div>
                             );
                         })}
                     </div>
-                </section>
+                </Panel>
             )}
         </div>
     );

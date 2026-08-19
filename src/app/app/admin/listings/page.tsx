@@ -11,10 +11,9 @@ export default async function AdminListingsPage() {
     if (!can(role, "listings.view")) redirect("/app/admin");
 
     return (
-        <div className="space-y-4 pb-6">
+        <div className="space-y-3">
             <div>
-                <h2 className="text-xl font-bold text-ink tracking-tight">Listings</h2>
-                <p className="text-sm text-gray-500">
+                <p className="text-[13px] text-gray-500">
                     Removing a listing also deletes its requests, saves and views so nothing is
                     left pointing at a missing item.
                 </p>

@@ -103,6 +103,15 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // CRM. Internal notes, logged conversations, tags and follow-ups about
+    // members — none of it is ever shown to the member it describes, so there
+    // is no client read path at all. Everything goes through crm.view /
+    // crm.manage in the server actions.
+    match /crmProfiles/{docId}    { allow read, write: if false; }
+    match /crmNotes/{docId}       { allow read, write: if false; }
+    match /crmInteractions/{docId} { allow read, write: if false; }
+    match /crmTasks/{docId}       { allow read, write: if false; }
+
     match /{document=**} {
       allow read, write: if false;
     }
