@@ -80,8 +80,10 @@ export default function Navbar() {
     }
   };
 
+  // pt-safe keeps the bar below the status bar and Dynamic Island; the tinted
+  // background extends up behind them so the inset doesn't read as a gap.
   return (
-    <header className="sticky top-0 z-50 w-full bg-canvas/90 backdrop-blur-md border-b border-gray-200/40">
+    <header className="sticky top-0 z-50 w-full bg-canvas/90 backdrop-blur-md border-b border-gray-200/40 pt-safe px-safe">
       <div className="max-w-[1400px] mx-auto px-4 h-16 grid grid-cols-[auto_1fr_auto] items-center gap-3 md:gap-6">
 
         {/* ── Logo ── */}

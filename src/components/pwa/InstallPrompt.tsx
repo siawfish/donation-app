@@ -95,7 +95,7 @@ export function InstallPrompt() {
     if (!visible) return null;
 
     return (
-        <div className="fixed bottom-4 inset-x-4 z-[60] flex justify-center pointer-events-none">
+        <div className="fixed bottom-[calc(1rem+var(--safe-bottom))] inset-x-4 z-[60] flex justify-center pointer-events-none">
             <div className="forest-panel pointer-events-auto w-full max-w-md rounded-3xl p-4 shadow-2xl shadow-forest/40 flex items-center gap-3.5">
                 <span className="flex items-center justify-center w-11 h-11 rounded-2xl bg-lime text-forest flex-shrink-0">
                     <Download className="w-5 h-5" />

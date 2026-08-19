@@ -40,7 +40,7 @@ export default function ProfileTabs({
         return (
             <div className="flex flex-col min-h-screen bg-canvas">
                 {/* Mobile horizontal tabs */}
-                <div className="p-2 sticky top-16 z-10 bg-canvas/95 backdrop-blur-md">
+                <div className="p-2 sticky top-nav z-10 bg-canvas/95 backdrop-blur-md">
                     <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
                         {Links.map((link) => (
                             <button

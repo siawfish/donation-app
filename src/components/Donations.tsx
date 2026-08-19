@@ -166,7 +166,7 @@ export default function Donations({ initial, categories, loadListings }: Donatio
       </div>
 
       {/* Sticky controls */}
-      <div className="sticky top-16 z-20 bg-canvas/95 backdrop-blur-md -mx-4 px-4 pt-3 pb-4 mb-6">
+      <div className="sticky top-nav z-20 bg-canvas/95 backdrop-blur-md -mx-4 px-4 pt-3 pb-4 mb-6">
         {/* Search */}
         <div className="flex items-center gap-2 bg-white border border-gray-200/80 rounded-full px-5 py-3 shadow-sm focus-within:border-forest focus-within:ring-2 focus-within:ring-forest/10 transition-all">
           <SearchIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />

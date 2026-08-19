@@ -225,7 +225,7 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
           (touched as any)[field] && (errors as any)[field] ? String((errors as any)[field]) : undefined
 
         return (
-          <Form className="w-full max-w-5xl mx-auto pb-32">
+          <Form className="w-full max-w-5xl mx-auto pb-[calc(8rem+var(--safe-bottom))]">
             {/* Header */}
             <div className="mb-6">
               <p className="text-xs font-bold tracking-[0.2em] uppercase text-primary mb-2">
@@ -436,7 +436,7 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
 
             {/* Sticky action bar */}
             <div className="fixed bottom-0 inset-x-0 bg-canvas/95 backdrop-blur-md border-t border-gray-200/60 z-30">
-              <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
+              <div className="max-w-5xl mx-auto px-4 pt-3 pb-[calc(0.75rem+var(--safe-bottom))] flex items-center gap-3">
                 {step > 0 ? (
                   <button
                     type="button"

@@ -24,7 +24,7 @@ export default async function RootLayout({
   return (
     <div className="min-h-screen bg-canvas flex flex-col">
       <Navbar />
-      <div className="container max-w-7xl mx-auto px-4 py-6 lg:py-10 pb-32">
+      <div className="container max-w-7xl mx-auto px-4 py-6 lg:py-10 pb-[calc(8rem+var(--safe-bottom))]">
         <Suspense fallback={<div>Loading...</div>}>
           {children}
         </Suspense>

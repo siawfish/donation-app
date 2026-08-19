@@ -48,7 +48,7 @@ export default function FloatingBottomNavigation() {
     ]
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 flex justify-center w-full pb-4 px-4 pointer-events-none">
+        <div className="fixed bottom-0 left-0 right-0 flex justify-center w-full pb-[calc(1rem+var(--safe-bottom))] pl-[calc(1rem+var(--safe-left))] pr-[calc(1rem+var(--safe-right))] pointer-events-none">
             <nav className="forest-panel rounded-full shadow-2xl shadow-forest/40 w-full lg:max-w-[420px] animate-slide-up pointer-events-auto">
                 <div className="flex justify-center items-center py-1.5 px-2">
                     {

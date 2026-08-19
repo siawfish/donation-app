@@ -233,7 +233,7 @@ export default function ItemContent() {
                         </div>
 
                         {/* ── Decision column ── */}
-                        <div className="px-4 lg:px-0 pt-5 lg:pt-0 pb-32 lg:pb-0 flex flex-col gap-5">
+                        <div className="px-4 lg:px-0 pt-5 lg:pt-0 pb-[calc(8rem+var(--safe-bottom))] lg:pb-0 flex flex-col gap-5">
 
                             {/* Identity first — you should know what this is before anything else */}
                             <div>
@@ -338,7 +338,7 @@ export default function ItemContent() {
                     </div>
 
                     {/* Mobile action bar */}
-                    <div className="lg:hidden fixed bottom-0 inset-x-0 bg-canvas/95 backdrop-blur-md border-t border-gray-200/60 px-4 py-3">
+                    <div className="lg:hidden fixed bottom-0 inset-x-0 bg-canvas/95 backdrop-blur-md border-t border-gray-200/60 pt-3 pb-[calc(0.75rem+var(--safe-bottom))] pl-[calc(1rem+var(--safe-left))] pr-[calc(1rem+var(--safe-right))]">
                         <Actions
                             isMine={isMine}
                             signedIn={!!user?.uid}
