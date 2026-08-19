@@ -96,6 +96,13 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Feature switches. Read by the Admin SDK on the server; clients never read
+    // or write them directly, and writes are gated on settings.manage in the
+    // server action.
+    match /settings/{docId} {
+      allow read, write: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

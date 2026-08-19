@@ -12,9 +12,10 @@ import {
     estimateDelivery,
     formatCedis,
     SIZE_LABELS,
-    TARIFFS_ARE_PLACEHOLDER,
     type ParcelSize,
 } from "@/lib/delivery"
+import { getFeatures } from "@/app/app/actions/settings"
+import { DEFAULT_FEATURES, FeatureSettings } from "@/lib/settings"
 
 /**
  * What collection would cost, shown while someone is still deciding.
@@ -27,11 +28,19 @@ import {
 export default function DeliveryEstimate({ item }: { item: ItemType }) {
     const { user } = useAuth()
     const [me, setMe] = useState<{ lat?: number; lng?: number } | null>(null)
+    const [features, setFeatures] = useState<FeatureSettings | null>(null)
 
-    // The session token doesn't carry coordinates, so read them from the profile.
+    // The session token doesn't carry coordinates, so read them from the
+    // profile. Features come from the admin switch, which decides whether any
+    // of this is shown at all.
     useEffect(() => {
-        if (!user?.uid) { setMe({}); return }
         let cancelled = false
+
+        getFeatures()
+            .then((f) => !cancelled && setFeatures(f))
+            .catch(() => !cancelled && setFeatures({ ...DEFAULT_FEATURES }))
+
+        if (!user?.uid) { setMe({}); return () => { cancelled = true } }
         getDoc(doc(firestore, "users", user.uid))
             .then((snap) => {
                 if (cancelled) return
@@ -39,12 +48,16 @@ export default function DeliveryEstimate({ item }: { item: ItemType }) {
                 setMe({ lat: d?.lat, lng: d?.lng })
             })
             .catch(() => !cancelled && setMe({}))
+
         return () => { cancelled = true }
     }, [user?.uid])
 
-    if (me === null) {
+    if (me === null || features === null) {
         return <div className="h-20 rounded-2xl bg-sand animate-pulse" />
     }
+
+    // The admin switch wins over everything else.
+    if (!features.deliveryEnabled) return null
 
     const estimate = estimateDelivery(item, me)
 
@@ -73,7 +86,15 @@ export default function DeliveryEstimate({ item }: { item: ItemType }) {
         return null
     }
 
-    return <DeliveryEstimateCard price={estimate.price} km={estimate.km} size={estimate.size} />
+    return (
+        <DeliveryEstimateCard
+            price={estimate.price}
+            km={estimate.km}
+            size={estimate.size}
+            partner={features.deliveryPartner}
+            ratesConfirmed={features.deliveryRatesConfirmed}
+        />
+    )
 }
 
 /**
@@ -84,10 +105,14 @@ export function DeliveryEstimateCard({
     price,
     km,
     size,
+    partner,
+    ratesConfirmed,
 }: {
     price: number
     km: number
     size: ParcelSize
+    partner: string
+    ratesConfirmed: boolean
 }) {
     const [open, setOpen] = useState(false)
     const bands = bandsForSize(size)
@@ -103,7 +128,7 @@ export function DeliveryEstimateCard({
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
                     {SIZE_LABELS[size].toLowerCase()} item · {km < 1 ? "under 1 km" : `about ${Math.round(km)} km`} ·
-                    via Flip Delivery
+                    via {partner}
                 </p>
 
                 <button
@@ -139,12 +164,12 @@ export function DeliveryEstimateCard({
                         ))}
                     </div>
 
-                    {TARIFFS_ARE_PLACEHOLDER && (
+                    {!ratesConfirmed && (
                         <p className="mt-3 text-[11px] leading-relaxed text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-2 flex gap-1.5">
                             <Info className="w-3.5 h-3.5 flex-shrink-0 mt-px" />
                             <span>
-                                These are sample rates, not live Flip pricing. Arrange the
-                                delivery with Flip directly to get the real cost.
+                                These are sample rates, not live pricing. Arrange the
+                                delivery with {partner} directly to get the real cost.
                             </span>
                         </p>
                     )}

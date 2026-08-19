@@ -21,7 +21,8 @@ export type Capability =
     | "listings.view"
     | "listings.remove"
     | "verifications.review"
-    | "roles.manage";
+    | "roles.manage"
+    | "settings.manage";
 
 /** What each role may do. Deliberately explicit rather than hierarchical, so
  *  reading this table tells you exactly what a role can reach. */
@@ -34,6 +35,7 @@ const CAPABILITIES: Record<AdminRole, Capability[]> = {
         "listings.remove",
         "verifications.review",
         "roles.manage",
+        "settings.manage",
     ],
     admin: [
         "analytics.view",
@@ -42,6 +44,7 @@ const CAPABILITIES: Record<AdminRole, Capability[]> = {
         "listings.view",
         "listings.remove",
         "verifications.review",
+        "settings.manage",
     ],
     moderator: ["analytics.view", "listings.view", "listings.remove", "verifications.review"],
 };
@@ -54,7 +57,7 @@ export const ROLE_LABELS: Record<AdminRole, string> = {
 
 export const ROLE_BLURB: Record<AdminRole, string> = {
     super_admin: "Full access, including granting and removing other admins.",
-    admin: "Manage members and listings, review verifications, see analytics.",
+    admin: "Manage members and listings, review verifications, see analytics, switch features on and off.",
     moderator: "Review verifications and remove listings. No member management.",
 };
 

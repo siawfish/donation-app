@@ -60,15 +60,17 @@ export const SIZE_LABELS: Record<ParcelSize, string> = {
 /**
  * ⚠️ PLACEHOLDER RATES — REPLACE BEFORE THIS IS TRUSTED
  *
- * These are illustrative Ghana figures, not your Flip tariff. Copy the real
- * numbers from your Tariff Page on ecommerce.flip.delivery into this table and
- * delete this warning. Until then `TARIFFS_ARE_PLACEHOLDER` stays true and the
- * UI labels every figure as a rough guide rather than a quote.
+ * These are illustrative Ghana figures, not a real tariff. Copy the real numbers
+ * from your Tariff Page on ecommerce.flip.delivery into this table, then mark
+ * them confirmed in Admin → Features. Until an admin confirms them, every
+ * estimate carries a visible "sample rates" notice.
+ *
+ * Whether rates are trusted is a runtime setting rather than a constant here,
+ * so it can be answered without a deploy and can't drift out of step with
+ * whether the feature is switched on at all.
  *
  * Bands are upper bounds in km, ascending. `price` is in Ghana cedis.
  */
-export const TARIFFS_ARE_PLACEHOLDER = true;
-
 export const CURRENCY = "GHS";
 
 type Band = { maxKm: number; price: Record<ParcelSize, number> };
