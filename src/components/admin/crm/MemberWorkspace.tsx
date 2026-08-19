@@ -75,7 +75,7 @@ export function MemberWorkspace({
         <div className="space-y-4">
             <IdentityCard detail={data} />
 
-            <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-4 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 items-start">
                 <div className="space-y-4 min-w-0">
                     <Notes detail={data} canManage={canManage} busy={busy} run={run} uid={uid} />
                     <Interactions detail={data} canManage={canManage} busy={busy} run={run} uid={uid} />

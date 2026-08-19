@@ -24,7 +24,10 @@ export type Capability =
     | "roles.manage"
     | "settings.manage"
     | "crm.view"
-    | "crm.manage";
+    | "crm.manage"
+    | "blog.manage"
+    | "jobs.manage"
+    | "applications.manage";
 
 /** What each role may do. Deliberately explicit rather than hierarchical, so
  *  reading this table tells you exactly what a role can reach. */
@@ -40,6 +43,9 @@ const CAPABILITIES: Record<AdminRole, Capability[]> = {
         "settings.manage",
         "crm.view",
         "crm.manage",
+        "blog.manage",
+        "jobs.manage",
+        "applications.manage",
     ],
     admin: [
         "analytics.view",
@@ -51,8 +57,11 @@ const CAPABILITIES: Record<AdminRole, Capability[]> = {
         "settings.manage",
         "crm.view",
         "crm.manage",
+        "blog.manage",
+        "jobs.manage",
+        "applications.manage",
     ],
-    moderator: ["analytics.view", "listings.view", "listings.remove", "verifications.review", "crm.view"],
+    moderator: ["analytics.view", "listings.view", "listings.remove", "verifications.review", "crm.view", "applications.manage"],
 };
 
 export const ROLE_LABELS: Record<AdminRole, string> = {
@@ -64,7 +73,7 @@ export const ROLE_LABELS: Record<AdminRole, string> = {
 export const ROLE_BLURB: Record<AdminRole, string> = {
     super_admin: "Full access, including granting and removing other admins.",
     admin: "Manage members and listings, review verifications, see analytics, switch features on and off.",
-    moderator: "Review verifications and remove listings, read the CRM. No member management.",
+    moderator: "Review verifications and listings, read the CRM, triage job applicants. No member management, no publishing.",
 };
 
 export function can(role: AdminRole | null | undefined, capability: Capability): boolean {

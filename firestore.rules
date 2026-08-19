@@ -119,6 +119,27 @@ service cloud.firestore {
     match /crmInteractions/{docId} { allow read, write: if false; }
     match /crmTasks/{docId}       { allow read, write: if false; }
 
+    // Blog. Published posts are public; drafts and everything else are only
+    // reachable through server actions gated on blog.manage.
+    match /blogPosts/{postId} {
+      allow read: if resource.data.status == "published";
+      allow write: if false;
+    }
+
+    // Jobs. Open roles are public so the careers pages can be statically
+    // generated; drafts and closed roles are not.
+    match /jobs/{jobId} {
+      allow read: if resource.data.status == "open";
+      allow write: if false;
+    }
+
+    // Applications contain a stranger CV, phone number and cover letter. No
+    // client access in either direction — submissions go through a server
+    // action, and reviewers read them with the Admin SDK.
+    match /jobApplications/{appId} {
+      allow read, write: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

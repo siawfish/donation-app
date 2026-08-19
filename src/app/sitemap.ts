@@ -1,0 +1,47 @@
+import type { MetadataRoute } from "next";
+import { listPublishedPosts } from "@/app/app/actions/blog";
+import { listOpenJobs } from "@/app/app/actions/jobs";
+import { siteUrl } from "@/lib/seo";
+
+export const revalidate = 3600;
+
+/**
+ * Only public, indexable pages belong here. Anything behind /app is signed-in
+ * and listing it would just spend crawl budget on redirects to the login page.
+ */
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+    const base = siteUrl();
+    const now = new Date();
+
+    const staticPages: MetadataRoute.Sitemap = [
+        { url: base, lastModified: now, changeFrequency: "daily", priority: 1 },
+        { url: `${base}/explore`, lastModified: now, changeFrequency: "hourly", priority: 0.9 },
+        { url: `${base}/blog`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+        { url: `${base}/careers`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
+        { url: `${base}/leaderboard`, lastModified: now, changeFrequency: "daily", priority: 0.5 },
+        { url: `${base}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
+        { url: `${base}/contact`, lastModified: now, changeFrequency: "monthly", priority: 0.4 },
+        { url: `${base}/team`, lastModified: now, changeFrequency: "monthly", priority: 0.3 },
+        { url: `${base}/terms-of-use`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
+    ];
+
+    const [posts, jobs] = await Promise.all([listPublishedPosts(), listOpenJobs()]);
+
+    const postPages: MetadataRoute.Sitemap = posts
+        // A post marked noindex should not be advertised in the sitemap either.
+        .map((p) => ({
+            url: `${base}/blog/${p.slug}`,
+            lastModified: new Date(p.updatedAt),
+            changeFrequency: "monthly" as const,
+            priority: 0.7,
+        }));
+
+    const jobPages: MetadataRoute.Sitemap = jobs.map((j) => ({
+        url: `${base}/careers/${j.slug}`,
+        lastModified: new Date(j.updatedAt),
+        changeFrequency: "weekly" as const,
+        priority: 0.6,
+    }));
+
+    return [...staticPages, ...postPages, ...jobPages];
+}

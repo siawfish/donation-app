@@ -57,6 +57,17 @@ service firebase.storage {
       allow update, delete: if false;   // server-side cleanup only
     }
 
+    // CVs. Anyone may attach one when applying — requiring an account to apply
+    // would cost real candidates — but nobody can read them back over the
+    // client SDK. Reviewers use short-lived signed URLs minted server-side.
+    match /resumes/{jobId}/{allPaths=**} {
+      allow read: if false;
+      allow create: if request.resource.size <= 5 * 1024 * 1024
+                    && request.resource.contentType.matches(
+                         "application/(pdf|msword|vnd.openxmlformats-officedocument.wordprocessingml.document)");
+      allow update, delete: if false;   // server-side cleanup only
+    }
+
     // Anything not matched above is denied.
     match /{allPaths=**} {
       allow read, write: if false;

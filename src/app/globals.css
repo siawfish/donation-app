@@ -321,3 +321,87 @@
     @apply border-border;
   }
 }
+
+/* Rendered markdown — blog posts and job descriptions.
+ *
+ * Scoped to .prose-givny rather than a plugin: the renderer emits a known, small
+ * set of tags, so styling them directly is less machinery than a typography
+ * plugin and keeps the measure and rhythm matched to the rest of the site. */
+@layer components {
+  .prose-givny {
+    color: var(--ink);
+    font-size: 1.0625rem;
+    line-height: 1.75;
+  }
+  .prose-givny > * + * { margin-top: 1.25em; }
+
+  .prose-givny h2,
+  .prose-givny h3,
+  .prose-givny h4 {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    color: var(--ink);
+  }
+  .prose-givny h2 { font-size: 1.75rem; margin-top: 2.25em; }
+  .prose-givny h3 { font-size: 1.35rem; margin-top: 2em; }
+  .prose-givny h4 { font-size: 1.1rem;  margin-top: 1.75em; }
+
+  .prose-givny a {
+    color: var(--forest);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+  .prose-givny a:hover { color: var(--primary); }
+
+  .prose-givny strong { font-weight: 700; }
+
+  .prose-givny ul,
+  .prose-givny ol { padding-left: 1.35em; }
+  .prose-givny ul { list-style: disc; }
+  .prose-givny ol { list-style: decimal; }
+  .prose-givny li { margin-top: 0.4em; }
+  .prose-givny li::marker { color: var(--primary); }
+
+  .prose-givny blockquote {
+    border-left: 3px solid var(--lime);
+    padding-left: 1.15em;
+    font-size: 1.15rem;
+    line-height: 1.6;
+    color: var(--forest);
+    font-weight: 500;
+  }
+  .prose-givny blockquote p { margin: 0; }
+
+  .prose-givny code {
+    background: var(--sand);
+    border-radius: 4px;
+    padding: 0.12em 0.35em;
+    font-size: 0.875em;
+  }
+  .prose-givny pre {
+    background: var(--forest);
+    color: #e8f5ee;
+    border-radius: 14px;
+    padding: 1.15em 1.35em;
+    overflow-x: auto;
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+  .prose-givny pre code { background: none; padding: 0; color: inherit; }
+
+  .prose-givny img {
+    border-radius: 18px;
+    width: 100%;
+  }
+
+  .prose-givny hr {
+    border: 0;
+    border-top: 1px solid rgb(0 0 0 / 0.08);
+    margin: 2.5em 0;
+  }
+
+  /* The editor preview shows the same markup in a much narrower column. */
+  .prose-givny.p-5 { font-size: 1rem; }
+}
