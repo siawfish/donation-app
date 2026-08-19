@@ -28,7 +28,15 @@ self.addEventListener("activate", (event) => {
     );
 });
 
+/**
+ * Only content-hashed production output is safe to cache first. The dev server
+ * reuses chunk filenames, so caching them pins the first build the browser ever
+ * saw and it will keep running stale JavaScript indefinitely.
+ */
+const IS_LOCAL = ["localhost", "127.0.0.1", "[::1]"].includes(self.location.hostname);
+
 function isImmutableAsset(url) {
+    if (IS_LOCAL) return false;
     return (
         url.pathname.startsWith("/_next/static/") ||
         url.pathname.startsWith("/icons/") ||

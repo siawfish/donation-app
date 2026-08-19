@@ -58,8 +58,16 @@ export default function LocationPicker({ lat, lng, locationName, onChange, disab
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
+    // The guard above runs before the dynamic import resolves. React 18 mounts
+    // effects twice in development, so both passes clear it and start their own
+    // import — and the second one initialises the same container again, throwing
+    // "Map container is already initialized". Re-checked after the await below.
+    let cancelled = false;
+
     // Dynamically import leaflet (avoids SSR issues)
     import("leaflet").then((L) => {
+      if (cancelled || !mapRef.current || mapInstanceRef.current) return;
+
       // Fix default icon path issue with webpack
       delete (L.Icon.Default.prototype as any)._getIconUrl;
       L.Icon.Default.mergeOptions({
@@ -96,6 +104,7 @@ export default function LocationPicker({ lat, lng, locationName, onChange, disab
     });
 
     return () => {
+      cancelled = true;
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;

@@ -15,6 +15,7 @@ import SelectInput from "./SelectInput"
 import { Conditions } from "@/lib/utils"
 import Link from "next/link"
 import { useAuth } from "@/firebase/auth/AuthContext"
+import { awaitClientAuth } from "@/firebase/auth/clientAuth"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage"
@@ -107,6 +108,16 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
   }, [defaultValues, user?.uid])
 
   const saveAssets = async (assets: UploadItem[]): Promise<AssetType[]> => {
+    // Storage rules check the *client* SDK's user, which is signed in with a
+    // custom token after mount. Without this the first upload after a page load
+    // can race that and come back as storage/unauthorized.
+    const signedIn = await awaitClientAuth()
+    if (!signedIn) {
+      throw new Error(
+        "Couldn't verify your session for uploads. Refresh the page and try again."
+      )
+    }
+
     const storageRef = ref(storage, `donor/${user?.uid}`)
 
     // Order matters — assets[0] is the cover shown everywhere — and Promise.all

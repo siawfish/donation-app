@@ -26,13 +26,30 @@ export function InstallPrompt() {
         if (typeof window === "undefined") return;
 
         if ("serviceWorker" in navigator) {
-            // Registered after load so it never competes with the first paint.
-            const register = () =>
-                navigator.serviceWorker.register("/sw.js").catch(() => {
-                    /* SW is an enhancement; the app works fine without it */
+            if (process.env.NODE_ENV === "production") {
+                // Registered after load so it never competes with the first paint.
+                const register = () =>
+                    navigator.serviceWorker.register("/sw.js").catch(() => {
+                        /* SW is an enhancement; the app works fine without it */
+                    });
+                if (document.readyState === "complete") register();
+                else window.addEventListener("load", register, { once: true });
+            } else {
+                // Never run the worker in development, and actively undo it for
+                // anyone who already has it. Next reuses chunk filenames in dev
+                // instead of content-hashing them, so the worker's cache-first
+                // rule pins the first build it ever saw and the browser keeps
+                // executing stale JavaScript — surviving new tabs, server
+                // restarts and even deleting .next.
+                navigator.serviceWorker.getRegistrations().then((registrations) => {
+                    registrations.forEach((registration) => registration.unregister());
                 });
-            if (document.readyState === "complete") register();
-            else window.addEventListener("load", register, { once: true });
+                if (typeof caches !== "undefined") {
+                    caches.keys().then((keys) =>
+                        keys.filter((k) => k.startsWith("givny-")).forEach((k) => caches.delete(k))
+                    );
+                }
+            }
         }
 
         // Already installed — nothing to offer.
