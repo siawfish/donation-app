@@ -5,7 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { collection, query, where, onSnapshot, doc, getDoc, updateDoc, addDoc } from "firebase/firestore";
 import { firestore } from "@/firebase/auth/firebase";
-import { useAuth } from "@/firebase/auth/AuthContext";
+import { useAuth } from "@/firebase/auth/AuthContext"
+import { useClientAuthReady } from "@/firebase/auth/useClientAuth";
 import { ActivityAction, ItemType, RequestStatus, RequestType, UserType } from "@/app/types";
 import { FirebaseErrors } from "@/firebase/errors";
 import { toast } from "sonner";
@@ -53,13 +54,14 @@ function Thumb({ item }: { item: ItemType | null }) {
 
 export function AttentionCenter() {
     const { user } = useAuth();
+    const clientReady = useClientAuthReady();
     const [incomingPending, setIncomingPending] = useState<Enriched[]>([]);
     const [readyToArrange, setReadyToArrange] = useState<Enriched[]>([]);
     const [loading, setLoading] = useState(true);
     const [busyId, setBusyId] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!user) return;
+        if (!user || !clientReady) return;
 
         const onError = (e: any) =>
             toast.error("Couldn't load your requests", { description: FirebaseErrors[e.code] || e.message });
@@ -116,7 +118,7 @@ export function AttentionCenter() {
         );
 
         return () => { unsubIncoming(); unsubAcceptedAsDonor(); unsubAcceptedAsRequester(); };
-    }, [user]);
+    }, [user, clientReady]);
 
     const decide = async (row: Enriched, status: RequestStatus) => {
         if (!user || !row.request.id) return;

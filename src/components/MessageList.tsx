@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useQueryState } from 'nuqs'
 import { FirebaseErrors } from "@/firebase/errors"
 import { useAuth } from "@/firebase/auth/AuthContext"
+import { useClientAuthReady } from "@/firebase/auth/useClientAuth"
 import { firestore } from "@/firebase/auth/firebase"
 import { collection, where, query, onSnapshot, doc, getDoc, orderBy, getDocs } from "firebase/firestore"
 import { toast } from "sonner"
@@ -31,13 +32,14 @@ function otherPersonId(request: RequestType, myUid: string): string {
 
 export default function MessageList() {
   const { user } = useAuth()
+    const clientReady = useClientAuthReady();
   const [searchTerm, setSearchTerm] = useQueryState('search')
   const [rid, setRid] = useQueryState("rid")
   const [conversations, setConversations] = useState<ConversationEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (!user) return
+    if (!user || !clientReady) return
     setIsLoading(true)
 
     const statuses = [RequestStatus.COMPLETED, RequestStatus.CANCELLED, RequestStatus.ACCEPTED]
@@ -122,7 +124,7 @@ export default function MessageList() {
     })
 
     return () => { unsub1(); unsub2() }
-  }, [user])
+  }, [user, clientReady])
 
   const filtered = useMemo(() => {
     if (!searchTerm) return conversations

@@ -4,7 +4,8 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ListTodo, Gift, Clock, MessageCircle, ArrowUpRight } from "lucide-react";
 import { FirebaseErrors } from "@/firebase/errors";
-import { useAuth } from "@/firebase/auth/AuthContext";
+import { useAuth } from "@/firebase/auth/AuthContext"
+import { useClientAuthReady } from "@/firebase/auth/useClientAuth";
 import { firestore } from "@/firebase/auth/firebase";
 import { collection, where, query, onSnapshot } from "firebase/firestore";
 import { RequestStatus } from "@/app/types";
@@ -12,6 +13,7 @@ import { toast } from "sonner";
 
 export function MinimalStatCards() {
     const { user } = useAuth();
+    const clientReady = useClientAuthReady();
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
         activeListings: 0,
@@ -21,7 +23,7 @@ export function MinimalStatCards() {
     });
 
     useEffect(() => {
-        if (!user) return;
+        if (!user || !clientReady) return;
 
         const ready = () => setLoading(false);
         const onError = (e: any) => {
@@ -73,7 +75,7 @@ export function MinimalStatCards() {
         ];
 
         return () => unsubs.forEach((u) => u());
-    }, [user]);
+    }, [user, clientReady]);
 
     const cards = [
         {

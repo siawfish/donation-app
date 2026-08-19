@@ -7,6 +7,7 @@ import { useQueryState } from "nuqs";
 import { Notifications } from "./Notifications";
 import { FirebaseErrors } from "@/firebase/errors"
 import { useAuth } from "@/firebase/auth/AuthContext"
+import { useClientAuthReady } from "@/firebase/auth/useClientAuth"
 import { firestore } from "@/firebase/auth/firebase"
 import { collection, where, query, onSnapshot, orderBy } from "firebase/firestore"
 import { toast } from "sonner"
@@ -16,9 +17,10 @@ export default function NotificationsButton() {
     const [activities, setActivities] = useState<ActivityType[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const { user } = useAuth()
+    const clientReady = useClientAuthReady();
 
     useEffect(() => {
-        if (!user) return
+        if (!user || !clientReady) return
         setIsLoading(true)
 
         const q = query(
@@ -46,7 +48,7 @@ export default function NotificationsButton() {
 
         // Cleanup subscription on unmount
         return () => unsubscribe()
-    }, [user])
+    }, [user, clientReady])
 
     const toggleNotifications = () => {
         setNotifications(notifications ? null : "true")

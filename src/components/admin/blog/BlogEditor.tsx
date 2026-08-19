@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
     Loader2, Save, Eye, Code2, ExternalLink, Check, AlertTriangle,
-    CircleAlert, X, Plus, Search,
+    CircleAlert, X, Plus, ImagePlus, Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import { createPost, updatePost, type PostInput } from "@/app/app/actions/blog";
@@ -15,6 +15,7 @@ import {
 } from "@/lib/blog";
 import { renderMarkdown, excerptFrom, readingTimeMinutes } from "@/lib/markdown";
 import { Badge, Button, Input, Panel, Textarea } from "../ui";
+import { IMAGE_TYPES, imageRejectionReason, uploadBlogImage } from "./uploadBlogImage";
 
 const EMPTY: PostInput = {
     title: "",
@@ -86,11 +87,103 @@ export function BlogEditor({ post }: { post?: BlogPost }) {
         setTagDraft("");
     };
 
+    /* ── Image upload ──────────────────────────────────────────────────── */
+
+    const bodyRef = useRef<HTMLTextAreaElement>(null);
+    const bodyFileRef = useRef<HTMLInputElement>(null);
+    const coverFileRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState<null | "cover" | "body">(null);
+    const [uploadPct, setUploadPct] = useState(0);
+    const [dragOver, setDragOver] = useState(false);
+
+    /**
+     * Insert markdown at the caret rather than appending.
+     *
+     * Someone who drops an image halfway down a draft means it to land there,
+     * and an editor that silently moves it to the end is one people stop
+     * trusting.
+     */
+    const insertAtCaret = useCallback((snippet: string) => {
+        const el = bodyRef.current;
+        if (!el) {
+            setForm((f) => ({ ...f, body: `${f.body}\n\n${snippet}\n` }));
+            return;
+        }
+        const start = el.selectionStart ?? el.value.length;
+        const end = el.selectionEnd ?? start;
+        setForm((f) => {
+            const next = `${f.body.slice(0, start)}\n\n${snippet}\n\n${f.body.slice(end)}`;
+            // Put the caret after what we inserted, once React has re-rendered.
+            requestAnimationFrame(() => {
+                const pos = start + snippet.length + 4;
+                el.focus();
+                el.setSelectionRange(pos, pos);
+            });
+            return { ...f, body: next };
+        });
+    }, []);
+
+    const handleUpload = useCallback(
+        async (file: File, target: "cover" | "body") => {
+            const reason = imageRejectionReason(file);
+            if (reason) { toast.error(reason); return; }
+
+            setUploading(target);
+            setUploadPct(0);
+            try {
+                const url = await uploadBlogImage(file, setUploadPct);
+                if (target === "cover") {
+                    setForm((f) => ({
+                        ...f,
+                        coverUrl: url,
+                        // Seed alt text from the filename so the SEO check stops
+                        // complaining, but leave it obviously editable.
+                        coverAlt: f.coverAlt || file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " "),
+                    }));
+                } else {
+                    insertAtCaret(`![](${url})`);
+                }
+                toast.success("Image uploaded");
+            } catch (e: any) {
+                toast.error(e?.message || "Couldn't upload that image.");
+            } finally {
+                setUploading(null);
+                setUploadPct(0);
+            }
+        },
+        [insertAtCaret]
+    );
+
     const previewTitle = (form.seoTitle?.trim() || form.title || "Untitled post").slice(0, 70);
     const previewDesc = (form.seoDescription?.trim() || form.excerpt?.trim() || autoExcerpt || "").slice(0, 180);
 
     return (
         <div className="space-y-4">
+            {/* One input per target, reset after each pick so choosing the same
+                file twice still fires a change event. */}
+            <input
+                ref={coverFileRef}
+                type="file"
+                accept={IMAGE_TYPES.join(",")}
+                className="hidden"
+                onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    e.target.value = "";
+                    if (f) handleUpload(f, "cover");
+                }}
+            />
+            <input
+                ref={bodyFileRef}
+                type="file"
+                accept={IMAGE_TYPES.join(",")}
+                className="hidden"
+                onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    e.target.value = "";
+                    if (f) handleUpload(f, "body");
+                }}
+            />
+
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                     <Link href="/app/admin/blog" className="text-xs font-semibold text-gray-500 hover:text-forest">
@@ -163,19 +256,50 @@ export function BlogEditor({ post }: { post?: BlogPost }) {
                                     </button>
                                 ))}
                             </div>
-                            <span className="text-[11px] text-gray-400 tabular-nums">
-                                {minutes} min read · markdown
-                            </span>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    onClick={() => bodyFileRef.current?.click()}
+                                    disabled={uploading !== null}
+                                    title="Insert an image at the cursor"
+                                >
+                                    {uploading === "body"
+                                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        : <ImagePlus className="w-3.5 h-3.5" />}
+                                    {uploading === "body" ? `${uploadPct}%` : "Image"}
+                                </Button>
+                                <span className="text-[11px] text-gray-400 tabular-nums">
+                                    {minutes} min read · markdown
+                                </span>
+                            </div>
                         </div>
 
                         {tab === "write" ? (
                             <textarea
+                                ref={bodyRef}
                                 value={form.body}
                                 onChange={(e) => set("body", e.target.value)}
-                                placeholder={"Write in markdown.\n\n## A heading\n\nSome **bold** text and a [link](https://example.com).\n\n- a list item\n- another\n\n> a quote"}
+                                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                                onDragLeave={() => setDragOver(false)}
+                                onDrop={(e) => {
+                                    const file = e.dataTransfer.files?.[0];
+                                    if (!file) return;
+                                    e.preventDefault();
+                                    setDragOver(false);
+                                    handleUpload(file, "body");
+                                }}
+                                onPaste={(e) => {
+                                    // Screenshots arrive on the clipboard as files.
+                                    const file = Array.from(e.clipboardData.files)[0];
+                                    if (!file) return;
+                                    e.preventDefault();
+                                    handleUpload(file, "body");
+                                }}
+                                placeholder={"Write in markdown.\n\n## A heading\n\nSome **bold** text and a [link](https://example.com).\n\n- a list item\n- another\n\n> a quote\n\nDrop or paste an image straight in."}
                                 aria-label="Post body"
                                 spellCheck
-                                className="w-full min-h-[460px] p-4 text-[14px] leading-relaxed text-ink font-mono outline-none resize-y bg-white"
+                                className={`w-full min-h-[460px] p-4 text-[14px] leading-relaxed text-ink font-mono outline-none resize-y transition-colors ${
+                                    dragOver ? "bg-lime/20" : "bg-white"
+                                }`}
                             />
                         ) : (
                             <article
@@ -272,27 +396,80 @@ export function BlogEditor({ post }: { post?: BlogPost }) {
                         </label>
                     </Panel>
 
-                    <Panel title="Cover image">
-                        <Input
-                            value={form.coverUrl}
-                            onChange={(e) => set("coverUrl", e.target.value)}
-                            placeholder="https://… image URL"
-                            className="w-full"
-                        />
+                    <Panel title="Cover image" description="Shown on cards and in link previews.">
+                        {form.coverUrl ? (
+                            <div className="relative group">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                    src={form.coverUrl}
+                                    alt={form.coverAlt || ""}
+                                    className="w-full rounded-md border border-gray-200 aspect-[16/9] object-cover bg-gray-50"
+                                />
+                                <div className="absolute inset-0 rounded-md bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                    <Button onClick={() => coverFileRef.current?.click()} disabled={uploading !== null}>
+                                        <Upload className="w-3.5 h-3.5" /> Replace
+                                    </Button>
+                                    <Button variant="danger" onClick={() => set("coverUrl", "")}>
+                                        <X className="w-3.5 h-3.5" /> Remove
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => coverFileRef.current?.click()}
+                                disabled={uploading !== null}
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={(e) => {
+                                    const f = e.dataTransfer.files?.[0];
+                                    if (!f) return;
+                                    e.preventDefault();
+                                    handleUpload(f, "cover");
+                                }}
+                                className="w-full border border-dashed border-gray-300 rounded-md py-7 text-center hover:border-forest hover:bg-gray-50 transition-colors disabled:opacity-50"
+                            >
+                                {uploading === "cover" ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 text-forest mx-auto animate-spin" />
+                                        <span className="block text-[13px] font-semibold text-ink mt-1.5 tabular-nums">
+                                            {uploadPct}%
+                                        </span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload className="w-5 h-5 text-gray-400 mx-auto" />
+                                        <span className="block text-[13px] font-semibold text-ink mt-1.5">
+                                            Upload a cover
+                                        </span>
+                                        <span className="block text-[11px] text-gray-400 mt-0.5">
+                                            Drop it here, or click. Up to 8 MB.
+                                        </span>
+                                    </>
+                                )}
+                            </button>
+                        )}
+
                         <Input
                             value={form.coverAlt}
                             onChange={(e) => set("coverAlt", e.target.value)}
                             placeholder="Alt text — describe the image"
+                            aria-label="Cover alt text"
                             className="w-full mt-2"
                         />
-                        {form.coverUrl && (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                                src={form.coverUrl}
-                                alt={form.coverAlt || ""}
-                                className="mt-2 w-full rounded-md border border-gray-200 aspect-[16/9] object-cover bg-gray-50"
+
+                        {/* Still accept a URL: not every cover is a file you hold. */}
+                        <details className="mt-2">
+                            <summary className="text-[11px] text-gray-400 cursor-pointer hover:text-gray-600">
+                                Use an image URL instead
+                            </summary>
+                            <Input
+                                value={form.coverUrl}
+                                onChange={(e) => set("coverUrl", e.target.value)}
+                                placeholder="https://…"
+                                aria-label="Cover image URL"
+                                className="w-full mt-1.5"
                             />
-                        )}
+                        </details>
                     </Panel>
 
                     <Panel title="Excerpt" description="Shown on cards. Falls back to the opening lines.">

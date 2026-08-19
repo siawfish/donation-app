@@ -44,6 +44,18 @@ service firebase.storage {
       allow write: if isOwner(uid) && isImage() && withinSizeLimit();
     }
 
+    // Blog images — public by definition: they appear on published pages and in
+    // link previews. Writes are scoped to the uploader's own folder.
+    //
+    // These rules cannot see Firestore roles, so this permits any signed-in
+    // member to write under their own uid rather than only blog authors. The
+    // editor is the sole caller and is gated on blog.manage; the residual risk
+    // is a member using the bucket as image hosting, which the size cap bounds.
+    match /blog/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(uid) && isImage() && withinSizeLimit();
+    }
+
     // Chat attachments — signed-in only, never public.
     match /messages/{requestId}/{allPaths=**} {
       allow read: if signedIn();
