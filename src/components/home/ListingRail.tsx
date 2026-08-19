@@ -6,31 +6,8 @@ import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import ImageCard from "@/components/ui/image-card";
 import { ItemType } from "@/app/types";
 
-/** Days after which an item stops counting as "fresh". */
-const FRESH_WINDOW_DAYS = 14;
-
-/**
- * Compact age, or undefined once an item is no longer genuinely new.
- *
- * A badge reading "about 1 year" on a rail called "just listed" actively
- * misleads, so past the freshness window we show nothing rather than aging text.
- * The rail still orders newest-first either way.
- */
-function freshnessLabel(iso?: string): string | undefined {
-    if (!iso) return undefined;
-    const ms = Date.now() - new Date(iso).getTime();
-    if (!Number.isFinite(ms) || ms < 0) return undefined;
-
-    const minutes = ms / 60_000;
-    const hours = minutes / 60;
-    const days = hours / 24;
-
-    if (days > FRESH_WINDOW_DAYS) return undefined;
-    if (minutes < 60) return "just now";
-    if (hours < 24) return `${Math.floor(hours)}h ago`;
-    if (days < 7) return `${Math.floor(days)}d ago`;
-    return `${Math.floor(days / 7)}w ago`;
-}
+/** Items may carry a pre-computed freshness label from the server. */
+export type RailItem = ItemType & { badge?: string };
 
 /**
  * A horizontally scrolling row of listings.
@@ -44,14 +21,12 @@ export function ListingRail({
     title,
     items,
     href = "/explore",
-    showAge = false,
 }: {
     eyebrow: string;
     title: string;
-    items: ItemType[];
+    /** Badges must be computed server-side; see lib/freshness. */
+    items: RailItem[];
     href?: string;
-    /** Render a "2h ago" chip — used by the freshness rail */
-    showAge?: boolean;
 }) {
     const scrollerRef = useRef<HTMLDivElement>(null);
     const [atStart, setAtStart] = useState(true);
@@ -140,7 +115,7 @@ export function ListingRail({
                             distance={item.distance}
                             locationName={item.locationName}
                             photoCount={item.assets?.length}
-                            badge={showAge ? freshnessLabel(item.createdAt) : undefined}
+                            badge={item.badge}
                         />
                     </Link>
                 ))}

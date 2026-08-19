@@ -1,27 +1,55 @@
 'use client'
 
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useDropzone, FileRejection } from 'react-dropzone'
-import { ImagePlus, Star, X, ArrowLeft, ArrowRight, AlertCircle } from 'lucide-react'
-import Image from 'next/image'
+import { ImagePlus, Star, X, ArrowLeft, ArrowRight, AlertCircle, FileImage } from 'lucide-react'
 import { toast } from 'sonner'
+import { AssetType } from '@/app/types'
 
-interface FileWithPreview extends File {
-  preview?: string;
-  url?: string;
-}
+/**
+ * An item is either a File the user just picked, or an AssetType already in
+ * Storage (edit mode). Both are kept in their original form all the way to
+ * upload — an earlier version spread Files into plain objects to satisfy this
+ * component's prop type, which silently destroyed them: File fields live on the
+ * prototype, so `{...file}` yields `{}`.
+ */
+export type UploadItem = File | AssetType;
 
 interface DragAndDropProps {
-  files: FileWithPreview[];
-  onChange: (files: FileWithPreview[]) => void;
+  files: UploadItem[];
+  onChange: (files: UploadItem[]) => void;
   maxFiles?: number;
   error?: string;
   onTouched?: () => void;
   disabled?: boolean;
 }
 
-/** Firebase Storage uploads are metered and phone cameras produce huge files. */
+/** Firebase Storage is metered and phone cameras produce very large files. */
 const MAX_BYTES = 8 * 1024 * 1024;
+
+/**
+ * Formats browsers can actually display. HEIC/HEIF are included because that is
+ * what iPhones produce — iOS usually transcodes to JPEG on pick, but when it
+ * doesn't we still accept the file and fall back to a placeholder tile rather
+ * than rejecting the upload.
+ */
+const ACCEPTED: Record<string, string[]> = {
+  'image/jpeg': ['.jpg', '.jpeg', '.jfif'],
+  'image/png': ['.png'],
+  'image/webp': ['.webp'],
+  'image/gif': ['.gif'],
+  'image/avif': ['.avif'],
+  'image/heic': ['.heic'],
+  'image/heif': ['.heif'],
+};
+
+export function isUploadedAsset(item: UploadItem): item is AssetType {
+  return typeof item === 'object' && item !== null && !(item instanceof File) && 'url' in item;
+}
+
+function keyFor(item: UploadItem, index: number) {
+  return isUploadedAsset(item) ? item.id || `asset-${index}` : `${item.name}-${item.lastModified}-${index}`;
+}
 
 export default function DragAndDrop({
   files = [],
@@ -33,26 +61,49 @@ export default function DragAndDrop({
 }: DragAndDropProps) {
   const remaining = Math.max(0, maxFiles - files.length);
 
+  // Object URLs are cached per File and revoked on unmount, so re-renders don't
+  // leak a new blob URL every time.
+  const urlsRef = useRef(new Map<File, string>());
+  const [unpreviewable, setUnpreviewable] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const urls = urlsRef.current;
+    return () => urls.forEach((url) => URL.revokeObjectURL(url));
+  }, []);
+
+  const srcFor = (item: UploadItem): string => {
+    if (isUploadedAsset(item)) return item.url;
+    const cached = urlsRef.current.get(item);
+    if (cached) return cached;
+    const url = URL.createObjectURL(item);
+    urlsRef.current.set(item, url);
+    return url;
+  };
+
   const onDrop = useCallback(
     (accepted: File[], rejections: FileRejection[]) => {
       if (disabled) return;
 
       if (rejections.length > 0) {
-        const tooBig = rejections.some((r) => r.errors.some((e) => e.code === 'file-too-large'));
-        const tooMany = rejections.some((r) => r.errors.some((e) => e.code === 'too-many-files'));
-        toast.error(
-          tooBig ? 'Some photos are over 8 MB'
-            : tooMany ? `You can add up to ${maxFiles} photos`
-            : 'Some files could not be added',
-          { description: tooBig ? 'Try a smaller photo, or one straight from your camera roll.' : undefined }
-        );
+        const codes = rejections.flatMap((r) => r.errors.map((e) => e.code));
+        if (codes.includes('file-too-large')) {
+          toast.error('Some photos are over 8 MB', {
+            description: 'Try a smaller version, or one straight from your camera roll.',
+          });
+        } else if (codes.includes('file-invalid-type')) {
+          toast.error('That file type isn’t supported', {
+            description: 'Use JPG, PNG, WebP, GIF, AVIF or HEIC.',
+          });
+        } else if (codes.includes('too-many-files')) {
+          toast.error(`You can add up to ${maxFiles} photos`);
+        } else {
+          toast.error('Some files could not be added');
+        }
       }
 
       if (accepted.length === 0) return;
 
-      const next = accepted.slice(0, remaining).map((file) =>
-        Object.assign(file, { preview: URL.createObjectURL(file) })
-      );
+      const next = accepted.slice(0, remaining);
       if (accepted.length > remaining) {
         toast.info(`Added ${remaining} of ${accepted.length} — ${maxFiles} photos max`);
       }
@@ -64,11 +115,11 @@ export default function DragAndDrop({
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
-    accept: { 'image/*': [] },
+    accept: ACCEPTED,
     maxSize: MAX_BYTES,
     maxFiles: remaining,
     disabled: disabled || remaining === 0,
-    noClick: true,   // the dropzone wraps the whole grid; clicking a tile shouldn't reopen the picker
+    noClick: true,   // the dropzone wraps the grid; clicking a tile shouldn't reopen the picker
     noKeyboard: true,
   });
 
@@ -83,7 +134,13 @@ export default function DragAndDrop({
   const remove = (index: number) => {
     if (disabled) return;
     const target = files[index];
-    if (target?.preview) URL.revokeObjectURL(target.preview);
+    if (target instanceof File) {
+      const url = urlsRef.current.get(target);
+      if (url) {
+        URL.revokeObjectURL(url);
+        urlsRef.current.delete(target);
+      }
+    }
     onChange(files.filter((_, i) => i !== index));
     onTouched?.();
   };
@@ -114,15 +171,15 @@ export default function DragAndDrop({
 
       <div
         {...getRootProps()}
-        className={`rounded-3xl transition-colors ${
+        className={`rounded-3xl transition-shadow ${
           isDragActive ? 'ring-2 ring-forest ring-offset-4 ring-offset-canvas' : ''
         }`}
       >
         <input {...getInputProps()} />
 
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
-          {slots.map((file, index) => {
-            if (!file) {
+          {slots.map((item, index) => {
+            if (!item) {
               const isNextSlot = index === files.length;
               return (
                 <button
@@ -147,24 +204,34 @@ export default function DragAndDrop({
               );
             }
 
-            const src = file.preview || file.url || '';
+            const key = keyFor(item, index);
             const isCover = index === 0;
+            const label = isUploadedAsset(item) ? `Photo ${index + 1}` : item.name;
+            const broken = unpreviewable.has(key);
 
             return (
               <div
-                key={`${file.name}-${index}`}
+                key={key}
                 className={`group relative aspect-square rounded-2xl overflow-hidden bg-sand ${
                   isCover ? 'ring-2 ring-forest' : 'border border-gray-200/70'
                 }`}
               >
-                {src && (
-                  <Image
-                    src={src}
-                    alt={`Photo ${index + 1}`}
-                    fill
-                    sizes="(max-width: 640px) 33vw, 20vw"
-                    className="object-cover"
-                    unoptimized
+                {broken ? (
+                  // HEIC and friends can't be rendered by every browser; the file
+                  // still uploads fine, so show a placeholder rather than a gap.
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-2 text-center">
+                    <FileImage className="w-5 h-5 text-gray-400" />
+                    <span className="text-[9px] text-gray-400 leading-tight break-all line-clamp-2">{label}</span>
+                  </div>
+                ) : (
+                  // Plain <img>: blob: and Storage URLs don't benefit from the
+                  // Next image pipeline, and this gives us a reliable onError.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={srcFor(item)}
+                    alt={label}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    onError={() => setUnpreviewable((prev) => new Set(prev).add(key))}
                   />
                 )}
 
@@ -174,7 +241,7 @@ export default function DragAndDrop({
                   </span>
                 )}
 
-                {/* Remove — always reachable, not hover-only, so it works on touch */}
+                {/* Always visible, not hover-gated — hover doesn't exist on touch */}
                 <button
                   type="button"
                   onClick={() => remove(index)}
@@ -184,8 +251,7 @@ export default function DragAndDrop({
                   <X className="w-3 h-3" />
                 </button>
 
-                {/* Reordering: arrows rather than drag — reliable on touch,
-                    and keyboard-accessible for free. */}
+                {/* Arrows rather than drag: reliable on touch, keyboard-accessible */}
                 <div className="absolute bottom-1.5 inset-x-1.5 flex items-center justify-between">
                   <button
                     type="button"
@@ -212,7 +278,7 @@ export default function DragAndDrop({
         </div>
       </div>
 
-      {isDragActive && (
+      {isDragActive && remaining > 0 && (
         <p className="text-xs font-semibold text-forest mt-2">Drop to add {remaining} more…</p>
       )}
 
@@ -223,7 +289,7 @@ export default function DragAndDrop({
       )}
 
       <p className="text-[11px] text-gray-400 mt-2">
-        JPG or PNG, up to 8 MB each. Photos from a few angles get picked up faster.
+        JPG, PNG, WebP, GIF, AVIF or HEIC — up to 8 MB each. Photos from a few angles get picked up faster.
       </p>
     </div>
   )

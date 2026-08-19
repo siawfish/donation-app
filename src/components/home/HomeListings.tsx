@@ -6,6 +6,7 @@ import { CategoryType } from "@/app/types";
 import { HomeFeed } from "@/app/app/actions/items";
 import { ListingRail } from "./ListingRail";
 import { CategoryStrip } from "./CategoryStrip";
+import { freshnessLabel } from "@/lib/freshness";
 
 /**
  * Homepage listings.
@@ -44,12 +45,12 @@ export function HomeListings({
             <div className="max-w-[1400px] mx-auto px-4 md:px-8 space-y-14 md:space-y-20">
 
                 {/* Freshness first — newly listed items are the most perishable,
-                    and seeing recent activity is what signals a living community. */}
+                    and seeing recent activity is what signals a living community.
+                    Labels are resolved here, on the server, so both renders agree. */}
                 <ListingRail
                     eyebrow="Just listed"
                     title="Fresh off the shelf"
-                    items={fresh}
-                    showAge
+                    items={fresh.map((item) => ({ ...item, badge: freshnessLabel(item.createdAt) }))}
                 />
 
                 {/* Only meaningful when we know where the viewer is */}

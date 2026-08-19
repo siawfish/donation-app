@@ -4,7 +4,7 @@ import { SaveIcon, MapPin } from "lucide-react"
 import CustomButton from "./Button"
 import CustomInput from "./CustomInput"
 import CustomTextarea from "./CustomTextarea"
-import DragAndDrop from "./ui/drag-n-drop"
+import DragAndDrop, { UploadItem, isUploadedAsset } from "./ui/drag-n-drop"
 import { Form, Formik } from "formik"
 import * as yup from "yup"
 import { AssetType, CategoryType, ItemType, ResponseData } from "@/app/types"
@@ -54,15 +54,24 @@ const validationSchema = yup.object({
   ).min(1, "Select at least one category"),
   condition: yup.string().required("Condition is required"),
   description: yup.string().required("Description is required"),
-  assets: yup.array().of(
-    yup.mixed().test('is-valid-asset', 'Invalid asset format', function (value) {
-      return (
-        (value instanceof File) ||
-        (typeof value === 'object' && value !== null && 'url' in value && 'type' in value)
-      )
-    })
-  ).min(1, "Upload at least one photo"),
+  // `mixed` rather than `array().of()` on purpose: `.of()` reports errors as an
+  // array (which rendered as the wrong message), and yup's array cast can clone
+  // items — which would quietly turn File objects into plain ones again.
+  assets: yup
+    .mixed<unknown[]>()
+    .test('has-photo', 'Add at least one photo', (value) => Array.isArray(value) && value.length > 0)
+    .test(
+      'usable-photos',
+      'One of your photos didn’t attach properly. Remove it and add it again.',
+      (value) => !Array.isArray(value) || value.every(isUsableAsset)
+    ),
 })
+
+/** A pending upload (File) or something already in Storage (has a url). */
+function isUsableAsset(value: unknown): boolean {
+  if (typeof File !== 'undefined' && value instanceof File) return true
+  return typeof value === 'object' && value !== null && 'url' in value
+}
 
 export default function AddDonation({ addItem, editItem, categories, defaultValues }: AddDonationProps) {
   const [initialValues, setInitialValues] = useState(INITIAL_VALUES)
@@ -73,15 +82,9 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
   // Pre-fill location from the user's profile
   useEffect(() => {
     if (defaultValues) {
-      setInitialValues({
-        ...defaultValues,
-        assets: defaultValues.assets.map((asset, i) => ({
-          ...asset,
-          preview: asset.url,
-          id: `image-${i + 1}`,
-          type: asset.type
-        }))
-      })
+      // Kept verbatim: these already carry the Storage path in `id`, and the
+      // previous mapping replaced it with "image-1", losing the real reference.
+      setInitialValues({ ...defaultValues, assets: defaultValues.assets ?? [] })
       return
     }
 
@@ -103,22 +106,40 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
     }
   }, [defaultValues, user?.uid])
 
-  const saveAssets = async (assets: (File | AssetType)[]) => {
+  const saveAssets = async (assets: UploadItem[]): Promise<AssetType[]> => {
     const storageRef = ref(storage, `donor/${user?.uid}`)
-    const promises = assets.map(async (asset) => {
-      if ('url' in asset && asset.url) return asset
-      const file = asset as File
-      const fileType = file.type.split("/")[0]
-      const fileName = `${fileType}/${Date.now()}_${file.name}`
-      const assetRef = ref(storageRef, fileName)
+
+    // Order matters — assets[0] is the cover shown everywhere — and Promise.all
+    // preserves it regardless of which upload finishes first.
+    const promises = assets.map(async (asset, index) => {
+      // Already in Storage (edit mode): keep it as-is.
+      if (isUploadedAsset(asset)) return asset
+
+      const file = asset
+      if (!(file instanceof File) || file.size === 0) {
+        throw new Error(`Photo ${index + 1} didn’t attach properly. Remove it and add it again.`)
+      }
+
+      // Storage object names choke on spaces and non-ASCII, and two photos
+      // picked in the same millisecond would otherwise collide.
+      const safeName = (file.name || `photo-${index + 1}`)
+        .replace(/[^a-zA-Z0-9._-]/g, '_')
+        .slice(-64)
+      const path = `image/${Date.now()}_${index}_${safeName}`
+
       try {
-        const uploadResult = await uploadBytesResumable(assetRef, file)
+        const uploadResult = await uploadBytesResumable(ref(storageRef, path), file, {
+          contentType: file.type || 'image/jpeg',
+        })
         const url = await getDownloadURL(uploadResult.ref)
-        return { id: uploadResult.ref.fullPath, url, type: file.type }
-      } catch (error) {
-        throw new Error(`Failed to upload ${file.name}`)
+        return { id: uploadResult.ref.fullPath, url, type: file.type || 'image/jpeg' }
+      } catch (error: any) {
+        throw new Error(
+          `Couldn’t upload ${file.name || `photo ${index + 1}`}${error?.code ? ` (${error.code})` : ''}`
+        )
       }
     })
+
     return await Promise.all(promises)
   }
 
@@ -245,18 +266,11 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
               {/* Photos */}
               <div className="bg-white rounded-3xl border border-gray-200/70 p-6">
                 <DragAndDrop
-                  files={values.assets.map(asset => ({
-                    ...asset,
-                    lastModified: Date.now(),
-                    name: asset.id,
-                    webkitRelativePath: '',
-                    size: 0,
-                    type: asset.type,
-                    arrayBuffer: async () => new ArrayBuffer(0),
-                    slice: () => new Blob(),
-                    stream: () => new ReadableStream(),
-                    text: async () => ''
-                  }))}
+                  // Passed through untouched. Mapping these into plain objects
+                  // used to strip File instances bare — File fields live on the
+                  // prototype, so the spread copied nothing and uploads sent
+                  // zero-byte files that failed validation.
+                  files={values.assets as unknown as UploadItem[]}
                   onChange={(files) => setFieldValue("assets", files)}
                   error={touched.assets && errors.assets ? errors.assets as string : undefined}
                   onTouched={() => setFieldTouched("assets", true)}
