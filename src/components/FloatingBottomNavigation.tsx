@@ -14,8 +14,10 @@ export default function FloatingBottomNavigation() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
 
-    // Hide while a chat thread is open — it overlaps the message input on mobile
+    // Hide during focused, single-task flows: these own the bottom of the screen
+    // with their own action bar, and two stacked bars collide.
     if (pathname === "/app/messages" && searchParams.get("rid")) return null;
+    if (pathname === "/app/add-item" || pathname.startsWith("/app/edit-item")) return null;
 
     const links = [
         {

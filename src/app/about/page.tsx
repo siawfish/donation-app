@@ -3,18 +3,18 @@ import Footer from "@/components/Footer";
 
 export default function About() {
     return (
-        <div className="flex flex-col min-h-[100dvh] bg-white">
+        <div className="flex flex-col min-h-[100dvh] bg-canvas">
             <Navbar />
             <main className="flex-1">
                 {/* Hero Section */}
                 <section className="w-full flex justify-center items-center py-16 md:py-24">
                     <div className="container px-4 md:px-6 max-w-4xl">
                         <div className="text-center space-y-6">
-                            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900">
-                                Give What You Don&apos;t Need,<br />Get What You Do
+                            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-ink">
+                                Give Things a<br />Second Life
                             </h1>
-                            <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
-                                Givny connects people who want to give with those who need. 
+                            <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto">
+                                Givny keeps good things in use by moving them between neighbours. 
                                 A simple platform for sharing items and building community.
                             </p>
                         </div>
@@ -22,16 +22,16 @@ export default function About() {
                 </section>
 
                 {/* What is Givny Section */}
-                <section className="w-full py-12 md:py-16 bg-gray-50">
+                <section className="w-full py-12 md:py-16 bg-sand">
                     <div className="container px-4 md:px-6 max-w-4xl mx-auto">
                         <div className="text-center space-y-6">
-                            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+                            <h2 className="text-2xl md:text-3xl font-bold text-ink">
                                 What is Givny?
                             </h2>
-                            <p className="text-base md:text-lg text-gray-600 max-w-3xl mx-auto">
-                                Givny is a digital platform where individuals can list items they no longer need, 
-                                and others can request and receive them for free. We believe in giving items a second life 
-                                by connecting those who no longer need them with those who do.
+                            <p className="text-base md:text-lg text-gray-500 max-w-3xl mx-auto">
+                                Givny is a free community marketplace where people list things they no longer use, 
+                                and neighbours nearby can ask for them. Nothing costs anything, ever. 
+                                Every item passed on is one less thing made, and one less thing thrown away.
                             </p>
                         </div>
                     </div>
@@ -43,7 +43,7 @@ export default function About() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                             {/* What You Can List */}
                             <div className="space-y-6">
-                                <h3 className="text-xl md:text-2xl font-bold text-gray-900">What You Can Share</h3>
+                                <h3 className="text-xl md:text-2xl font-bold text-ink">What You Can Share</h3>
                                 <div className="space-y-3">
                                     {[
                                         "Clothing and footwear",
@@ -62,7 +62,7 @@ export default function About() {
 
                             {/* What You Cannot List */}
                             <div className="space-y-6">
-                                <h3 className="text-xl md:text-2xl font-bold text-gray-900">What We Don&apos;t Allow</h3>
+                                <h3 className="text-xl md:text-2xl font-bold text-ink">What We Don&apos;t Allow</h3>
                                 <div className="space-y-3">
                                     {[
                                         "Hazardous materials",
@@ -83,13 +83,13 @@ export default function About() {
                 </section>
 
                 {/* Who Can Use Section */}
-                <section className="w-full py-12 md:py-16 bg-gray-50">
+                <section className="w-full py-12 md:py-16 bg-sand">
                     <div className="container px-4 md:px-6 max-w-4xl mx-auto">
                         <div className="text-center space-y-6">
-                            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+                            <h2 className="text-2xl md:text-3xl font-bold text-ink">
                                 Who Can Use Givny?
                             </h2>
-                            <p className="text-base md:text-lg text-gray-600 max-w-3xl mx-auto">
+                            <p className="text-base md:text-lg text-gray-500 max-w-3xl mx-auto">
                                 Our platform is open to all individuals and organizations. 
                                 Users must be at least 18 years old or have parental guidance to participate.
                             </p>

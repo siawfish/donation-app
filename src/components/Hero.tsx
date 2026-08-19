@@ -1,50 +1,49 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { CategoryType, ResponseData } from "@/app/types";
-import { Search, ArrowRight, PackagePlus, MapPin, Sparkles } from "lucide-react";
+import { ArrowRight, PackagePlus, MapPin, Sparkles, Search } from "lucide-react";
 import { useAuth } from "@/firebase/auth/AuthContext";
 
+export interface HeroCategory {
+  id: string;
+  name: string;
+  count: number;
+}
+
+/**
+ * Below this, browsing is an unsatisfying experience and the honest ask is for
+ * supply rather than demand — so the hero inverts its priorities.
+ */
+const HEALTHY_INVENTORY = 6;
+
+/**
+ * Adaptive hero.
+ *
+ * Search deliberately does not appear here. It needs the visitor to bring both
+ * intent and vocabulary, and on thin inventory it mostly returns nothing — which
+ * reads as "this place is empty" rather than "no matches". The navbar carries a
+ * permanent search field for people who do arrive with something specific in
+ * mind, so putting a second one here spent the most valuable space on the page
+ * duplicating it.
+ *
+ * Instead the hero leads with whichever side of the marketplace is scarce:
+ * listings while the shelves are bare, browsing once there is something to find.
+ */
 export default function Hero({
-  getTrendingCategoriesAction,
-  getCategoriesAction,
+  totalAvailable = 0,
+  categories = [],
 }: {
-  getTrendingCategoriesAction: () => Promise<ResponseData<CategoryType[] | null>>;
-  getCategoriesAction: () => Promise<ResponseData<CategoryType[] | null>>;
+  totalAvailable?: number;
+  categories?: HeroCategory[];
 }) {
-  const [trendingCategories, setTrendingCategories] = useState<CategoryType[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchValue, setSearchValue] = useState("");
-  const [_, startTransition] = useTransition();
   const { user } = useAuth();
-  const router = useRouter();
   const listHref = user ? "/app/add-item" : "/auth/register";
+  const stocked = totalAvailable >= HEALTHY_INVENTORY;
 
-  useEffect(() => {
-    startTransition(async () => {
-      try {
-        const trending = await getTrendingCategoriesAction();
-        setTrendingCategories(trending.data ?? []);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const q = searchValue.trim();
-    router.push(q ? `/explore?q=${encodeURIComponent(q)}` : "/explore");
-  };
+  const liveCategories = categories.filter((c) => c.count > 0).slice(0, 5);
 
   return (
     <section className="w-full px-3 sm:px-4 pt-3">
-      {/* ── Forest panel ── */}
       <div className="forest-panel relative max-w-[1400px] mx-auto rounded-[2rem] md:rounded-[2.5rem] overflow-hidden">
         <div className="relative z-10 px-5 sm:px-10 md:px-16 pt-12 md:pt-24 pb-10 md:pb-16 flex flex-col items-center">
 
@@ -68,71 +67,88 @@ export default function Hero({
             </span>
           </h1>
 
+          {/* Sub-line doubles as live proof once there's stock to point at */}
           <p
-            className="text-sm sm:text-base md:text-lg text-white/60 max-w-xl text-center leading-relaxed mb-8 md:mb-10 animate-fade-in-up"
+            className="text-sm sm:text-base md:text-lg text-white/60 max-w-xl text-center leading-relaxed mb-9 md:mb-10 animate-fade-in-up"
             style={{ animationDelay: "160ms" }}
           >
-            Neighbours giving good things a second life. Find what you need close to
-            home, or pass on what you no longer use — no money, ever.
+            {stocked ? (
+              <>
+                <span className="text-lime font-bold">{totalAvailable} item{totalAvailable === 1 ? "" : "s"}</span>{" "}
+                are looking for a new home right now. Find something you need close
+                to home, or pass on what you no longer use.
+              </>
+            ) : (
+              <>
+                Neighbours giving good things a second life. The shelves are just
+                filling up — add something you no longer use and get it seen.
+              </>
+            )}
           </p>
 
-          {/* ── Search — the focal point ── */}
-          <form
-            onSubmit={handleSearch}
-            className="w-full max-w-2xl animate-fade-in-up"
+          {/* Primary action follows whichever side is scarce */}
+          <div
+            className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full max-w-md sm:max-w-none sm:w-auto animate-fade-in-up"
             style={{ animationDelay: "240ms" }}
           >
-            <div className="flex items-center bg-white rounded-full p-2 pl-6 shadow-2xl shadow-black/30 focus-within:ring-4 focus-within:ring-lime/40 transition-shadow">
-              <Search className="w-5 h-5 text-gray-400 flex-shrink-0" />
-              <input
-                type="text"
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                placeholder="Search sofas, strollers, books, bikes…"
-                className="flex-1 bg-transparent text-ink text-base placeholder-gray-400 outline-none px-3 py-2.5 min-w-0"
-              />
-              <button
-                type="submit"
-                className="flex items-center gap-2 bg-forest hover:bg-forest-dark text-white font-semibold text-sm pl-5 pr-4 py-3 rounded-full transition-colors flex-shrink-0"
-              >
-                <span className="hidden sm:inline">Search</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </form>
-
-          {/* Category quick-links under search */}
-          <div
-            className="mt-5 flex flex-wrap items-center justify-center gap-2 animate-fade-in-up"
-            style={{ animationDelay: "320ms" }}
-          >
-            {loading
-              ? Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="h-8 w-24 bg-white/10 animate-pulse rounded-full" />
-                ))
-              : trendingCategories.slice(0, 5).map((cat) => (
-                  <Link
-                    key={cat.id}
-                    href={`/explore?category=${encodeURIComponent(cat.name)}`}
-                    className="px-4 py-1.5 rounded-full border border-white/15 text-white/70 hover:text-forest hover:bg-lime hover:border-lime text-xs font-medium transition-all duration-200"
-                  >
-                    {cat.name}
-                  </Link>
-                ))}
+            {stocked ? (
+              <>
+                <Link
+                  href="/explore"
+                  className="group inline-flex items-center justify-center gap-2.5 bg-lime text-forest font-bold text-base px-8 py-4 rounded-full hover:brightness-95 transition-all"
+                >
+                  <Search className="w-5 h-5" />
+                  Browse what&apos;s nearby
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <Link
+                  href={listHref}
+                  className="inline-flex items-center justify-center gap-2.5 border border-white/25 text-white font-bold text-base px-8 py-4 rounded-full hover:bg-white/10 transition-colors"
+                >
+                  <PackagePlus className="w-5 h-5" />
+                  List an item
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href={listHref}
+                  className="group inline-flex items-center justify-center gap-2.5 bg-lime text-forest font-bold text-base px-8 py-4 rounded-full hover:brightness-95 transition-all"
+                >
+                  <PackagePlus className="w-5 h-5" />
+                  {totalAvailable === 0 ? "Be the first to list" : "List an item"}
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <Link
+                  href="/explore"
+                  className="inline-flex items-center justify-center gap-2.5 border border-white/25 text-white font-bold text-base px-8 py-4 rounded-full hover:bg-white/10 transition-colors"
+                >
+                  Have a look around
+                </Link>
+              </>
+            )}
           </div>
 
-          {/* Secondary CTA */}
-          <Link
-            href={listHref}
-            className="mt-8 md:mt-10 group inline-flex items-center gap-2.5 text-white/80 hover:text-lime text-xs sm:text-sm font-medium transition-colors animate-fade-in-up text-center px-4"
-            style={{ animationDelay: "400ms" }}
-          >
-            <span className="flex items-center justify-center w-9 h-9 rounded-full bg-lime text-forest group-hover:scale-110 transition-transform flex-shrink-0">
-              <PackagePlus className="w-4 h-4" />
-            </span>
-            Got something gathering dust? Pass it on in under 2 minutes
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform flex-shrink-0" />
-          </Link>
+          {/* Category chips are browse without typing — and only ever show
+              categories that actually have something in them. */}
+          {liveCategories.length > 0 && (
+            <div
+              className="mt-8 flex flex-wrap items-center justify-center gap-2 animate-fade-in-up"
+              style={{ animationDelay: "320ms" }}
+            >
+              <span className="text-xs text-white/40 mr-1">Jump to</span>
+              {liveCategories.map((cat) => (
+                <Link
+                  key={cat.id}
+                  href={`/explore?cid=${encodeURIComponent(cat.id)}`}
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-white/15 text-white/70 hover:text-forest hover:bg-lime hover:border-lime text-xs font-medium transition-all duration-200"
+                >
+                  {cat.name}
+                  <span className="text-[10px] opacity-60">{cat.count}</span>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ── Marquee ticker ── */}
@@ -144,9 +160,8 @@ export default function Hero({
                   "100% free, always",
                   "Nearest first",
                   "No fees · no ads",
-                  "1,200+ things rehomed",
-                  "800+ neighbours",
                   "Give more · waste less",
+                  "Built by neighbours",
                 ].map((t) => (
                   <span key={`${dup}-${t}`} className="flex items-center text-white/40 text-xs font-medium tracking-widest uppercase whitespace-nowrap px-6">
                     {t}
@@ -158,19 +173,19 @@ export default function Hero({
           </div>
         </div>
 
-        {/* Floating location chip */}
-        <div className="hidden lg:flex absolute top-24 left-12 z-10 items-center gap-2 bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl px-4 py-3 animate-float">
+        {/* Floating chips — only from xl up. At lg the headline is wide enough
+            to run underneath them, and the right-hand chip covered "free". */}
+        <div className="hidden xl:flex absolute top-28 left-10 z-10 items-center gap-2 bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl px-4 py-3 animate-float">
           <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-lime text-forest">
             <MapPin className="w-4 h-4" />
           </span>
           <div>
             <p className="text-white text-xs font-semibold leading-tight">Near you</p>
-            <p className="text-white/50 text-[10px] leading-tight">items sorted by distance</p>
+            <p className="text-white/50 text-[10px] leading-tight">sorted by distance</p>
           </div>
         </div>
 
-        {/* Floating free chip */}
-        <div className="hidden lg:flex absolute top-44 right-14 z-10 items-center gap-2 bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl px-4 py-3 animate-float" style={{ animationDelay: "1.2s" }}>
+        <div className="hidden xl:flex absolute bottom-28 right-10 z-10 items-center gap-2 bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl px-4 py-3 animate-float" style={{ animationDelay: "1.2s" }}>
           <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-white text-forest text-xs font-bold">€0</span>
           <div>
             <p className="text-white text-xs font-semibold leading-tight">Always free</p>

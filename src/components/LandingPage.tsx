@@ -1,31 +1,38 @@
-import { Suspense } from "react"
 import Footer from "./Footer"
 import Navbar from "./ui/navbar"
 import HowItWorks from "./HowItWorks"
 import Hero from "./Hero"
 import { HomeListings } from "./home/HomeListings"
-import { getCategories, getTrendingCategories } from "@/app/app/actions/categories"
+import { getCategories } from "@/app/app/actions/categories"
 import { getHomeFeed } from "@/app/app/actions/items"
 
 export async function LandingPage() {
-  // Both resolved on the server so the first paint already contains listings.
+  // Both resolved on the server so the first paint already contains listings —
+  // and the hero can size its message to what's actually in stock.
   const [{ data: feed }, categories] = await Promise.all([
     getHomeFeed(),
     getCategories(),
   ])
 
+  const categoryList = categories.data ?? []
+
+  // Counts come from the same pool the rails use, so the hero chips can never
+  // point at an empty category.
+  const heroCategories = categoryList
+    .map((c) => ({ id: c.id, name: c.name, count: feed?.categoryCounts?.[c.id] ?? 0 }))
+    .filter((c) => c.count > 0)
+    .sort((a, b) => b.count - a.count)
+
   return (
     <div className="flex flex-col min-h-[100dvh] bg-canvas">
       <Navbar />
       <main className="flex-1 bg-canvas">
-        <Suspense>
-          <Hero
-            getTrendingCategoriesAction={getTrendingCategories}
-            getCategoriesAction={getCategories}
-          />
-        </Suspense>
+        <Hero
+          totalAvailable={feed?.totalAvailable ?? 0}
+          categories={heroCategories}
+        />
 
-        {feed && <HomeListings feed={feed} categories={categories.data ?? []} />}
+        {feed && <HomeListings feed={feed} categories={categoryList} />}
 
         <HowItWorks />
       </main>
