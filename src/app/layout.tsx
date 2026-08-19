@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import "./globals.css";
 import { Suspense } from "react";
@@ -8,6 +8,7 @@ import { getTokens } from "next-firebase-auth-edge";
 import { toUser } from "@/firebase/user";
 import { AuthProvider } from "@/firebase/auth/AuthProvider";
 import { Toaster } from "@/components/ui/sonner"
+import { InstallPrompt } from "@/components/pwa/InstallPrompt"
 import { authConfig } from "@/firebase/config/server-config";
 import Script from 'next/script';
 
@@ -15,6 +16,23 @@ export const metadata: Metadata = {
   title: "Givny — give your things a second life",
   description:
     "Givny is a free community marketplace for passing things on. Find what you need from neighbours nearby, or give something you no longer use a second life. No money, no fees, ever — just less waste and more use out of what already exists.",
+  manifest: "/manifest.webmanifest",
+  applicationName: "Givny",
+  appleWebApp: {
+    capable: true,
+    title: "Givny",
+    // Lets the forest panel run under the iOS status bar
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: { telephone: false },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0C3B2E",
+  width: "device-width",
+  initialScale: 1,
+  // Installed apps shouldn't rubber-band like a web page
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({
@@ -59,9 +77,10 @@ export default async function RootLayout({
               <main>
                 {children}
               </main>
-              <Toaster 
+              <Toaster
                 position="bottom-left"
               />
+              <InstallPrompt />
             </NuqsAdapter>
           </AuthProvider>
         </Suspense>

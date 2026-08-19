@@ -186,34 +186,88 @@ export async function getMyItems({
     }
 }
 
-export async function getPopularItems(): Promise<ResponseData<ItemType[] | null>> {
+export interface HomeFeed {
+    /** Newest listings — drives the "just listed" rail */
+    fresh: ItemType[];
+    /** Most viewed, proximity-sorted when we know where the viewer is */
+    popular: ItemType[];
+    /** Closest listings; empty when the viewer has no saved location */
+    nearby: ItemType[];
+    /** Live listing count per category id, for the category strip */
+    categoryCounts: Record<string, number>;
+    totalAvailable: number;
+}
+
+/**
+ * Everything the homepage needs from one collection read. Previously the page
+ * would have needed a separate query per rail; each slice below is derived from
+ * the same pool in memory.
+ */
+export async function getHomeFeed(): Promise<ResponseData<HomeFeed | null>> {
     'use server';
     try {
-        // Try to get user location for proximity sorting
         let userLocation: { lat: number; lng: number } | null = null;
         try {
             const tokens = await getTokens(await cookies(), authConfig);
             if (tokens) userLocation = await getUserLocation(tokens.decodedToken.uid);
         } catch {}
 
-        // Ordering by `views` alone keeps this on the automatic single-field index.
-        // Adding `where('donatedTo','==',null)` would require a composite index, so
-        // already-donated items are filtered out in memory instead.
+        // Single equality filter keeps this off any composite index.
         const snapshot = await db
             .collection('items')
-            .orderBy('views', 'desc')
-            .limit(userLocation ? 100 : 40)
+            .where('donatedTo', '==', null)
+            .limit(LISTINGS_POOL)
             .get();
 
-        let items: ItemType[] = snapshot.docs
-            .map((doc) => ({ ...doc.data(), id: doc.id } as ItemType))
-            .filter((item) => !item.donatedTo);
+        const pool: ItemType[] = snapshot.docs.map((d) => ({ ...d.data(), id: d.id } as ItemType));
+
+        const categoryCounts: Record<string, number> = {};
+        pool.forEach((item) =>
+            item.categories?.forEach((c) => {
+                if (c?.id) categoryCounts[c.id] = (categoryCounts[c.id] ?? 0) + 1;
+            })
+        );
+
+        const fresh = [...pool]
+            .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""))
+            .slice(0, 12);
+
+        let popular = [...pool].sort((a, b) => (b.views ?? 0) - (a.views ?? 0));
+        let nearby: ItemType[] = [];
 
         if (userLocation) {
-            items = sortByDistance(items, userLocation.lat, userLocation.lng);
+            // Distance-annotate everything so cards can show "1.2 km away"
+            const ranked = sortByDistance(pool, userLocation.lat, userLocation.lng);
+            nearby = ranked.slice(0, 12);
+
+            const distanceById = new Map(ranked.map((i) => [i.id, i.distance]));
+            const annotate = (list: ItemType[]) =>
+                list.map((i) => ({ ...i, distance: distanceById.get(i.id) }));
+            popular = annotate(popular);
+            return {
+                success: true,
+                message: "Home feed fetched successfully",
+                data: {
+                    fresh: annotate(fresh),
+                    popular: popular.slice(0, 8),
+                    nearby,
+                    categoryCounts,
+                    totalAvailable: pool.length,
+                },
+            };
         }
 
-        return { success: true, message: "Items fetched successfully", data: items.slice(0, 8) };
+        return {
+            success: true,
+            message: "Home feed fetched successfully",
+            data: {
+                fresh,
+                popular: popular.slice(0, 8),
+                nearby,
+                categoryCounts,
+                totalAvailable: pool.length,
+            },
+        };
     } catch (error: any) {
         const message = FirebaseErrors[error.code] || error.message;
         return { success: false, message: message, data: null };

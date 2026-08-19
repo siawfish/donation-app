@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image"
-import { MapPin } from "lucide-react"
+import { MapPin, Images } from "lucide-react"
 import { formatDistance } from "@/lib/distance"
 import { firestore } from "@/firebase/auth/firebase"
 import { collection, where, query, getDocs, addDoc, deleteDoc } from "firebase/firestore"
@@ -23,6 +23,10 @@ interface ImageCardProps {
     createdBy?: string;
     distance?: number;
     locationName?: string;
+    /** Small chip beside FREE, e.g. "2 hours" for freshly listed items */
+    badge?: string;
+    /** Shows a photo-count pill when a listing has more than one image */
+    photoCount?: number;
 }
 
 export default function ImageCard({
@@ -36,6 +40,8 @@ export default function ImageCard({
     createdBy,
     distance,
     locationName,
+    badge,
+    photoCount,
 }: ImageCardProps) {
     const { user } = useAuth();
     const [isWishlisted, setIsWishlisted] = useState(false);
@@ -159,10 +165,25 @@ export default function ImageCard({
                     </div>
                 )}
 
-                {/* FREE badge */}
-                <div className="absolute top-3 left-3 bg-lime text-forest text-[10px] font-extrabold px-2.5 py-1 rounded-full tracking-widest">
-                    FREE
+                {/* FREE badge + optional freshness chip */}
+                <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                    <span className="bg-lime text-forest text-[10px] font-extrabold px-2.5 py-1 rounded-full tracking-widest">
+                        FREE
+                    </span>
+                    {badge && (
+                        <span className="bg-black/55 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-full">
+                            {badge}
+                        </span>
+                    )}
                 </div>
+
+                {/* Photo count — signals a well-documented listing */}
+                {(photoCount ?? 0) > 1 && (
+                    <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1 bg-black/55 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-full">
+                        <Images className="w-3 h-3" />
+                        {photoCount}
+                    </div>
+                )}
 
                 {user && itemId && createdBy && (
                     <Button

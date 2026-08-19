@@ -244,7 +244,6 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
 
               {/* Photos */}
               <div className="bg-white rounded-3xl border border-gray-200/70 p-6">
-                <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Photos</h2>
                 <DragAndDrop
                   files={values.assets.map(asset => ({
                     ...asset,
