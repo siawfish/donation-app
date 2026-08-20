@@ -66,7 +66,7 @@ export default async function JobPage({ params }: { params: { slug: string } }) 
     ];
 
     return (
-        <main className="bg-canvas min-h-screen">
+        <>
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(schema) }} />
 
             <div className="max-w-[840px] mx-auto px-4 pt-10 pb-20 md:pt-16">
@@ -137,6 +137,6 @@ export default async function JobPage({ params }: { params: { slug: string } }) 
                     )}
                 </section>
             </div>
-        </main>
+        </>
     );
 }

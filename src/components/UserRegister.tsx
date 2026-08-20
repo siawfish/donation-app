@@ -100,7 +100,7 @@ export default function RegisterPage({
       <div className="hidden md:flex md:w-5/12 p-3 md:sticky md:top-0 md:h-screen">
       <div className="forest-panel w-full rounded-[2rem] flex flex-col justify-between p-10 md:p-14 relative overflow-hidden">
         <div className="relative z-10">
-          <span className="text-white text-2xl font-bold tracking-tight">Givny</span>
+          <Link href="/" className="text-white text-2xl font-bold tracking-tight hover:opacity-80 transition-opacity">Givny</Link>
         </div>
         <div className="relative z-10 space-y-6 py-8">
           <h1 className="text-4xl md:text-5xl font-bold text-white leading-[1.05] tracking-tight">
@@ -131,7 +131,7 @@ export default function RegisterPage({
         <div className="w-full max-w-lg mx-auto">
           {/* Mobile brand */}
           <div className="md:hidden mb-8 text-center">
-            <span className="text-2xl font-bold text-forest tracking-tight">Givny</span>
+            <Link href="/" className="text-2xl font-bold text-forest tracking-tight hover:opacity-80 transition-opacity">Givny</Link>
           </div>
 
           {/* Invite banner */}

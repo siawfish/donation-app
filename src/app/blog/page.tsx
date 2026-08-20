@@ -86,7 +86,7 @@ export default async function BlogIndex({
     const [lead, ...rest] = posts;
 
     return (
-        <main className="bg-canvas min-h-screen">
+        <>
             <section className="max-w-[1100px] mx-auto px-4 pt-12 pb-8 md:pt-20">
                 <p className="text-xs font-bold tracking-[0.2em] uppercase text-primary mb-3">Journal</p>
                 <h1 className="text-4xl md:text-6xl font-bold text-ink tracking-tight leading-[1.05] max-w-3xl">
@@ -146,6 +146,6 @@ export default async function BlogIndex({
                     </div>
                 )}
             </section>
-        </main>
+        </>
     );
 }

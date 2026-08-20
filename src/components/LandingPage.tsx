@@ -29,7 +29,7 @@ export async function LandingPage() {
   return (
     <div className="flex flex-col min-h-[100dvh] bg-canvas">
       <Navbar />
-      <main className="flex-1 bg-canvas">
+      <div className="flex-1 bg-canvas">
         <Hero
           totalAvailable={feed?.totalAvailable ?? 0}
           categories={heroCategories}
@@ -40,7 +40,7 @@ export async function LandingPage() {
         <HowItWorks />
 
         <HomeJournal posts={posts.slice(0, 3)} />
-      </main>
+      </div>
       <Footer />
     </div>
   )

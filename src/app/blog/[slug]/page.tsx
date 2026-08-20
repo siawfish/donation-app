@@ -92,7 +92,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
     };
 
     return (
-        <main className="bg-canvas min-h-screen">
+        <>
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(schema) }} />
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbs) }} />
 
@@ -177,6 +177,6 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
                     </div>
                 </section>
             )}
-        </main>
+        </>
     );
 }

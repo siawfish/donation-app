@@ -60,9 +60,9 @@ export default function ProfileTabs({
                 </div>
 
                 {/* Main content */}
-                <main className="flex-1 p-4">
+                <div className="flex-1 p-4">
                     {children}
-                </main>
+                </div>
             </div>
         )
     }
@@ -93,9 +93,9 @@ export default function ProfileTabs({
             </aside>
 
             {/* Main content */}
-            <main className="flex-1 p-4">
+            <div className="flex-1 p-4">
                 {children}
-            </main>
+            </div>
         </div>
     )
 }

@@ -1,13 +1,10 @@
-import Navbar from "@/components/ui/navbar";
-import Footer from "@/components/Footer";
+import PublicShell from "@/components/PublicShell";
 import DownloadTermsButton from "@/components/DownloadTermsButton";
 
 export default function TermsOfUse() {
   return (
-    <div className="min-h-screen bg-canvas">
-      <Navbar />
-      
-      <main className="max-w-4xl mx-auto px-6 py-16">
+    <PublicShell>
+      <div className="max-w-4xl mx-auto px-6 py-16">
         {/* Header Section */}
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-light text-ink mb-4">
@@ -145,9 +142,7 @@ export default function TermsOfUse() {
             </div>
           </div>
         </div>
-      </main>
-      
-      <Footer />
-    </div>
+      </div>
+    </PublicShell>
   );
 }

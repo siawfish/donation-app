@@ -1,8 +1,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import Navbar from "@/components/ui/navbar";
-import Footer from "@/components/Footer";
+import PublicShell from "@/components/PublicShell";
 import { ItemDetails } from "@/components/ItemDetails";
 import { LeaderboardBoard } from "@/components/loyalty/LeaderboardBoard";
 import { getLeaderboard, getLeaderboardCategories } from "@/app/app/actions/leaderboard";
@@ -55,10 +54,9 @@ export default async function LeaderboardPage({
     };
 
     return (
-        <div className="flex flex-col min-h-[100dvh] bg-canvas">
-            <Navbar />
+        <PublicShell>
 
-            <main className="flex-1">
+            <>
                 {/* Hero */}
                 <section className="w-full px-3 sm:px-4 pt-3">
                     <div className="forest-panel relative max-w-[1400px] mx-auto rounded-[2rem] md:rounded-[2.5rem] overflow-hidden px-5 sm:px-10 md:px-16 py-12 md:py-16">
@@ -195,12 +193,11 @@ export default async function LeaderboardPage({
                         </div>
                     )}
                 </section>
-            </main>
+            </>
 
-            <Footer />
             <Suspense>
                 <ItemDetails />
             </Suspense>
-        </div>
+        </PublicShell>
     );
 }

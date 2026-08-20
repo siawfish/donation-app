@@ -1,6 +1,5 @@
 import Link from "next/link";
-import Navbar from "@/components/ui/navbar";
-import Footer from "@/components/Footer";
+import PublicShell from "@/components/PublicShell";
 import Image from "next/image";
 import { InfiniteSlider } from "@/components/ui/infinite-slider";
 
@@ -75,9 +74,8 @@ const jobListings = [
 
 export default function Team() {
   return (
-    <div className="flex flex-col min-h-[100dvh] bg-white">
-      <Navbar />
-      <main className="flex-1">
+    <PublicShell>
+      <>
         <section className="py-12 md:py-24 container mx-auto px-4 md:px-6">
           <div className="flex flex-col lg:flex-row lg:items-center gap-8 lg:gap-12 mb-12 lg:mb-20">
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold flex-1">
@@ -193,8 +191,7 @@ export default function Team() {
             ))}
           </div>
         </section>
-      </main>
-      <Footer />
-    </div>
+      </>
+      </PublicShell>
   );
 }

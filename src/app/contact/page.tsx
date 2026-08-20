@@ -1,14 +1,12 @@
-import Footer from "@/components/Footer";
-import Navbar from "@/components/ui/navbar";
+import PublicShell from "@/components/PublicShell";
 import { Mail } from "lucide-react";
 import ContactForm from "@/components/ContactForm";
 import { sendContactForm } from "./actions/send";
 
 export default function Contact() {
   return (
-    <div className="flex flex-col bg-white">
-      <Navbar />
-      <main className="container max-w-7xl mx-auto">
+    <PublicShell>
+      <div className="container max-w-7xl mx-auto bg-white">
         <div className="grid md:grid-cols-[35%_65%] lg:h-[calc(100vh-150px)]">
           {/* Contact Information */}
           <div className="flex flex-row md:flex-col flex-wrap gap-8 px-6 pt-12 lg:py-24">
@@ -47,8 +45,7 @@ export default function Contact() {
             <ContactForm onSubmit={sendContactForm} />
           </div>
         </div>
-      </main>
-      <Footer />
-    </div>
+      </div>
+    </PublicShell>
   );
 }

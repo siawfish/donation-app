@@ -1,11 +1,9 @@
-import Navbar from "@/components/ui/navbar";
-import Footer from "@/components/Footer";
+import PublicShell from "@/components/PublicShell";
 
 export default function About() {
     return (
-        <div className="flex flex-col min-h-[100dvh] bg-canvas">
-            <Navbar />
-            <main className="flex-1">
+        <PublicShell>
+            <>
                 {/* Hero Section */}
                 <section className="w-full flex justify-center items-center py-16 md:py-24">
                     <div className="container px-4 md:px-6 max-w-4xl">
@@ -96,8 +94,7 @@ export default function About() {
                         </div>
                     </div>
                 </section>
-            </main>
-            <Footer />
-        </div>
+            </>
+            </PublicShell>
     );
 }

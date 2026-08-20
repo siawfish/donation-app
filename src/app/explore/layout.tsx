@@ -1,4 +1,5 @@
 import Navbar from "@/components/ui/navbar";
+import Footer from "@/components/Footer";
 import { ItemDetails } from "@/components/ItemDetails";
 import { Suspense } from "react";
 
@@ -15,6 +16,7 @@ export default function RootLayout({
           {children}
         </Suspense>
       </div>
+      <Footer />
       {/* Item Details */}
       <ItemDetails />
     </div>
