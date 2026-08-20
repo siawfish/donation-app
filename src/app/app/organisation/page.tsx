@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { Metadata } from "next";
 import { ArrowRight, Clock } from "lucide-react";
 import { getMyOrg } from "@/app/app/actions/organisations";
@@ -63,5 +64,11 @@ export default async function OrganisationPage() {
         );
     }
 
-    return <OrgDashboard initial={res.data} />;
+    // useSearchParams inside the dashboard needs a boundary to opt this
+    // subtree out of static rendering.
+    return (
+        <Suspense fallback={<div className="h-40 rounded-3xl bg-sand animate-pulse" />}>
+            <OrgDashboard initial={res.data} />
+        </Suspense>
+    );
 }

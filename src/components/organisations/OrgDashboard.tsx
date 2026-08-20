@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState, useTransition } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
     Check, Loader2, ExternalLink, Leaf, Package, Users2, Copy, Plus,
@@ -23,7 +24,13 @@ export function OrgDashboard({ initial }: { initial: MyOrg }) {
     const [data, setData] = useState(initial);
     const [, startTransition] = useTransition();
     const [busy, setBusy] = useState<string | null>(null);
-    const [tab, setTab] = useState<"overview" | "storefront" | "team">("overview");
+    // Honour ?tab= so the setup checklist can deep-link straight to the thing
+    // it is asking for, rather than dropping people on the overview.
+    const searchParams = useSearchParams();
+    const requested = searchParams.get("tab");
+    const [tab, setTab] = useState<"overview" | "storefront" | "team">(
+        requested === "storefront" || requested === "team" ? requested : "overview"
+    );
 
     const { org, role, impact, steps, team, items } = data;
     const progress = onboardingProgress(steps);

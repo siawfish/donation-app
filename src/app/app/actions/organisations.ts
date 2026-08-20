@@ -328,7 +328,7 @@ export async function addTeamMember(email: string, role: OrgRole): Promise<Respo
             addedAt: iso(),
         });
 
-        revalidatePath("/app/organisation/team");
+        revalidatePath("/app/organisation");
         return { success: true, message: "Added to the team", data: null };
     } catch (error: any) {
         return { success: false, message: error.message, data: null };
@@ -349,7 +349,7 @@ export async function removeTeamMember(uid: string): Promise<ResponseData<null>>
         }
 
         await target.ref.delete();
-        revalidatePath("/app/organisation/team");
+        revalidatePath("/app/organisation");
         return { success: true, message: "Removed from the team", data: null };
     } catch (error: any) {
         return { success: false, message: error.message, data: null };

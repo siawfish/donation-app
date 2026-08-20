@@ -218,14 +218,14 @@ export function onboardingSteps(
             label: "Add a logo",
             why: "A storefront without a logo reads as abandoned, and people don't ask.",
             done: !!org.logoUrl,
-            href: "/app/organisation/profile",
+            href: "/app/organisation?tab=storefront",
         },
         {
             id: "about",
             label: "Say who you are",
             why: "People decide whether to ask based on this, not on your listings.",
             done: !!org.about && org.about.trim().length > 60,
-            href: "/app/organisation/profile",
+            href: "/app/organisation?tab=storefront",
         },
         {
             id: "listing",
@@ -239,7 +239,7 @@ export function onboardingSteps(
             label: "Invite a colleague",
             why: "Requests arrive at awkward times. One person is a single point of failure.",
             done: counts.team > 1,
-            href: "/app/organisation/team",
+            href: "/app/organisation?tab=team",
         },
     ];
 }
