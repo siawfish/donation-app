@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useState, useTransition } from "react";
-import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState, useTransition } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
     Check, Loader2, ExternalLink, Leaf, Package, Users2, Copy, Plus,
@@ -16,6 +16,8 @@ import {
     OrgRole, impactSentence, onboardingProgress, orgCan,
 } from "@/lib/organisations";
 
+type Tab = "overview" | "storefront" | "team";
+
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://givny.com";
 const FIELD =
     "w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-ink outline-none focus:border-forest focus:ring-2 focus:ring-forest/10 transition-all";
@@ -24,13 +26,37 @@ export function OrgDashboard({ initial }: { initial: MyOrg }) {
     const [data, setData] = useState(initial);
     const [, startTransition] = useTransition();
     const [busy, setBusy] = useState<string | null>(null);
-    // Honour ?tab= so the setup checklist can deep-link straight to the thing
-    // it is asking for, rather than dropping people on the overview.
+    /**
+     * Which tab is open, seeded from the URL and kept in step with it.
+     *
+     * This was `useState(searchParams.get("tab"))` alone, which reads the URL
+     * once on mount. The setup checklist links to ?tab=storefront from the same
+     * page, so the component never remounted: the URL changed and nothing else
+     * did, and "Do it" appeared to do nothing.
+     */
+    const pathname = usePathname();
     const searchParams = useSearchParams();
-    const requested = searchParams.get("tab");
-    const [tab, setTab] = useState<"overview" | "storefront" | "team">(
-        requested === "storefront" || requested === "team" ? requested : "overview"
-    );
+    const fromUrl: Tab = (() => {
+        const t = searchParams.get("tab");
+        return t === "storefront" || t === "team" ? t : "overview";
+    })();
+
+    const [tab, setTabState] = useState<Tab>(fromUrl);
+
+    // Follow the URL when it changes under us — this is what makes the setup
+    // checklist work, since those links change only the query string and the
+    // component never remounts.
+    useEffect(() => { setTabState(fromUrl) }, [fromUrl]);
+
+    const setTab = (next: Tab) => {
+        // Switch immediately, then update the address bar without a router
+        // navigation. router.replace would round-trip to the server on this
+        // dynamic route, which is a second of lag for a tab whose content is
+        // already on the client. history.replaceState keeps the URL shareable
+        // and the back button pointed out of the dashboard.
+        setTabState(next);
+        window.history.replaceState(null, "", next === "overview" ? pathname : `${pathname}?tab=${next}`);
+    };
 
     const { org, role, impact, steps, team, items } = data;
     const progress = onboardingProgress(steps);
