@@ -9,6 +9,7 @@ import { revalidatePath } from "next/cache";
 import { ResponseData } from "@/app/types";
 import { can } from "@/lib/roles";
 import { getMyAdminRole } from "./admin";
+import { recordAudit } from "./audit";
 import {
     DEFAULT_FEATURES,
     FEATURES_DOC,
@@ -82,6 +83,12 @@ export async function updateDeliverySettings(input: {
         // The estimate is rendered on listing pages, so those have to re-read.
         revalidatePath("/explore");
         revalidatePath("/app/admin/settings");
+
+        await recordAudit({
+            action: "settings.update",
+            targetLabel: "Delivery",
+            detail: `enabled=${next.deliveryEnabled}, ratesConfirmed=${next.deliveryRatesConfirmed}`,
+        });
 
         return { success: true, message: "Settings saved", data: next };
     } catch (error: any) {

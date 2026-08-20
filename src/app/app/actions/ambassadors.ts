@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 import { ResponseData } from "@/app/types";
 import { Capability, can } from "@/lib/roles";
 import { getMyAdminRole } from "./admin";
+import { recordAudit } from "./audit";
 import {
     ActivityKind, Ambassador, AmbassadorActivity, AmbassadorKpis, AmbassadorStatus,
     AmbassadorTargets, AmbassadorType, DEFAULT_TARGETS, EMPTY_KPIS,
@@ -227,6 +228,13 @@ export async function addAmbassador(input: {
             createdBy: actor,
         });
 
+        await recordAudit({
+            action: "ambassador.add",
+            targetId: input.uid,
+            targetLabel: (userSnap.data()?.name as string) || input.uid,
+            detail: `${input.type} — ${territory}`,
+        });
+
         revalidatePath("/app/admin/ambassadors");
         return { success: true, message: "Ambassador added", data: null };
     } catch (error: any) {
@@ -283,7 +291,13 @@ export async function removeAmbassador(uid: string): Promise<ResponseData<null>>
         await requireAdmin();
         // Activities survive on purpose: they record work that was done, and
         // ending someone's term should not erase it.
+        const gone = await db.collection(AMB).doc(uid).get();
         await db.collection(AMB).doc(uid).delete();
+        await recordAudit({
+            action: "ambassador.remove",
+            targetId: uid,
+            targetLabel: (gone.data()?.name as string) || uid,
+        });
         revalidatePath("/app/admin/ambassadors");
         return { success: true, message: "Removed from the programme", data: null };
     } catch (error: any) {

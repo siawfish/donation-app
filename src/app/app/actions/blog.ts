@@ -9,6 +9,7 @@ import { revalidatePath } from "next/cache";
 import { ResponseData } from "@/app/types";
 import { can } from "@/lib/roles";
 import { getMyAdminRole } from "./admin";
+import { recordAudit } from "./audit";
 import { BlogListItem, BlogPost, isValidSlug, normaliseTag, slugify } from "@/lib/blog";
 import { excerptFrom, readingTimeMinutes } from "@/lib/markdown";
 
@@ -238,6 +239,7 @@ export async function deletePost(id: string): Promise<ResponseData<null>> {
         const snap = await db.collection(POSTS).doc(id).get();
         const slug = (snap.data() as BlogPost | undefined)?.slug;
         await db.collection(POSTS).doc(id).delete();
+        await recordAudit({ action: "post.delete", targetId: id, targetLabel: slug || id });
         revalidateBlog(slug);
         return { success: true, message: "Post deleted", data: null };
     } catch (error: any) {

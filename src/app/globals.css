@@ -405,3 +405,15 @@
   /* The editor preview shows the same markup in a much narrower column. */
   .prose-givny.p-5 { font-size: 1rem; }
 }
+
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+
+@layer utilities {
+  /* Admin drawer on mobile. */
+  .animate-slide-in-left {
+    animation: slideInLeft 0.2s ease-out forwards;
+  }
+}

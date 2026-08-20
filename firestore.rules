@@ -139,6 +139,13 @@ service cloud.firestore {
     match /ambassadors/{uid}       { allow read, write: if false; }
     match /ambassadorActivities/{id} { allow read, write: if false; }
 
+    // Audit log. Append-only through the server action, and never readable or
+    // writable by a client — a log an admin could edit from the browser would
+    // be worthless as accountability.
+    match /auditLog/{entryId} {
+      allow read, write: if false;
+    }
+
     // Push registrations. A token is a capability to notify a device, so it is
     // written only through the server action after the session is checked.
     match /pushTokens/{token} {

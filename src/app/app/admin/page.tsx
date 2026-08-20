@@ -4,11 +4,16 @@ import { KpiGrid } from "@/components/admin/KpiGrid";
 import { TrendChart } from "@/components/admin/TrendChart";
 import { MilestoneList } from "@/components/admin/MilestoneList";
 import { Num, Panel } from "@/components/admin/ui";
+import { AttentionInbox } from "@/components/admin/AttentionInbox";
+import { getAttention } from "@/app/app/actions/audit";
 
 export const metadata: Metadata = { title: "Admin overview — Givny" };
 
 export default async function AdminOverview() {
-    const { data, success, message } = await getAnalytics();
+    const [{ data, success, message }, attention] = await Promise.all([
+        getAnalytics(),
+        getAttention(),
+    ]);
 
     if (!success || !data) {
         return (
@@ -20,6 +25,8 @@ export default async function AdminOverview() {
 
     return (
         <div className="space-y-4">
+            <AttentionInbox attention={attention} />
+
             <div>
                 <KpiGrid kpis={data.kpis} />
                 <p className="text-[11px] text-gray-400 mt-1.5">

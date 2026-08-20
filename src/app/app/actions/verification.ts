@@ -16,6 +16,7 @@ import {
     normaliseCardNumber,
 } from "@/lib/verification";
 import { getMyAdminRole } from "./admin";
+import { recordAudit } from "./audit";
 import { can } from "@/lib/roles";
 
 const COLLECTION = "verifications";

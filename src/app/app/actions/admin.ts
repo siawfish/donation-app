@@ -8,6 +8,7 @@ import { cookies } from "next/headers";
 import { FirebaseErrors } from "@/firebase/errors";
 import { ItemType, ResponseData, UserType } from "@/app/types";
 import { AdminRole, AdminRoleRecord, Capability, can, isAdminRole } from "@/lib/roles";
+import { recordAudit } from "./audit";
 
 const ROLES = "adminRoles";
 
@@ -85,6 +86,13 @@ export async function grantRole({
             grantedAt: new Date().toISOString(),
         } satisfies AdminRoleRecord);
 
+        await recordAudit({
+            action: "role.grant",
+            targetId: uid,
+            targetLabel: user.name || user.email || uid,
+            detail: role.replace("_", " "),
+        });
+
         return { success: true, message: `${user.name || "Member"} is now ${role.replace("_", " ")}`, data: null };
     } catch (error: any) {
         return { success: false, message: FirebaseErrors[error.code] || error.message, data: null };
@@ -104,7 +112,14 @@ export async function revokeRole(uid: string): Promise<ResponseData<null>> {
             if (uid === tokens.decodedToken.uid) throw new Error("Ask another super admin to remove your own access.");
         }
 
+        const revoked = await db.collection(ROLES).doc(uid).get();
         await db.collection(ROLES).doc(uid).delete();
+        await recordAudit({
+            action: "role.revoke",
+            targetId: uid,
+            targetLabel: (revoked.data()?.name as string) || uid,
+            detail: (revoked.data()?.role as string) || "",
+        });
         return { success: true, message: "Access removed", data: null };
     } catch (error: any) {
         return { success: false, message: FirebaseErrors[error.code] || error.message, data: null };
@@ -190,6 +205,14 @@ export async function setMemberSuspended({
         if (roleSnap.exists) throw new Error("Remove their admin access first.");
 
         await db.collection("users").doc(uid).set({ suspended }, { merge: true });
+
+        const target = await db.collection("users").doc(uid).get();
+        await recordAudit({
+            action: suspended ? "member.suspend" : "member.reinstate",
+            targetId: uid,
+            targetLabel: (target.data()?.name as string) || (target.data()?.email as string) || uid,
+        });
+
         return { success: true, message: suspended ? "Member suspended" : "Member reinstated", data: null };
     } catch (error: any) {
         return { success: false, message: FirebaseErrors[error.code] || error.message, data: null };
@@ -248,6 +271,10 @@ export async function removeListing(itemId: string): Promise<ResponseData<null>>
     try {
         await requireCapability("listings.remove");
 
+        // Read the name first: after the batch there is nothing left to name.
+        const itemSnap = await db.collection("items").doc(itemId).get();
+        const itemName = (itemSnap.data()?.name as string) || itemId;
+
         const dependants = await Promise.all(
             ["requests", "wishlist", "views"].map((c) =>
                 db.collection(c).where("itemId", "==", itemId).get()
@@ -258,6 +285,8 @@ export async function removeListing(itemId: string): Promise<ResponseData<null>>
         dependants.forEach((snap) => snap.docs.forEach((d) => batch.delete(d.ref)));
         batch.delete(db.collection("items").doc(itemId));
         await batch.commit();
+
+        await recordAudit({ action: "listing.remove", targetId: itemId, targetLabel: itemName });
 
         return { success: true, message: "Listing removed", data: null };
     } catch (error: any) {

@@ -10,6 +10,7 @@ import { revalidatePath } from "next/cache";
 import { ResponseData } from "@/app/types";
 import { can } from "@/lib/roles";
 import { getMyAdminRole } from "./admin";
+import { recordAudit } from "./audit";
 import {
     ApplicationStage, EmploymentType, Job, JobApplication, JobListItem, JobStatus, WorkMode,
     isAcceptingApplications, isValidEmail, isValidPhone, slugifyJob,
@@ -413,6 +414,11 @@ export async function deleteApplication(id: string): Promise<ResponseData<null>>
                 .file(path).delete().catch(() => {});
         }
         await db.collection(APPLICATIONS).doc(id).delete();
+        await recordAudit({
+            action: "application.delete",
+            targetId: id,
+            targetLabel: (snap.data() as JobApplication | undefined)?.name || id,
+        });
         revalidatePath("/app/admin/jobs");
         return { success: true, message: "Application deleted", data: null };
     } catch (error: any) {
