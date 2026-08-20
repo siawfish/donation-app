@@ -29,7 +29,9 @@ export type Capability =
     | "jobs.manage"
     | "applications.manage"
     | "ambassadors.view"
-    | "ambassadors.manage";
+    | "ambassadors.manage"
+    | "organisations.view"
+    | "organisations.manage";
 
 /** What each role may do. Deliberately explicit rather than hierarchical, so
  *  reading this table tells you exactly what a role can reach. */
@@ -50,6 +52,8 @@ const CAPABILITIES: Record<AdminRole, Capability[]> = {
         "applications.manage",
         "ambassadors.view",
         "ambassadors.manage",
+        "organisations.view",
+        "organisations.manage",
     ],
     admin: [
         "analytics.view",
@@ -66,8 +70,10 @@ const CAPABILITIES: Record<AdminRole, Capability[]> = {
         "applications.manage",
         "ambassadors.view",
         "ambassadors.manage",
+        "organisations.view",
+        "organisations.manage",
     ],
-    moderator: ["analytics.view", "listings.view", "listings.remove", "verifications.review", "crm.view", "applications.manage", "ambassadors.view"],
+    moderator: ["analytics.view", "listings.view", "listings.remove", "verifications.review", "crm.view", "applications.manage", "ambassadors.view", "organisations.view"],
 };
 
 export const ROLE_LABELS: Record<AdminRole, string> = {

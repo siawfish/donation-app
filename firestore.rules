@@ -139,6 +139,18 @@ service cloud.firestore {
     match /ambassadors/{uid}       { allow read, write: if false; }
     match /ambassadorActivities/{id} { allow read, write: if false; }
 
+    // Organisations. Approved storefronts are public so the directory and
+    // storefront pages can be statically generated; applications, contact
+    // details and internal notes are not. Membership decides who may list on an
+    // organisation's behalf, so it is server-only.
+    match /organisations/{orgId} {
+      allow read: if resource.data.status == "active";
+      allow write: if false;
+    }
+    match /orgMembers/{memberId} {
+      allow read, write: if false;
+    }
+
     // Audit log. Append-only through the server action, and never readable or
     // writable by a client — a log an admin could edit from the browser would
     // be worthless as accountability.

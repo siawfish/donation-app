@@ -5,6 +5,7 @@ import { authConfig } from "@/firebase/config/server-config";
 import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
 import { haversineKm } from "@/lib/distance";
+import { getMyOrgLite } from "./organisations";
 
 /** Fetch the authenticated user's lat/lng from Firestore. Returns null if unavailable. */
 async function getUserLocation(uid: string): Promise<{ lat: number; lng: number } | null> {
@@ -70,8 +71,13 @@ export async function addItem(item: ItemType): Promise<ResponseData<string | nul
             }
         }
 
+        // If they act for an active organisation, the listing belongs to it —
+        // resolved server-side so a client cannot claim someone else's org.
+        const org = await getMyOrgLite();
+
         const docRef = await db.collection('items').add({
             ...item,
+            ...(org ? { orgId: org.orgId } : {}),
             ...locationFields,
             donatedTo: null,
             donatedOn: null,

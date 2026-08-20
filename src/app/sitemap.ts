@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { listPublishedPosts } from "@/app/app/actions/blog";
 import { listOpenJobs } from "@/app/app/actions/jobs";
+import { listActiveOrgs } from "@/app/app/actions/organisations";
 import { siteUrl } from "@/lib/seo";
 
 export const revalidate = 3600;
@@ -18,6 +19,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { url: `${base}/explore`, lastModified: now, changeFrequency: "hourly", priority: 0.9 },
         { url: `${base}/blog`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
         { url: `${base}/careers`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
+        { url: `${base}/for-organisations`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+        { url: `${base}/organisations`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
         { url: `${base}/leaderboard`, lastModified: now, changeFrequency: "daily", priority: 0.5 },
         { url: `${base}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
         { url: `${base}/contact`, lastModified: now, changeFrequency: "monthly", priority: 0.4 },
@@ -25,7 +28,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { url: `${base}/terms-of-use`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
     ];
 
-    const [posts, jobs] = await Promise.all([listPublishedPosts(), listOpenJobs()]);
+    const [posts, jobs, orgs] = await Promise.all([
+        listPublishedPosts(),
+        listOpenJobs(),
+        listActiveOrgs(),
+    ]);
 
     const postPages: MetadataRoute.Sitemap = posts
         // A post marked noindex should not be advertised in the sitemap either.
@@ -43,5 +50,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.6,
     }));
 
-    return [...staticPages, ...postPages, ...jobPages];
+    const orgPages: MetadataRoute.Sitemap = orgs.map((o) => ({
+        url: `${base}/o/${o.slug}`,
+        lastModified: new Date(o.updatedAt),
+        changeFrequency: "weekly" as const,
+        priority: 0.6,
+    }));
+
+    return [...staticPages, ...postPages, ...jobPages, ...orgPages];
 }

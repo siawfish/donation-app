@@ -17,6 +17,8 @@ const links: Record<string, FooterLink[]> = {
   ],
   Company: [
     { label: "Journal", href: "/blog" },
+    { label: "For organisations", href: "/for-organisations" },
+    { label: "Organisations", href: "/organisations" },
     { label: "About", href: "/about" },
     { label: "Team", href: "/team" },
     // Flagged rather than buried: a careers link only works if someone notices it.

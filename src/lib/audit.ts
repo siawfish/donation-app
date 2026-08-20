@@ -27,7 +27,10 @@ export type AuditAction =
     | "settings.update"
     | "ambassador.add"
     | "ambassador.update"
-    | "ambassador.remove";
+    | "ambassador.remove"
+    | "org.status"
+    | "org.verify"
+    | "org.unverify";
 
 export const AUDIT_LABELS: Record<AuditAction, string> = {
     "member.suspend": "Suspended a member",
@@ -47,6 +50,9 @@ export const AUDIT_LABELS: Record<AuditAction, string> = {
     "ambassador.add": "Added an ambassador",
     "ambassador.update": "Changed ambassador terms",
     "ambassador.remove": "Removed an ambassador",
+    "org.status": "Changed an organisation's status",
+    "org.verify": "Verified an organisation",
+    "org.unverify": "Removed organisation verification",
 };
 
 /** How alarming an entry should look when scanning the list. */
@@ -70,6 +76,9 @@ export const AUDIT_SEVERITY: Record<AuditAction, AuditSeverity> = {
     "ambassador.add": "notable",
     "ambassador.update": "info",
     "ambassador.remove": "notable",
+    "org.status": "notable",
+    "org.verify": "notable",
+    "org.unverify": "notable",
 };
 
 export const SEVERITY_TONE: Record<AuditSeverity, "neutral" | "warn" | "bad"> = {

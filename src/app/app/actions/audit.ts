@@ -87,7 +87,7 @@ export async function getAttention(): Promise<AttentionCounts> {
 
         const today = new Date().toISOString().slice(0, 10);
 
-        const [verifications, applications, tasks, ambassadors] = await Promise.all([
+        const [verifications, applications, tasks, ambassadors, orgs] = await Promise.all([
             can(role, "verifications.review")
                 ? db.collection("verifications").where("status", "==", "pending").get().then((s) => s.size)
                 : Promise.resolve(0),
@@ -104,9 +104,12 @@ export async function getAttention(): Promise<AttentionCounts> {
                 ? db.collection("ambassadorActivities").get()
                       .then((s) => s.docs.filter((d) => !d.data().reviewedAt).length)
                 : Promise.resolve(0),
+            can(role, "organisations.view")
+                ? db.collection("organisations").where("status", "in", ["applied", "reviewing"]).get().then((s) => s.size)
+                : Promise.resolve(0),
         ]);
 
-        return { verifications, applications, tasks, ambassadors };
+        return { verifications, applications, tasks, ambassadors, orgs };
     } catch {
         return { ...EMPTY_ATTENTION };
     }

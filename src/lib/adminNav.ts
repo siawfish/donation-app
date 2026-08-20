@@ -14,7 +14,7 @@ export interface AdminNavItem {
     label: string;
     capability: Capability;
     /** Which pending counter, if any, belongs on this item. */
-    badge?: "verifications" | "applications" | "tasks" | "ambassadors";
+    badge?: "verifications" | "applications" | "tasks" | "ambassadors" | "orgs";
     /** Icon name resolved in the sidebar, so this file stays free of JSX. */
     icon: string;
     /** Marks the section landing page, which must match exactly. */
@@ -62,6 +62,13 @@ export const ADMIN_NAV: AdminNavGroup[] = [
             { href: "/app/admin/crm", label: "CRM", capability: "crm.view", icon: "Contact", badge: "tasks" },
             { href: "/app/admin/members", label: "Members", capability: "users.view", icon: "Users" },
             {
+                href: "/app/admin/organisations",
+                label: "Organisations",
+                capability: "organisations.view",
+                icon: "Building2",
+                badge: "orgs",
+            },
+            {
                 href: "/app/admin/ambassadors",
                 label: "Ambassadors",
                 capability: "ambassadors.view",
@@ -101,6 +108,7 @@ export interface AttentionCounts {
     applications: number;
     tasks: number;
     ambassadors: number;
+    orgs: number;
 }
 
 export const EMPTY_ATTENTION: AttentionCounts = {
@@ -108,4 +116,5 @@ export const EMPTY_ATTENTION: AttentionCounts = {
     applications: 0,
     tasks: 0,
     ambassadors: 0,
+    orgs: 0,
 };
