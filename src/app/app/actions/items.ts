@@ -6,6 +6,7 @@ import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
 import { haversineKm } from "@/lib/distance";
 import { getMyOrgLite } from "./organisations";
+import { notifyFollowersOfListing } from "./orgSocial";
 
 /** Fetch the authenticated user's lat/lng from Firestore. Returns null if unavailable. */
 async function getUserLocation(uid: string): Promise<{ lat: number; lng: number } | null> {
@@ -86,6 +87,17 @@ export async function addItem(item: ItemType): Promise<ResponseData<string | nul
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         });
+        // Anyone following the organisation hears about it. Not awaited: the
+        // person listing should not wait on a fan-out, and a failure here must
+        // never lose them the listing they just wrote.
+        if (org) {
+            void notifyFollowersOfListing({
+                orgId: org.orgId,
+                itemId: docRef.id,
+                listedBy: tokens.decodedToken.uid,
+            });
+        }
+
         return {
             success: true,
             message: "Item added successfully",

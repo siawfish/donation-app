@@ -1,5 +1,5 @@
 import { ActivityAction, ActivityType, UserType, ItemType } from "@/app/types"
-import { CheckIcon, XIcon, HandIcon, GiftIcon, HeartIcon, HeartOffIcon, PencilIcon } from "lucide-react"
+import { CheckIcon, XIcon, HandIcon, GiftIcon, HeartIcon, HeartOffIcon, PencilIcon, Building2 as Building2Icon } from "lucide-react"
 import { formatDistanceToNow } from "date-fns";
 import NotificationAction from "./NotificationAction";
 import { FirebaseErrors } from "@/firebase/errors"
@@ -59,6 +59,12 @@ const getNotificationIconAndDescription = (notification: NotificationProps['noti
         return {
             icon: <HeartOffIcon className="w-4 h-4 text-green-500" />,
             description: <p className="text-base text-gray-500"><span className="font-medium text-black">{notification?.creator?.name}</span> removed <Link href={`${pathname}?id=${notification?.activity?.itemId}`} className="font-medium text-black">{notification?.item?.name}</Link> from their wishlist.</p>
+        }
+    }
+    if (notification?.activity?.action === ActivityAction.ORG_LISTED_ITEM) {
+        return {
+            icon: <Building2Icon className="w-4 h-4 text-forest" />,
+            description: <p className="text-base text-gray-500"><span className="font-medium text-black">{notification?.item?.orgName ?? "An organisation you follow"}</span> listed <Link href={`${pathname}?id=${notification?.activity?.itemId}`} className="font-medium text-black">{notification?.item?.name ?? "something new"}</Link>.</p>
         }
     }
     if (notification?.activity?.action === ActivityAction.ACCOUNT_UPDATED) {

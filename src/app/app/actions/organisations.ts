@@ -12,8 +12,14 @@ import { getMyAdminRole } from "./admin";
 import { recordAudit } from "./audit";
 import {
     EMPTY_IMPACT, OnboardingStep, OrgImpact, OrgMember, OrgRole, OrgStatus, OrgType,
-    Organisation, estimateKg, isValidOrgSlug, onboardingSteps, orgCan, slugifyOrg,
+    Organisation, estimateKg, isValidOrgSlug, onboardingProgress, onboardingSteps,
+    orgCan, slugifyOrg,
 } from "@/lib/organisations";
+import {
+    OrgBadge, OrgTier, calculateOrgPoints, getNextOrgTier, getOrgTier, orgBadges,
+    orgTierProgress, pointsToNextOrgTier,
+} from "@/lib/orgLoyalty";
+import { countFollowers } from "./orgSocial";
 
 const ORGS = "organisations";
 const MEMBERS = "orgMembers";
@@ -87,6 +93,61 @@ export interface Storefront {
     org: Organisation;
     impact: OrgImpact;
     items: ItemType[];
+    standing: OrgStanding;
+    followers: number;
+}
+
+export interface OrgStanding {
+    points: number;
+    tier: OrgTier;
+    nextTier: OrgTier | null;
+    progress: number;
+    pointsToNext: number;
+    badges: OrgBadge[];
+}
+
+/**
+ * An organisation's standing, derived at read time from what it has actually
+ * done. Nothing here is stored, so it cannot be edited into existence.
+ */
+async function computeStanding(
+    org: Organisation,
+    impact: OrgImpact,
+    followers: number,
+    teamCount: number
+): Promise<OrgStanding> {
+    // Requests answered, either way — being reachable is most of the job, and
+    // an unanswered listing is worse than no listing.
+    let requestsAnswered = 0;
+    try {
+        const answered = await db.collection("requests")
+            .where("orgId", "==", org.id)
+            .where("status", "in", ["accepted", "rejected", "completed"])
+            .count().get();
+        requestsAnswered = answered.data().count ?? 0;
+    } catch {
+        // The index or the field may not exist yet; a missing count is better
+        // than a storefront that will not render.
+    }
+
+    const steps = onboardingSteps(org, { listings: impact.listed, team: teamCount });
+    const input = {
+        impact,
+        followers,
+        requestsAnswered,
+        storefrontComplete: onboardingProgress(steps) === 100,
+        verified: !!org.verified,
+    };
+
+    const points = calculateOrgPoints(input);
+    return {
+        points,
+        tier: getOrgTier(points),
+        nextTier: getNextOrgTier(points),
+        progress: orgTierProgress(points),
+        pointsToNext: pointsToNextOrgTier(points),
+        badges: orgBadges(input),
+    };
 }
 
 export async function getStorefront(slug: string): Promise<Storefront | null> {
@@ -97,9 +158,11 @@ export async function getStorefront(slug: string): Promise<Storefront | null> {
         const org = { ...(snap.docs[0].data() as Organisation), id: snap.docs[0].id };
         if (org.status !== "active") return null;
 
-        const [itemsSnap, impact] = await Promise.all([
+        const [itemsSnap, impact, followers, teamSnap] = await Promise.all([
             db.collection(ITEMS).where("orgId", "==", org.id).get(),
             computeImpact(org.id!),
+            countFollowers(org.id!),
+            db.collection(MEMBERS).where("orgId", "==", org.id).get(),
         ]);
 
         const items = itemsSnap.docs
@@ -111,7 +174,9 @@ export async function getStorefront(slug: string): Promise<Storefront | null> {
                 (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
             );
 
-        return { org, impact, items };
+        const standing = await computeStanding(org, impact, followers, teamSnap.size);
+
+        return { org, impact, items, standing, followers };
     } catch {
         return null;
     }
@@ -197,6 +262,8 @@ export interface MyOrg {
     steps: OnboardingStep[];
     team: OrgMember[];
     items: ItemType[];
+    standing: OrgStanding;
+    followers: number;
 }
 
 /** The organisation the signed-in person belongs to, with everything it needs. */
@@ -213,10 +280,11 @@ export async function getMyOrg(): Promise<ResponseData<MyOrg | null>> {
 
         const org = { ...(orgSnap.data() as Organisation), id: orgSnap.id };
 
-        const [impact, teamSnap, itemsSnap] = await Promise.all([
+        const [impact, teamSnap, itemsSnap, followers] = await Promise.all([
             computeImpact(org.id!),
             db.collection(MEMBERS).where("orgId", "==", org.id).get(),
             db.collection(ITEMS).where("orgId", "==", org.id).get(),
+            countFollowers(org.id!),
         ]);
 
         const team = teamSnap.docs.map((d) => d.data() as OrgMember);
@@ -234,6 +302,8 @@ export async function getMyOrg(): Promise<ResponseData<MyOrg | null>> {
                 steps: onboardingSteps(org, { listings: items.length, team: team.length }),
                 team,
                 items,
+                standing: await computeStanding(org, impact, followers, team.length),
+                followers,
             },
         };
     } catch (error: any) {

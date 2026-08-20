@@ -16,6 +16,7 @@ import {
 import { renderMarkdown, excerptFrom, readingTimeMinutes } from "@/lib/markdown";
 import { Badge, Button, Input, Panel, Textarea } from "../ui";
 import { IMAGE_TYPES, imageRejectionReason, uploadBlogImage } from "./uploadBlogImage";
+import { PollEditor } from "./PollEditor";
 
 const EMPTY: PostInput = {
     title: "",
@@ -30,6 +31,7 @@ const EMPTY: PostInput = {
     seoDescription: "",
     canonicalUrl: "",
     noindex: false,
+    poll: null,
 };
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://givny.com";
@@ -50,7 +52,7 @@ export function BlogEditor({ post }: { post?: BlogPost }) {
                   coverUrl: post.coverUrl ?? "", coverAlt: post.coverAlt ?? "", tags: post.tags ?? [],
                   status: post.status, seoTitle: post.seoTitle ?? "",
                   seoDescription: post.seoDescription ?? "", canonicalUrl: post.canonicalUrl ?? "",
-                  noindex: post.noindex ?? false,
+                  noindex: post.noindex ?? false, poll: post.poll ?? null,
               }
             : EMPTY
     );
@@ -345,6 +347,10 @@ export function BlogEditor({ post }: { post?: BlogPost }) {
                                 </li>
                             ))}
                         </ul>
+                    </Panel>
+
+                    <Panel title="Poll">
+                        <PollEditor poll={form.poll} onChange={(poll) => set("poll", poll)} />
                     </Panel>
 
                     <Panel title="SEO">

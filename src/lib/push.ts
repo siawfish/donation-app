@@ -58,6 +58,11 @@ const COPY: Partial<Record<ActivityAction, { title: string; body: string; url: s
         body: "A request on your item was cancelled.",
         url: "/app/pending-requests",
     },
+    [ActivityAction.ORG_LISTED_ITEM]: {
+        title: "New from an organisation you follow",
+        body: "They have just listed something. First come, first served.",
+        url: "/explore",
+    },
     [ActivityAction.ACCOUNT_VERIFIED]: {
         title: "You're verified",
         body: "Your Ghana Card check passed. The badge is on your profile.",

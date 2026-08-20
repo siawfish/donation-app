@@ -89,6 +89,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
         label: "Publishing",
         items: [
             { href: "/app/admin/blog", label: "Journal", capability: "blog.manage", icon: "BookOpen" },
+            { href: "/app/admin/blog/comments", label: "Comments", capability: "blog.manage", icon: "MessageSquare" },
         ],
     },
     {

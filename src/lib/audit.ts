@@ -30,7 +30,9 @@ export type AuditAction =
     | "ambassador.remove"
     | "org.status"
     | "org.verify"
-    | "org.unverify";
+    | "org.unverify"
+    | "comment.hide"
+    | "comment.restore";
 
 export const AUDIT_LABELS: Record<AuditAction, string> = {
     "member.suspend": "Suspended a member",
@@ -53,6 +55,8 @@ export const AUDIT_LABELS: Record<AuditAction, string> = {
     "org.status": "Changed an organisation's status",
     "org.verify": "Verified an organisation",
     "org.unverify": "Removed organisation verification",
+    "comment.hide": "Hid a comment",
+    "comment.restore": "Restored a comment",
 };
 
 /** How alarming an entry should look when scanning the list. */
@@ -79,6 +83,10 @@ export const AUDIT_SEVERITY: Record<AuditAction, AuditSeverity> = {
     "org.status": "notable",
     "org.verify": "notable",
     "org.unverify": "notable",
+    // Hiding is a moderator silencing a member, which is worth flagging even
+    // though it is reversible.
+    "comment.hide": "destructive",
+    "comment.restore": "notable",
 };
 
 export const SEVERITY_TONE: Record<AuditSeverity, "neutral" | "warn" | "bad"> = {

@@ -10,6 +10,7 @@ import { ResponseData } from "@/app/types";
 import { can } from "@/lib/roles";
 import { getMyAdminRole } from "./admin";
 import { recordAudit } from "./audit";
+import { POLL_OPTION_MAX, Poll, validatePoll } from "@/lib/blogSocial";
 import { BlogListItem, BlogPost, isValidSlug, normaliseTag, slugify } from "@/lib/blog";
 import { excerptFrom, readingTimeMinutes } from "@/lib/markdown";
 
@@ -146,6 +147,7 @@ export interface PostInput {
     seoDescription?: string;
     canonicalUrl?: string;
     noindex?: boolean;
+    poll?: Poll | null;
 }
 
 function clean(input: PostInput) {
@@ -170,6 +172,35 @@ function clean(input: PostInput) {
         seoDescription: input.seoDescription?.trim() || "",
         canonicalUrl: input.canonicalUrl?.trim() || "",
         noindex: input.noindex === true,
+        poll: cleanPoll(input.poll),
+    };
+}
+
+/**
+ * Normalise a poll, or drop it.
+ *
+ * Option ids are preserved exactly as authored so that editing the wording of
+ * an option does not silently discard the votes already cast for it.
+ */
+function cleanPoll(poll: Poll | null | undefined): Poll | null {
+    if (!poll) return null;
+
+    const question = (poll.question ?? "").trim();
+    const options = (poll.options ?? [])
+        .map((o) => ({ id: o.id, label: (o.label ?? "").trim() }))
+        .filter((o) => o.id && o.label);
+
+    // An empty poll form is not an error — it is someone who decided against
+    // one — so it is dropped rather than rejected.
+    if (!question && !options.length) return null;
+
+    const invalid = validatePoll({ question, options, closesAt: poll.closesAt });
+    if (invalid) throw new Error(invalid);
+
+    return {
+        question,
+        options: options.slice(0, POLL_OPTION_MAX),
+        ...(poll.closesAt ? { closesAt: poll.closesAt } : {}),
     };
 }
 

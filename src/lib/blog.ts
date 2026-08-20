@@ -7,6 +7,8 @@
  * to.
  */
 
+import type { Poll } from "./blogSocial";
+
 export type PostStatus = "draft" | "published";
 
 export interface BlogPost {
@@ -28,6 +30,13 @@ export interface BlogPost {
     canonicalUrl?: string;
     /** Keep this post out of search results without unpublishing it. */
     noindex?: boolean;
+
+    /**
+     * An optional single-question poll rendered after the body. Stored with the
+     * post rather than in its own collection: it is authored with the post,
+     * read with the post, and dies with it.
+     */
+    poll?: Poll | null;
 
     authorId: string;
     authorName?: string;

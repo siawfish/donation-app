@@ -16,13 +16,19 @@ const LIME = "#D9F36E";
 const WHITE = "#FFFFFF";
 
 export interface CrestConfig {
-    variant: "overall" | "achievement";
+    variant: "overall" | "achievement" | "organisation";
     name: string;
     tier: { name: string; emoji: string; blurb: string };
     points: number;
     rank: number | null;
     totalRanked: number;
     stats: { donated: number; badges: number; invited: number };
+    /**
+     * Organisation crests report different things — households reached and
+     * weight diverted rather than invites — so the three stat cells are
+     * overridable rather than hard-coded to the member scheme.
+     */
+    statsRow?: { value: string; label: string }[];
     topBadges: { emoji: string; name: string }[];
     achievement?: { emoji: string; name: string; description: string };
 }
@@ -294,6 +300,46 @@ export function drawCrest(canvas: HTMLCanvasElement, cfg: CrestConfig) {
             { value: cfg.rank ? `#${cfg.rank}` : "—", label: "Rank" },
         ]);
 
+        footer(ctx);
+        return;
+    }
+
+    if (cfg.variant === "organisation") {
+        header(ctx, `${cfg.tier.name} on Givny`);
+        medallion(ctx, cfg.tier.emoji, 400, 130);
+
+        ctx.textAlign = "center";
+        ctx.fillStyle = LIME;
+        ctx.font = font(800, 60);
+        ctx.fillText(cfg.tier.name, CREST_W / 2, 630);
+
+        ctx.fillStyle = "rgba(255,255,255,0.45)";
+        ctx.font = font(400, 28);
+        wrapCentered(ctx, cfg.tier.blurb, CREST_W / 2, 676, CREST_W - 280, 40);
+
+        // The organisation's name is the point of the image, so it gets the
+        // largest treatment on the card and wraps rather than shrinking away.
+        ctx.fillStyle = WHITE;
+        const orgSize = fitFont(ctx, cfg.name, CREST_W - 200, 78, 800, 40);
+        ctx.font = font(800, orgSize);
+        ctx.fillText(cfg.name, CREST_W / 2, 800);
+
+        ctx.fillStyle = WHITE;
+        ctx.font = font(800, 120);
+        ctx.fillText(cfg.points.toLocaleString(), CREST_W / 2, 940);
+        ctx.fillStyle = "rgba(255,255,255,0.40)";
+        ctx.font = font(700, 24);
+        ctx.letterSpacing = "6px";
+        ctx.fillText("POINTS", CREST_W / 2, 980);
+        ctx.letterSpacing = "0px";
+
+        statsRow(ctx, 1090, cfg.statsRow ?? [
+            { value: String(cfg.stats.donated), label: "Passed on" },
+            { value: String(cfg.stats.badges), label: "Badges" },
+            { value: String(cfg.stats.invited), label: "Followers" },
+        ]);
+
+        badgeChips(ctx, cfg.topBadges, 1160, 1);
         footer(ctx);
         return;
     }

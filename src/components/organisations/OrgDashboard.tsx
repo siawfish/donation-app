@@ -8,6 +8,7 @@ import {
     Trash2, ArrowRight, Clock,
 } from "lucide-react";
 import { toast } from "sonner";
+import { OrgCrest } from "./OrgCrest";
 import {
     addTeamMember, getMyOrg, removeTeamMember, updateStorefront, type MyOrg,
 } from "@/app/app/actions/organisations";
@@ -58,7 +59,7 @@ export function OrgDashboard({ initial }: { initial: MyOrg }) {
         window.history.replaceState(null, "", next === "overview" ? pathname : `${pathname}?tab=${next}`);
     };
 
-    const { org, role, impact, steps, team, items } = data;
+    const { org, role, impact, steps, team, items, standing, followers } = data;
     const progress = onboardingProgress(steps);
     const url = `${SITE}/o/${org.slug}`;
 
@@ -112,6 +113,29 @@ export function OrgDashboard({ initial }: { initial: MyOrg }) {
                         </a>
                     )}
                 </div>
+
+                <div className="flex flex-wrap items-center gap-3 mt-5">
+                    <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full ${standing.tier.chip}`}>
+                        <span aria-hidden="true">{standing.tier.emoji}</span> {standing.tier.name}
+                    </span>
+                    <span className="text-sm text-white/70 tabular-nums">
+                        {standing.points.toLocaleString()} points
+                    </span>
+                    <span className="text-sm text-white/70 tabular-nums">
+                        {followers} follower{followers === 1 ? "" : "s"}
+                    </span>
+                </div>
+
+                {standing.nextTier && (
+                    <div className="mt-3 max-w-md">
+                        <div className="h-1.5 rounded-sm bg-white/15 overflow-hidden">
+                            <div className="h-full bg-lime transition-all" style={{ width: `${standing.progress}%` }} />
+                        </div>
+                        <p className="text-xs text-white/50 mt-1.5">
+                            {standing.pointsToNext.toLocaleString()} points to {standing.nextTier.emoji} {standing.nextTier.name}
+                        </p>
+                    </div>
+                )}
 
                 {impact.rehomed > 0 && (
                     <>
@@ -207,7 +231,17 @@ export function OrgDashboard({ initial }: { initial: MyOrg }) {
                 ))}
             </div>
 
-            {tab === "overview" && <Listings items={items} available={impact.available} />}
+            {tab === "overview" && (
+                <div className="space-y-5">
+                    <Listings items={items} available={impact.available} />
+                    <OrgCrest
+                        orgName={org.name}
+                        standing={standing}
+                        impact={impact}
+                        followers={followers}
+                    />
+                </div>
+            )}
             {tab === "storefront" && (
                 <StorefrontEditor org={org} canEdit={orgCan(role, "storefront.edit")} busy={busy} run={run} />
             )}

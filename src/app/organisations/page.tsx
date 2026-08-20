@@ -4,8 +4,9 @@ import { BadgeCheck, ArrowRight } from "lucide-react";
 import { listActiveOrgs } from "@/app/app/actions/organisations";
 import { ORG_TYPE_LABELS } from "@/lib/organisations";
 import { siteUrl } from "@/lib/seo";
+import { FollowedStrip } from "@/components/organisations/FollowedStrip";
 
-export const revalidate = 900;
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
     title: "Organisations on Givny",
@@ -29,6 +30,8 @@ export default async function OrganisationsDirectory() {
                     term. Every one of them checked before their page went live.
                 </p>
             </section>
+
+            <FollowedStrip />
 
             <section className="max-w-[1100px] mx-auto px-4 pb-24">
                 {orgs.length === 0 ? (

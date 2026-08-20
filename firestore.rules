@@ -151,6 +151,22 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Following an organisation. Server-only in both directions: a follow is
+    // one-per-person, which rules cannot enforce across a set of documents, and
+    // the follower list is a list of people — not something to hand to the page
+    // that would most like to have it.
+    match /orgFollowers/{followId} {
+      allow read, write: if false;
+    }
+
+    // Blog interaction. Reactions, comments and poll votes are all
+    // one-per-person and are written through server actions after the session
+    // is checked. Reads go the same way so that a comment hidden by a moderator
+    // is actually hidden rather than merely not rendered.
+    match /blogComments/{commentId}  { allow read, write: if false; }
+    match /blogReactions/{docId}     { allow read, write: if false; }
+    match /blogPollVotes/{voteId}    { allow read, write: if false; }
+
     // Audit log. Append-only through the server action, and never readable or
     // writable by a client — a log an admin could edit from the browser would
     // be worthless as accountability.

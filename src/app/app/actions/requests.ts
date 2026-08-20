@@ -14,8 +14,16 @@ export async function sendRequest(request: RequestType): Promise<ResponseData<st
         if (!tokens) {
             throw new Error('Unauthorized');
         }
+        // Carry the organisation down from the item, so an organisation's
+        // responsiveness can be counted without reading every one of its
+        // listings back. Read server-side: a client could otherwise credit
+        // someone else's organisation.
+        const itemSnap = await db.collection('items').doc(request.itemId).get();
+        const orgId = itemSnap.data()?.orgId ?? null;
+
         const docRef = await db.collection('requests').add({
             ...request,
+            ...(orgId ? { orgId } : {}),
             createdBy: tokens.decodedToken.uid,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()

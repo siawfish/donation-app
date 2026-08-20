@@ -108,6 +108,8 @@ export interface RequestType {
     id?: string;
     itemId: string;
     donorId: string;
+    /** Copied from the item when it belongs to an organisation. */
+    orgId?: string;
     createdBy?: string;
     createdAt?: string;
     updatedAt?: string;
@@ -120,6 +122,8 @@ export interface ActivityType {
     action: ActivityAction;
     itemId?: string;
     requestId?: string;
+    /** Set on follower notifications, so the entry can name the organisation. */
+    orgId?: string;
     read?: boolean;
     createdAt?: string;
     updatedAt?: string;
@@ -138,7 +142,9 @@ export enum ActivityAction {
     ACCOUNT_CREATED = "account_created",
     ACCOUNT_UPDATED = "account_updated",
     ACCOUNT_DELETED = "account_deleted",
-    ACCOUNT_VERIFIED = "account_verified"
+    ACCOUNT_VERIFIED = "account_verified",
+    /** An organisation someone follows has listed something. */
+    ORG_LISTED_ITEM = "org_listed_item"
 }
 
 export enum RequestStatus {

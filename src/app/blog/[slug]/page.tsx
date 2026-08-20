@@ -1,13 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
+import { getTokens } from "next-firebase-auth-edge";
 import { ArrowLeft, Clock } from "lucide-react";
 import { getPublishedPost, relatedPosts } from "@/app/app/actions/blog";
+import { getPollResults, getReactions, listComments } from "@/app/app/actions/blogSocial";
+import { authConfig } from "@/firebase/config/server-config";
+import { countComments } from "@/lib/blogSocial";
+import { ShareButtons } from "@/components/ShareButtons";
+import { ReactionBar } from "@/components/blog/ReactionBar";
+import { PollCard } from "@/components/blog/PollCard";
+import { Comments } from "@/components/blog/Comments";
 import { seoDescriptionFor, seoTitleFor } from "@/lib/blog";
 import { excerptFrom, readingTimeMinutes, renderMarkdown } from "@/lib/markdown";
 import { absoluteUrl, jsonLd, siteUrl } from "@/lib/seo";
 
-export const revalidate = 3600;
+export const revalidate = 120;
 
 /**
  * Metadata is generated from the post itself, with every field overridable in
@@ -60,7 +69,19 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
 
     const html = renderMarkdown(post.body);
     const minutes = readingTimeMinutes(post.body);
-    const related = await relatedPosts(post.slug, post.tags ?? []);
+
+    const [related, reactions, comments, poll, tokens] = await Promise.all([
+        relatedPosts(post.slug, post.tags ?? []),
+        getReactions(post.id!),
+        listComments(post.id!),
+        getPollResults(post.id!),
+        getTokens(await cookies(), authConfig),
+    ]);
+
+    const signedIn = !!tokens;
+    const uid = tokens?.decodedToken.uid ?? null;
+    const shareUrl = absoluteUrl(`/blog/${post.slug}`);
+    const shareTitle = seoTitleFor(post);
 
     // Article schema; this is what earns the rich result in search.
     const schema = {
@@ -79,6 +100,19 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
         },
         mainEntityOfPage: { "@type": "WebPage", "@id": absoluteUrl(`/blog/${post.slug}`) },
         keywords: post.tags?.join(", ") || undefined,
+        commentCount: countComments(comments),
+        interactionStatistic: [
+            {
+                "@type": "InteractionCounter",
+                interactionType: "https://schema.org/CommentAction",
+                userInteractionCount: countComments(comments),
+            },
+            {
+                "@type": "InteractionCounter",
+                interactionType: "https://schema.org/LikeAction",
+                userInteractionCount: reactions.total,
+            },
+        ],
     };
 
     const breadcrumbs = {
@@ -134,7 +168,21 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
                     />
                 )}
 
+                {/* Sharing sits above the fold as well as below it: the people
+                    most likely to pass a post on decide within the first screen. */}
+                <div className="mt-7 pb-1">
+                    <ShareButtons url={shareUrl} title={shareTitle} label="" />
+                </div>
+
                 <div className="prose-givny mt-8" dangerouslySetInnerHTML={{ __html: html }} />
+
+                {poll && <PollCard postId={post.id!} initial={poll} signedIn={signedIn} />}
+
+                <ReactionBar postId={post.id!} initial={reactions} signedIn={signedIn} />
+
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <ShareButtons url={shareUrl} title={shareTitle} />
+                </div>
 
                 <div className="mt-12 forest-panel rounded-3xl p-6 md:p-8">
                     <p className="text-lime text-xs font-bold tracking-[0.2em] uppercase mb-2">Givny</p>
@@ -149,6 +197,13 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
                     </Link>
                 </div>
             </article>
+
+            <Comments
+                postId={post.id!}
+                initial={comments}
+                signedIn={signedIn}
+                currentUid={uid}
+            />
 
             {related.length > 0 && (
                 <section className="max-w-[1100px] mx-auto px-4 pb-24">
