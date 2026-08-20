@@ -78,6 +78,7 @@ export function RecentActivity() {
                                 description={item.description}
                                 distance={item.distance}
                                 locationName={item.locationName}
+                                orgName={item.orgName}
                             />
                         </Link>
                     ))}

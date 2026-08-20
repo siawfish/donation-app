@@ -77,7 +77,7 @@ export async function addItem(item: ItemType): Promise<ResponseData<string | nul
 
         const docRef = await db.collection('items').add({
             ...item,
-            ...(org ? { orgId: org.orgId } : {}),
+            ...(org ? { orgId: org.orgId, orgName: org.name, orgSlug: org.slug } : {}),
             ...locationFields,
             donatedTo: null,
             donatedOn: null,

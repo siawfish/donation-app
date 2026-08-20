@@ -298,6 +298,7 @@ export default function Donations({ initial, categories, loadListings }: Donatio
                   createdBy={item.createdBy || ""}
                   distance={item.distance}
                   locationName={item.locationName}
+                  orgName={item.orgName}
                 />
               </Link>
             ))}

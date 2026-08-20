@@ -242,7 +242,7 @@ export async function getMyOrg(): Promise<ResponseData<MyOrg | null>> {
 }
 
 /** Membership only — cheap enough to call from the listing form. */
-export async function getMyOrgLite(): Promise<{ orgId: string; name: string; role: OrgRole } | null> {
+export async function getMyOrgLite(): Promise<{ orgId: string; name: string; slug: string; role: OrgRole } | null> {
     try {
         const uid = await signedInUid();
         const snap = await db.collection(MEMBERS).where("uid", "==", uid).limit(1).get();
@@ -253,7 +253,7 @@ export async function getMyOrgLite(): Promise<{ orgId: string; name: string; rol
         const data = org.data() as Organisation;
         // Only an active organisation can attach listings to itself.
         if (data.status !== "active") return null;
-        return { orgId: m.orgId, name: data.name, role: m.role };
+        return { orgId: m.orgId, name: data.name, slug: data.slug, role: m.role };
     } catch {
         return null;
     }

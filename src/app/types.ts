@@ -62,6 +62,16 @@ export interface ItemType {
     locationName?: string;
     /** Set when listed on behalf of an organisation; drives its storefront. */
     orgId?: string;
+    /**
+     * The organisation's name and slug, copied at listing time.
+     *
+     * Denormalised deliberately: every card in a grid would otherwise need its
+     * own read of the organisation just to name the lister. There is no rename
+     * path today (the name is fixed at application); if one is ever added it
+     * must fan out to the organisation's existing items.
+     */
+    orgName?: string;
+    orgSlug?: string;
     /** Size band used to estimate delivery cost. Matches Flip's `weight` field. */
     parcelSize?: ParcelSize;
     // Computed at query time, never stored in Firestore

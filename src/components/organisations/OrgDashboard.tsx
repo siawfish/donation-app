@@ -12,8 +12,8 @@ import {
     addTeamMember, getMyOrg, removeTeamMember, updateStorefront, type MyOrg,
 } from "@/app/app/actions/organisations";
 import {
-    ORG_ROLE_BLURB, ORG_ROLE_LABELS, ORG_STATUS_LABELS, ORG_TYPE_LABELS,
-    OrgRole, impactSentence, onboardingProgress, orgCan,
+    ABOUT_MIN_CHARS, ORG_ROLE_BLURB, ORG_ROLE_LABELS, ORG_STATUS_LABELS,
+    ORG_TYPE_LABELS, OrgRole, impactSentence, onboardingProgress, orgCan,
 } from "@/lib/organisations";
 
 type Tab = "overview" | "storefront" | "team";
@@ -71,11 +71,19 @@ export function OrgDashboard({ initial }: { initial: MyOrg }) {
         setBusy(key);
         startTransition(async () => {
             const res = await fn();
-            setBusy(null);
-            if (!res.success) { toast.error(res.message); return; }
-            toast.success(res.message);
+            if (!res.success) { setBusy(null); toast.error(res.message); return; }
             after?.();
-            refresh();
+
+            // Reload before releasing the button, not after.
+            //
+            // refresh() used to be fired and forgotten, so the save finished,
+            // the button went idle and the toast appeared while the setup
+            // checklist above still showed the previous state — it caught up a
+            // second later, or on the *next* save. Saving something that
+            // visibly changes nothing reads as a save that failed.
+            await refresh();
+            setBusy(null);
+            toast.success(res.message);
         });
     };
 
@@ -166,6 +174,11 @@ export function OrgDashboard({ initial }: { initial: MyOrg }) {
                                     </span>
                                     {!s.done && (
                                         <span className="block text-xs text-gray-500 mt-0.5 leading-relaxed">{s.why}</span>
+                                    )}
+                                    {!s.done && s.hint && (
+                                        <span className="inline-block text-xs text-amber-700 bg-amber-50 border border-amber-200/70 rounded-lg px-2 py-1 mt-1.5 leading-relaxed">
+                                            {s.hint}
+                                        </span>
                                     )}
                                 </span>
                                 {!s.done && s.href && (
@@ -260,6 +273,11 @@ function StorefrontEditor({
     });
     const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
+    // The setup checklist holds out for a real paragraph, so say so next to the
+    // field rather than letting a short save look like a failed one.
+    const aboutLength = form.about.trim().length;
+    const aboutOk = aboutLength >= ABOUT_MIN_CHARS;
+
     if (!canEdit) {
         return (
             <section className="bg-white border border-gray-200/70 rounded-3xl p-6">
@@ -282,7 +300,14 @@ function StorefrontEditor({
             </label>
 
             <label className="block">
-                <span className="text-sm font-semibold text-ink">About</span>
+                <span className="flex items-baseline justify-between gap-3">
+                    <span className="text-sm font-semibold text-ink">About</span>
+                    <span className={`text-xs tabular-nums ${aboutOk ? "text-primary" : "text-gray-400"}`}>
+                        {aboutOk
+                            ? `${aboutLength} characters`
+                            : `${aboutLength} / ${ABOUT_MIN_CHARS} to finish setup`}
+                    </span>
+                </span>
                 <textarea rows={6} value={form.about} onChange={(e) => set("about", e.target.value)}
                     className={`${FIELD} mt-1.5 resize-y font-mono text-[13px]`}
                     placeholder={"Markdown works here.\n\nWho you are, what you tend to list, and how quickly you reply."} />

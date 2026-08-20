@@ -96,6 +96,7 @@ export function HomeListings({
                                         createdBy={item.createdBy}
                                         distance={item.distance}
                                         locationName={item.locationName}
+                                        orgName={item.orgName}
                                         photoCount={item.assets?.length}
                                     />
                                 </Link>

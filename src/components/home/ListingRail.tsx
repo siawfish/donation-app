@@ -114,6 +114,7 @@ export function ListingRail({
                             createdBy={item.createdBy}
                             distance={item.distance}
                             locationName={item.locationName}
+                            orgName={item.orgName}
                             photoCount={item.assets?.length}
                             badge={item.badge}
                         />

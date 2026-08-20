@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image"
-import { MapPin, Images } from "lucide-react"
+import { MapPin, Images, Building2 } from "lucide-react"
 import { formatDistance } from "@/lib/distance"
 import { firestore } from "@/firebase/auth/firebase"
 import { collection, where, query, getDocs, addDoc, deleteDoc } from "firebase/firestore"
@@ -27,6 +27,11 @@ interface ImageCardProps {
     badge?: string;
     /** Shows a photo-count pill when a listing has more than one image */
     photoCount?: number;
+    /**
+     * Set when the listing belongs to an organisation, which is then credited
+     * as the lister. Stamped on the item, so naming it costs no extra read.
+     */
+    orgName?: string;
 }
 
 export default function ImageCard({
@@ -42,6 +47,7 @@ export default function ImageCard({
     locationName,
     badge,
     photoCount,
+    orgName,
 }: ImageCardProps) {
     const { user } = useAuth();
     const [isWishlisted, setIsWishlisted] = useState(false);
@@ -206,6 +212,13 @@ export default function ImageCard({
                 <p className={`text-xs text-gray-400 mt-0.5 line-clamp-1 leading-relaxed ${descriptionClassName}`}>
                     {description}
                 </p>
+                {/* Who listed it, when that is an organisation rather than a neighbour */}
+                {orgName && (
+                    <div className="mt-2 flex items-center gap-1 text-xs">
+                        <Building2 className="w-3 h-3 flex-shrink-0 text-forest" />
+                        <span className="truncate font-semibold text-forest">{orgName}</span>
+                    </div>
+                )}
                 {/* Distance / location row */}
                 {(distance != null || locationName) && (
                     <div className="mt-2 flex items-center gap-1 text-xs">

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState, useTransition } from "react"
 import { SheetContent, SheetTitle } from "./ui/sheet"
 import {
     CalendarIcon, EyeIcon, HandIcon, LockIcon, MapPin, MessageCircleIcon,
-    PencilIcon, ChevronLeft, ChevronRight, ShieldCheck, Sparkles,
+    PencilIcon, ChevronLeft, ChevronRight, ShieldCheck, Sparkles, Building2,
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import CustomButton from "./Button"
@@ -35,6 +35,14 @@ export default function ItemContent() {
     const { user } = useAuth()
     const [item, setItem] = useState<ItemType | null>(null)
     const [donor, setDonor] = useState<UserType | null>(null)
+    /**
+     * The organisation this was listed for, when there is one.
+     *
+     * An organisation's listing is the organisation's, not the staff member's
+     * who typed it in — so the page credits the organisation. The individual
+     * still owns the conversation, because somebody has to answer.
+     */
+    const [org, setOrg] = useState<{ name: string; slug: string; logoUrl?: string; verified?: boolean } | null>(null)
     const [loading, setLoading] = useState(false)
     const searchParams = useSearchParams()
     const id = searchParams.get('id')
@@ -44,7 +52,9 @@ export default function ItemContent() {
     const [_, startTransition] = useTransition()
 
     // Copy addresses the other person by name rather than as "the donor".
-    const firstName = donor?.name?.split(" ")[0] || "the owner"
+    // An organisation's listing is answered in the organisation's name, so the
+    // copy addresses it rather than whichever member of staff typed it in.
+    const firstName = org?.name || donor?.name?.split(" ")[0] || "the owner"
     const isMine = !!user?.uid && user.uid === item?.createdBy
     const photos = item?.assets ?? []
 
@@ -91,6 +101,28 @@ export default function ItemContent() {
             )
             setDonor({ ...donorDoc.data(), id: donorDoc.id } as UserType)
             setItem({ ...docSnap.data(), id: docSnap.id } as ItemType)
+
+            // Read the organisation for its logo and verified mark. Rules only
+            // expose active organisations, so a paused one quietly falls back
+            // to the name stamped on the item.
+            const orgId = docSnap.data()?.orgId
+            if (orgId) {
+                const stamped = {
+                    name: docSnap.data()?.orgName ?? "",
+                    slug: docSnap.data()?.orgSlug ?? "",
+                }
+                try {
+                    const orgDoc = await getDoc(doc(firestore, "organisations", orgId))
+                    const d = orgDoc.data()
+                    setOrg(d
+                        ? { name: d.name, slug: d.slug, logoUrl: d.logoUrl, verified: d.verified }
+                        : (stamped.name ? stamped : null))
+                } catch {
+                    setOrg(stamped.name ? stamped : null)
+                }
+            } else {
+                setOrg(null)
+            }
         } catch (error: any) {
             toast.error('Error fetching item', {
                 description: FirebaseErrors[error.code] || error.message,
@@ -297,24 +329,51 @@ export default function ItemContent() {
                             {/* Owner */}
                             <div>
                                 <p className="text-xs font-bold tracking-[0.15em] uppercase text-gray-400 mb-2">Passing it on</p>
-                                <div className="flex items-center gap-3 bg-white border border-gray-200/70 rounded-2xl px-4 py-3.5">
-                                    <Avatar className="h-11 w-11">
-                                        <AvatarFallback className="bg-forest text-lime text-sm font-bold">
-                                            {getInitials(donor?.name || '')}
-                                        </AvatarFallback>
-                                        <AvatarImage src={donor?.profileUrl} alt={donor?.name} />
-                                    </Avatar>
-                                    <div className="min-w-0">
-                                        <p className="text-base font-bold text-ink truncate flex items-center gap-1.5">
-                                            {donor?.name}
-                                            {donor?.verified && <VerifiedBadge />}
-                                        </p>
-                                        <p className="text-xs text-gray-400 truncate">
-                                            {donor?.verified ? "Identity verified · " : ""}
-                                            {donor?.preferedLocation || "Community member"}
-                                        </p>
+                                {org ? (
+                                    /* Listed for an organisation — it is the lister, and its
+                                       page is the thing worth clicking through to. */
+                                    <Link
+                                        href={`/o/${org.slug}`}
+                                        className="flex items-center gap-3 bg-white border border-gray-200/70 rounded-2xl px-4 py-3.5 hover:border-forest/40 transition-colors"
+                                    >
+                                        <span className="h-11 w-11 rounded-xl bg-sand overflow-hidden flex items-center justify-center flex-shrink-0">
+                                            {org.logoUrl ? (
+                                                /* eslint-disable-next-line @next/next/no-img-element */
+                                                <img src={org.logoUrl} alt="" className="w-full h-full object-contain p-1" />
+                                            ) : (
+                                                <Building2 className="w-5 h-5 text-forest" />
+                                            )}
+                                        </span>
+                                        <span className="min-w-0">
+                                            <span className="text-base font-bold text-ink truncate flex items-center gap-1.5">
+                                                {org.name}
+                                                {org.verified && <VerifiedBadge />}
+                                            </span>
+                                            <span className="block text-xs text-gray-400 truncate">
+                                                Organisation · view their page
+                                            </span>
+                                        </span>
+                                    </Link>
+                                ) : (
+                                    <div className="flex items-center gap-3 bg-white border border-gray-200/70 rounded-2xl px-4 py-3.5">
+                                        <Avatar className="h-11 w-11">
+                                            <AvatarFallback className="bg-forest text-lime text-sm font-bold">
+                                                {getInitials(donor?.name || '')}
+                                            </AvatarFallback>
+                                            <AvatarImage src={donor?.profileUrl} alt={donor?.name} />
+                                        </Avatar>
+                                        <div className="min-w-0">
+                                            <p className="text-base font-bold text-ink truncate flex items-center gap-1.5">
+                                                {donor?.name}
+                                                {donor?.verified && <VerifiedBadge />}
+                                            </p>
+                                            <p className="text-xs text-gray-400 truncate">
+                                                {donor?.verified ? "Identity verified · " : ""}
+                                                {donor?.preferedLocation || "Community member"}
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                                 <p className="flex items-center gap-1.5 text-[11px] text-gray-400 mt-2">
                                     <ShieldCheck className="w-3.5 h-3.5" />
                                     Always free. Never send money for anything on Givny.

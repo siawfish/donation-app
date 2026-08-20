@@ -200,12 +200,30 @@ export interface OnboardingStep {
     why: string;
     done: boolean;
     href?: string;
+    /**
+     * Shown when a step has been started but doesn't yet count.
+     *
+     * Without this a saved-but-too-short About reads as a save that failed:
+     * the field holds their text, the step stays unticked, and nothing on the
+     * screen explains the gap.
+     */
+    hint?: string;
 }
+
+/**
+ * How much "About" text counts as saying who you are.
+ *
+ * A dozen words tells a stranger nothing, so the step holds out for more — but
+ * the number has to be visible wherever it is enforced, or it just looks broken.
+ */
+export const ABOUT_MIN_CHARS = 60;
 
 export function onboardingSteps(
     org: Organisation,
     counts: { listings: number; team: number }
 ): OnboardingStep[] {
+    const aboutLength = (org.about ?? "").trim().length;
+
     return [
         {
             id: "approved",
@@ -224,8 +242,12 @@ export function onboardingSteps(
             id: "about",
             label: "Say who you are",
             why: "People decide whether to ask based on this, not on your listings.",
-            done: !!org.about && org.about.trim().length > 60,
+            done: aboutLength >= ABOUT_MIN_CHARS,
             href: "/app/organisation?tab=storefront",
+            hint:
+                aboutLength > 0 && aboutLength < ABOUT_MIN_CHARS
+                    ? `Saved — but it's ${aboutLength} of the ${ABOUT_MIN_CHARS} characters this needs. A sentence or two more.`
+                    : undefined,
         },
         {
             id: "listing",
