@@ -25,6 +25,9 @@ import { sendRequest } from "@/app/app/actions/requests"
 import { formatDistance } from "@/lib/distance"
 import DeliveryEstimate from "./DeliveryEstimate"
 import { VerifiedBadge } from "./verification/VerifiedBadge"
+import { ShareButtons } from "./ShareButtons"
+
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://givny.com";
 
 /** Status shown in the decision column, derived from request + item state. */
 type Standing =
@@ -378,6 +381,19 @@ export default function ItemContent() {
                                     <ShieldCheck className="w-3.5 h-3.5" />
                                     Always free. Never send money for anything on Givny.
                                 </p>
+                            </div>
+
+                            {/* Sharing points at the listing's own page, not at
+                                this sheet. `/explore?id=…` works in a browser but
+                                previews as the generic explore page, so every
+                                listing shared into WhatsApp looked the same. */}
+                            <div className="pt-1">
+                                <ShareButtons
+                                    url={`${SITE}/listing/${id}`}
+                                    title={`${item.name} — free on Givny`}
+                                    includeLinkedIn={false}
+                                    label=""
+                                />
                             </div>
 
                             {/* Actions — inline on desktop, pinned on mobile */}

@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { listPublishedPosts } from "@/app/app/actions/blog";
 import { listOpenJobs } from "@/app/app/actions/jobs";
 import { listActiveOrgs } from "@/app/app/actions/organisations";
+import { listListingsForSitemap } from "@/app/app/actions/items";
 import { siteUrl } from "@/lib/seo";
 
 export const revalidate = 3600;
@@ -28,10 +29,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { url: `${base}/terms-of-use`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
     ];
 
-    const [posts, jobs, orgs] = await Promise.all([
+    const [posts, jobs, orgs, listings] = await Promise.all([
         listPublishedPosts(),
         listOpenJobs(),
         listActiveOrgs(),
+        listListingsForSitemap(),
     ]);
 
     const postPages: MetadataRoute.Sitemap = posts
@@ -57,5 +59,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.6,
     }));
 
-    return [...staticPages, ...postPages, ...jobPages, ...orgPages];
+    // Only listings that are still available. A taken one is noindex on the
+    // page itself, so advertising it here would contradict that.
+    const listingPages: MetadataRoute.Sitemap = listings.map((l) => ({
+        url: `${base}/listing/${l.id}`,
+        lastModified: new Date(l.updatedAt),
+        changeFrequency: "daily" as const,
+        priority: 0.5,
+    }));
+
+    return [...staticPages, ...postPages, ...jobPages, ...orgPages, ...listingPages];
 }

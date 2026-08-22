@@ -633,6 +633,11 @@ export async function getItem(id: string): Promise<ResponseData<ItemType | null>
     'use server';
     try {
         const itemDoc = await db.collection('items').doc(id).get();
+        // A missing document used to fall through as `{ id }` with every other
+        // field undefined, so callers got success:true and a hollow item.
+        if (!itemDoc.exists) {
+            return { success: false, message: "Item not found", data: null };
+        }
         return {
             success: true,
             message: "Item fetched successfully",
@@ -648,5 +653,94 @@ export async function getItem(id: string): Promise<ResponseData<ItemType | null>
             message: message,
             data: null
         }
+    }
+}
+
+export interface PublicListing {
+    item: ItemType;
+    /** Who is passing it on — an organisation if there is one, else the member. */
+    lister: {
+        kind: "organisation" | "member";
+        name: string;
+        /** Storefront slug, organisations only. */
+        slug?: string;
+        photoUrl?: string;
+        verified?: boolean;
+        location?: string;
+    } | null;
+}
+
+/**
+ * One listing, with everything a public page needs, resolved server-side.
+ *
+ * Exists so a listing has a real URL of its own. Sharing `/explore?id=…` works
+ * in a browser but previews as the generic explore page — which, on WhatsApp,
+ * is most of what a shared link is.
+ */
+export async function getPublicListing(id: string): Promise<PublicListing | null> {
+    'use server';
+    try {
+        const snap = await db.collection('items').doc(id).get();
+        if (!snap.exists) return null;
+
+        const item = { ...(snap.data() as ItemType), id: snap.id };
+
+        // An organisation's listing belongs to the organisation, not to whichever
+        // member of staff typed it in.
+        if (item.orgId) {
+            const org = await db.collection('organisations').doc(item.orgId).get();
+            const d = org.data();
+            if (d && d.status === 'active') {
+                return {
+                    item,
+                    lister: {
+                        kind: 'organisation',
+                        name: d.name,
+                        slug: d.slug,
+                        photoUrl: d.logoUrl || undefined,
+                        verified: !!d.verified,
+                        location: d.locationName || undefined,
+                    },
+                };
+            }
+        }
+
+        if (item.createdBy) {
+            const user = await db.collection('users').doc(item.createdBy).get();
+            const d = user.data();
+            if (d) {
+                return {
+                    item,
+                    lister: {
+                        kind: 'member',
+                        name: d.name || 'A neighbour',
+                        photoUrl: d.profileUrl || undefined,
+                        verified: !!d.verified,
+                        location: d.preferedLocation || undefined,
+                    },
+                };
+            }
+        }
+
+        return { item, lister: null };
+    } catch {
+        return null;
+    }
+}
+
+/** Ids and timestamps of available listings, for the sitemap. */
+export async function listListingsForSitemap(): Promise<{ id: string; updatedAt: string }[]> {
+    'use server';
+    try {
+        const snap = await db.collection('items')
+            .where('donatedTo', '==', null)
+            .limit(5000)
+            .get();
+        return snap.docs.map((d) => ({
+            id: d.id,
+            updatedAt: (d.data().updatedAt as string) || (d.data().createdAt as string) || new Date().toISOString(),
+        }));
+    } catch {
+        return [];
     }
 }

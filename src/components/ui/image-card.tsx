@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image"
-import { MapPin, Images, Building2 } from "lucide-react"
+import { MapPin, Images, Building2, Share2, Check } from "lucide-react"
 import { formatDistance } from "@/lib/distance"
 import { firestore } from "@/firebase/auth/firebase"
 import { collection, where, query, getDocs, addDoc, deleteDoc } from "firebase/firestore"
@@ -11,6 +11,8 @@ import { useAuth } from "@/firebase/auth/AuthContext"
 import { useState, useEffect, useCallback } from "react"
 import { Button } from "./button"
 import { ActivityAction } from "@/app/types"
+
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://givny.com";
 
 interface ImageCardProps {
     image: string;
@@ -52,6 +54,39 @@ export default function ImageCard({
     const { user } = useAuth();
     const [isWishlisted, setIsWishlisted] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [shared, setShared] = useState(false);
+
+    /**
+     * Share this listing from the grid, without opening it first.
+     *
+     * Uses the listing's own page rather than the sheet URL, so the link
+     * previews as the item. `stopPropagation` because the whole card is a link.
+     */
+    const handleShare = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!itemId) return;
+
+        const url = `${SITE}/listing/${itemId}`;
+        const shareTitle = `${title} — free on Givny`;
+
+        if (typeof navigator !== "undefined" && "share" in navigator) {
+            try {
+                await navigator.share({ title: shareTitle, url });
+                return;
+            } catch {
+                // A cancelled sheet rejects too — fall through to copying.
+            }
+        }
+        try {
+            await navigator.clipboard.writeText(url);
+            setShared(true);
+            setTimeout(() => setShared(false), 2000);
+            toast.success("Link copied");
+        } catch {
+            toast.error("Couldn't copy the link");
+        }
+    };
 
     const checkWishlistStatus = useCallback(async () => {
         if (!user || !itemId) return;
@@ -204,6 +239,23 @@ export default function ImageCard({
                         ) : (
                             <Image src="/unlike.png" alt="Save" width={16} height={16} />
                         )}
+                    </Button>
+                )}
+
+                {itemId && (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Share ${title}`}
+                        title="Share this listing"
+                        className={`max-w-8 max-h-8 absolute top-2.5 bg-white/95 hover:bg-white hover:scale-110 transition-all shadow-sm rounded-full ${
+                            user && createdBy ? "right-12" : "right-2.5"
+                        }`}
+                        onClick={handleShare}
+                    >
+                        {shared
+                            ? <Check className="w-4 h-4 text-primary" />
+                            : <Share2 className="w-4 h-4 text-ink" />}
                     </Button>
                 )}
             </div>
