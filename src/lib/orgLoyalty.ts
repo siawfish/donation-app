@@ -206,3 +206,47 @@ export function topOrgBadges(badges: OrgBadge[], limit = 3): OrgBadge[] {
         .sort((a, b) => b.target - a.target)
         .slice(0, limit);
 }
+
+/* ── Leaderboard ───────────────────────────────────────────────────────── */
+
+export interface OrgLeaderboardEntry {
+    orgId: string;
+    name: string;
+    slug: string;
+    logoUrl?: string;
+    locationName?: string;
+    type: string;
+    verified: boolean;
+    points: number;
+    rank: number;
+    tierId: string;
+    /** The numbers a reader can check the ranking against. */
+    rehomed: number;
+    householdsReached: number;
+    kgDiverted: number;
+    followers: number;
+}
+
+/** Rank a scored list of organisations, sharing a rank across ties. */
+export function rankOrgEntries(
+    rows: Omit<OrgLeaderboardEntry, "rank" | "tierId">[]
+): OrgLeaderboardEntry[] {
+    const sorted = [...rows].sort(
+        (a, b) =>
+            b.points - a.points ||
+            b.rehomed - a.rehomed ||
+            // Ties on both still need a stable order, or the board reshuffles
+            // between renders for no visible reason.
+            a.name.localeCompare(b.name)
+    );
+
+    let lastPoints: number | null = null;
+    let lastRank = 0;
+
+    return sorted.map((row, index) => {
+        const rank = row.points === lastPoints ? lastRank : index + 1;
+        lastPoints = row.points;
+        lastRank = rank;
+        return { ...row, rank, tierId: getOrgTier(row.points).id };
+    });
+}

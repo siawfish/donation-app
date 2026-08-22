@@ -24,6 +24,13 @@ import {
     getTier,
     rankEntries,
 } from "@/lib/loyalty";
+import {
+    OrgLeaderboardEntry, calculateOrgPoints, rankOrgEntries,
+} from "@/lib/orgLoyalty";
+import {
+    SIZE_KG, onboardingProgress, onboardingSteps, type Organisation,
+} from "@/lib/organisations";
+import type { ParcelSize } from "@/lib/delivery";
 
 /**
  * Scores are computed by aggregating the items/requests collections rather than
@@ -286,5 +293,168 @@ export async function getLeaderboardCategories(): Promise<ResponseData<string[]>
         };
     } catch {
         return { success: true, message: "No categories", data: [] };
+    }
+}
+
+
+/* ── Organisations ─────────────────────────────────────────────────────── */
+
+/**
+ * The organisation board.
+ *
+ * Kept as a separate ranking rather than merged with the member board. The two
+ * schemes score different things on different scales — an organisation clearing
+ * one office already out-lists an active neighbour — so a single mixed table
+ * would be organisations at the top, members below, permanently, which tells a
+ * reader nothing about either.
+ *
+ * Scoped to a month, only what happened inside the window counts. The standing
+ * bonuses (followers, verification, a finished storefront) are all-time facts,
+ * so including them would let an organisation that did nothing this month
+ * outrank one that did — see `windowed` below.
+ */
+export async function getOrgLeaderboard({
+    scope = "all-time",
+    limit = 50,
+}: {
+    scope?: LeaderboardScope;
+    limit?: number;
+} = {}): Promise<ResponseData<OrgLeaderboardEntry[] | null>> {
+    try {
+        const [orgsSnap, itemsSnap, requestsSnap, followsSnap, membersSnap] = await Promise.all([
+            db.collection("organisations").limit(MAX_DOCS).get(),
+            db.collection("items").limit(MAX_DOCS).get(),
+            db.collection("requests").limit(MAX_DOCS).get(),
+            db.collection("orgFollowers").limit(MAX_DOCS).get(),
+            db.collection("orgMembers").limit(MAX_DOCS).get(),
+        ]);
+
+        const windowed = scope === "month";
+        const since = windowed ? startOfMonthISO() : null;
+        const inWindow = (ts?: string) => !since || (!!ts && ts >= since);
+
+        // Only active organisations appear publicly — the directory and the
+        // storefronts already work that way.
+        const orgs = orgsSnap.docs
+            .map((d) => ({ ...(d.data() as Organisation), id: d.id }))
+            .filter((o) => o.status === "active");
+        if (!orgs.length) {
+            return { success: true, message: "No organisations", data: [] };
+        }
+
+        const teamSize: Record<string, number> = {};
+        membersSnap.docs.forEach((d) => {
+            const orgId = d.data().orgId as string | undefined;
+            if (orgId) teamSize[orgId] = (teamSize[orgId] ?? 0) + 1;
+        });
+
+        const followers: Record<string, number> = {};
+        followsSnap.docs.forEach((d) => {
+            const orgId = d.data().orgId as string | undefined;
+            if (orgId) followers[orgId] = (followers[orgId] ?? 0) + 1;
+        });
+
+        interface Tally {
+            listed: number;
+            rehomed: number;
+            kg: number;
+            households: Set<string>;
+            answered: number;
+            /**
+             * All-time listing count, kept alongside the windowed one because
+             * the setup checklist is an all-time fact — an organisation does
+             * not un-finish its storefront when a new month starts.
+             */
+            listedEver: number;
+        }
+        const tally: Record<string, Tally> = {};
+        const touch = (orgId: string) =>
+            (tally[orgId] ??= { listed: 0, rehomed: 0, kg: 0, households: new Set(), answered: 0, listedEver: 0 });
+        orgs.forEach((o) => touch(o.id!));
+
+        itemsSnap.docs.forEach((d) => {
+            const item = d.data() as ItemType;
+            if (!item.orgId || !tally[item.orgId]) return;
+            const t = tally[item.orgId];
+
+            t.listedEver += 1;
+            if (inWindow(item.createdAt)) t.listed += 1;
+
+            // A handover is dated by when it happened, not when it was listed.
+            if (item.donatedTo && inWindow(item.donatedOn ?? item.updatedAt)) {
+                t.rehomed += 1;
+                t.households.add(item.donatedTo);
+                t.kg += item.parcelSize ? SIZE_KG[item.parcelSize as ParcelSize] : SIZE_KG.small;
+            }
+        });
+
+        requestsSnap.docs.forEach((d) => {
+            const req = d.data() as RequestType;
+            if (!req.orgId || !tally[req.orgId]) return;
+            if (req.status === RequestStatus.PENDING) return;
+            if (!inWindow(req.updatedAt ?? req.createdAt)) return;
+            tally[req.orgId].answered += 1;
+        });
+
+        const rows = orgs.map((org) => {
+            const t = tally[org.id!];
+            const impact = {
+                listed: t.listed,
+                rehomed: t.rehomed,
+                available: 0,
+                kgDiverted: t.kg,
+                householdsReached: t.households.size,
+                rehomingRate: t.listed ? Math.round((t.rehomed / t.listed) * 100) : 0,
+            };
+
+            const points = calculateOrgPoints({
+                impact,
+                followers: windowed ? 0 : followers[org.id!] ?? 0,
+                requestsAnswered: t.answered,
+                // All-time facts, excluded from a monthly board so it reflects
+                // the month rather than a head start. On the all-time board they
+                // are included, so this ranking agrees with the number the
+                // organisation sees on its own storefront.
+                storefrontComplete: windowed
+                    ? false
+                    : onboardingProgress(
+                          onboardingSteps(org, {
+                              listings: t.listedEver,
+                              team: teamSize[org.id!] ?? 0,
+                          })
+                      ) === 100,
+                verified: windowed ? false : !!org.verified,
+            });
+
+            return {
+                orgId: org.id!,
+                name: org.name,
+                slug: org.slug,
+                logoUrl: org.logoUrl || undefined,
+                locationName: org.locationName || undefined,
+                type: org.type,
+                verified: !!org.verified,
+                points,
+                rehomed: t.rehomed,
+                householdsReached: t.households.size,
+                kgDiverted: t.kg,
+                followers: followers[org.id!] ?? 0,
+            };
+        })
+        // An organisation that has done nothing yet is not a ranking, and a
+        // board of zeroes reads as broken.
+        .filter((r) => r.points > 0);
+
+        return {
+            success: true,
+            message: "Organisation leaderboard fetched successfully",
+            data: rankOrgEntries(rows).slice(0, limit),
+        };
+    } catch (error: any) {
+        return {
+            success: false,
+            message: FirebaseErrors[error.code] || error.message,
+            data: null,
+        };
     }
 }
