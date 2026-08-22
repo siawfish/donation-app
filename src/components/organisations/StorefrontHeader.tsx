@@ -62,9 +62,16 @@ export function StorefrontHeader({
                     buttons on a single squeezed row, which crushed "NGO /
                     non-profit · Anloga" into a four-line column.
                 */}
-                <div className="-mt-12 md:-mt-20 relative">
+                <div className="relative">
                     <div className="flex flex-col md:flex-row md:items-end gap-4 md:gap-5">
-                        <div className="w-24 h-24 md:w-32 md:h-32 rounded-3xl bg-white border border-gray-200/70 shadow-lg shadow-forest/5 overflow-hidden flex items-center justify-center flex-shrink-0">
+                        {/*
+                            The negative margin belongs to the logo alone.
+                            On the container it pulled the whole row up, so on
+                            desktop the name and its chips rendered *over* the
+                            cover photo — dark ink on a dark image. Only the
+                            logo should cross that edge.
+                        */}
+                        <div className="-mt-12 md:-mt-20 w-24 h-24 md:w-36 md:h-36 rounded-3xl bg-white border border-gray-200/70 shadow-lg shadow-forest/5 overflow-hidden flex items-center justify-center flex-shrink-0">
                             {org.logoUrl ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img src={org.logoUrl} alt={org.name} className="w-full h-full object-contain p-2.5" />
