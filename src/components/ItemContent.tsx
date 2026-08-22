@@ -26,6 +26,7 @@ import { formatDistance } from "@/lib/distance"
 import DeliveryEstimate from "./DeliveryEstimate"
 import { VerifiedBadge } from "./verification/VerifiedBadge"
 import { ShareButtons } from "./ShareButtons"
+import { listingShareMessage } from "@/lib/listingCopy"
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://givny.com";
 
@@ -390,7 +391,12 @@ export default function ItemContent() {
                             <div className="pt-1">
                                 <ShareButtons
                                     url={`${SITE}/listing/${id}`}
-                                    title={`${item.name} — free on Givny`}
+                                    title={listingShareMessage({
+                                        title: item.name,
+                                        listerName: org?.name ?? donor?.name,
+                                        isOrganisation: !!org,
+                                        gone: !!item.donatedTo,
+                                    })}
                                     includeLinkedIn={false}
                                     label=""
                                 />

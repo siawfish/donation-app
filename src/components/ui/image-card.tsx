@@ -12,6 +12,8 @@ import { useState, useEffect, useCallback } from "react"
 import { Button } from "./button"
 import { ActivityAction } from "@/app/types"
 
+import { listingShareMessage } from "@/lib/listingCopy"
+
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://givny.com";
 
 interface ImageCardProps {
@@ -68,7 +70,14 @@ export default function ImageCard({
         if (!itemId) return;
 
         const url = `${SITE}/listing/${itemId}`;
-        const shareTitle = `${title} — free on Givny`;
+        const shareTitle = listingShareMessage({
+            title,
+            // Cards carry an organisation's name but not a member's, so a
+            // neighbour's listing shares under the neutral phrasing rather than
+            // inventing a name the card never had.
+            listerName: orgName,
+            isOrganisation: !!orgName,
+        });
 
         if (typeof navigator !== "undefined" && "share" in navigator) {
             try {

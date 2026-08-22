@@ -7,6 +7,9 @@ import {
 import { getPublicListing } from "@/app/app/actions/items";
 import { absoluteUrl, jsonLd, siteUrl } from "@/lib/seo";
 import { ShareButtons } from "@/components/ShareButtons";
+import {
+    listingDescription, listingHeadline, listingShareMessage,
+} from "@/lib/listingCopy";
 import { ListingGallery } from "@/components/ListingGallery";
 
 /**
@@ -32,12 +35,17 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     const { item, lister } = listing;
     const gone = !!item.donatedTo;
 
-    const title = gone ? `${item.name} — already taken` : `${item.name} — free on Givny`;
-    const description =
-        (item.description?.trim().slice(0, 155)) ||
-        `${item.name}, free to a good home${item.locationName ? ` in ${item.locationName}` : ""}${
-            lister ? `, from ${lister.name}` : ""
-        }.`;
+    // The preview is the whole advert, so it leads with the person rather than
+    // the product — a name is what makes a stranger stop scrolling.
+    const subject = {
+        title: item.name,
+        listerName: lister?.name,
+        isOrganisation: lister?.kind === "organisation",
+        locationName: item.locationName,
+        gone,
+    };
+    const title = listingHeadline(subject);
+    const description = listingDescription(subject, item.description);
 
     const image = item.assets?.[0]?.url;
 
@@ -260,7 +268,12 @@ export default async function ListingPage({ params }: { params: { id: string } }
                         <div className="mt-7 pt-6 border-t border-gray-200/70">
                             <ShareButtons
                                 url={shareUrl}
-                                title={gone ? item.name : `${item.name} — free on Givny`}
+                                title={listingShareMessage({
+                                    title: item.name,
+                                    listerName: lister?.name,
+                                    isOrganisation: lister?.kind === "organisation",
+                                    gone,
+                                })}
                                 includeLinkedIn={false}
                             />
                         </div>
