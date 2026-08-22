@@ -168,6 +168,85 @@ export interface Organisation {
     createdAt: string;
     updatedAt: string;
     activatedAt?: string;
+
+    /**
+     * Set when Givny built the page rather than the organisation applying.
+     *
+     * We prepare pages for organisations we are pitching, so a prospect can see
+     * their own storefront instead of imagining one. That is a genuinely useful
+     * sales tool and a dishonest one if it is hidden: a page the organisation
+     * has never seen must never look like a page they run. Hence `claim`.
+     */
+    createdByAdmin?: boolean;
+    claim?: ClaimStatus;
+    claimedAt?: string;
+    /** Who accepted the invitation and became the first owner. */
+    claimedBy?: string;
+}
+
+/**
+ * Whether a real person at the organisation has taken the page over.
+ *
+ * `unclaimed` is a public state, not a hidden one — the storefront says so in
+ * plain words, the directory marks it, and search engines are told not to index
+ * it. Nobody should be able to mistake a prepared page for a live one.
+ */
+export type ClaimStatus = "unclaimed" | "invited" | "claimed";
+
+export const CLAIM_LABELS: Record<ClaimStatus, string> = {
+    unclaimed: "Not claimed",
+    invited: "Invite sent",
+    claimed: "Claimed",
+};
+
+/** True when this page was prepared by us and nobody has taken it over yet. */
+export function isUnclaimed(org: Pick<Organisation, "createdByAdmin" | "claim">): boolean {
+    return !!org.createdByAdmin && org.claim !== "claimed";
+}
+
+/* ── Invitations ───────────────────────────────────────────────────────── */
+
+export type InviteStatus = "pending" | "accepted" | "revoked" | "expired";
+
+export interface OrgInvite {
+    id?: string;
+    orgId: string;
+    orgName: string;
+    orgSlug: string;
+    /** Random, single-use, and the only thing standing between a stranger and ownership. */
+    token: string;
+    /** Who it was prepared for. The accepting account does not have to match. */
+    email: string;
+    name?: string;
+    role: OrgRole;
+    status: InviteStatus;
+    invitedBy: string;
+    createdAt: string;
+    expiresAt: string;
+    acceptedAt?: string;
+    acceptedBy?: string;
+}
+
+/** How long an invitation stays good for. Long enough to survive a slow reply. */
+export const INVITE_DAYS = 30;
+
+export function inviteExpiry(from = new Date()): string {
+    const d = new Date(from);
+    d.setDate(d.getDate() + INVITE_DAYS);
+    return d.toISOString();
+}
+
+export function inviteExpired(invite: Pick<OrgInvite, "expiresAt">): boolean {
+    const at = Date.parse(invite.expiresAt);
+    return Number.isFinite(at) && at < Date.now();
+}
+
+/** Whether an invitation can still be accepted, and why not when it cannot. */
+export function inviteProblem(invite: Pick<OrgInvite, "status" | "expiresAt">): string | null {
+    if (invite.status === "accepted") return "That invitation has already been used.";
+    if (invite.status === "revoked") return "That invitation was withdrawn.";
+    if (inviteExpired(invite)) return "That invitation has expired. Ask us for a new one.";
+    return null;
 }
 
 export function slugifyOrg(input: string): string {

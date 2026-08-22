@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { Loader2, ExternalLink, BadgeCheck, Check, X, Building2 } from "lucide-react";
+import { Loader2, ExternalLink, BadgeCheck, Check, X, Building2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
     listOrganisations, setOrgStatus, setOrgVerified, type OrgRow,
 } from "@/app/app/actions/organisations";
 import {
-    ORG_STATUS_LABELS, ORG_STATUS_TONE, ORG_TYPE_LABELS, OrgStatus,
+    CLAIM_LABELS, ORG_STATUS_LABELS, ORG_STATUS_TONE, ORG_TYPE_LABELS, OrgStatus,
+    isUnclaimed,
 } from "@/lib/organisations";
 import {
     Badge, Button, EmptyRow, Input, Num, Panel, Segmented, SkeletonRows,
@@ -76,6 +77,13 @@ export function OrgQueue({ canManage }: { canManage: boolean }) {
                 flush
                 title={`${visible.length} organisation${visible.length === 1 ? "" : "s"}`}
                 actions={
+                    <div className="flex items-center gap-2">
+                    <Link
+                        href="/app/admin/organisations/new"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-forest bg-forest px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-forest-dark transition-colors"
+                    >
+                        <Plus className="w-3.5 h-3.5" /> New organisation
+                    </Link>
                     <Segmented
                         value={filter}
                         options={[
@@ -85,6 +93,7 @@ export function OrgQueue({ canManage }: { canManage: boolean }) {
                         ]}
                         onChange={setFilter}
                     />
+                    </div>
                 }
             >
                 <TableWrap>
@@ -105,7 +114,8 @@ export function OrgQueue({ canManage }: { canManage: boolean }) {
                                 <SkeletonRows cols={COLS} />
                             ) : visible.length === 0 ? (
                                 <EmptyRow colSpan={COLS}>
-                                    Nothing here. Applications arrive from /for-organisations.
+                                    Nothing here. Applications arrive from /for-organisations — or
+                                    create a page yourself with “New organisation”.
                                 </EmptyRow>
                             ) : (
                                 visible.map((row) => (
@@ -123,6 +133,11 @@ export function OrgQueue({ canManage }: { canManage: boolean }) {
                                                 <div className="min-w-0">
                                                     <Link href={`/app/admin/organisations/${row.id}`} className="font-semibold text-ink hover:text-forest truncate flex items-center gap-1.5">
                                                         {row.name}
+                                                        {isUnclaimed(row) && (
+                                                            <span className="text-[10px] font-semibold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded flex-shrink-0">
+                                                                {CLAIM_LABELS[row.claim ?? "unclaimed"]}
+                                                            </span>
+                                                        )}
                                                         {row.verified && <BadgeCheck className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
                                                     </Link>
                                                     <span className="block text-xs text-gray-500 truncate">{row.contactEmail}</span>

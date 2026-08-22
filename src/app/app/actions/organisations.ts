@@ -12,8 +12,8 @@ import { getMyAdminRole } from "./admin";
 import { recordAudit } from "./audit";
 import {
     EMPTY_IMPACT, OnboardingStep, OrgImpact, OrgMember, OrgRole, OrgStatus, OrgType,
-    Organisation, estimateKg, isValidOrgSlug, onboardingProgress, onboardingSteps,
-    orgCan, slugifyOrg,
+    ClaimStatus, Organisation, OrgInvite, estimateKg, inviteExpiry, inviteProblem,
+    isValidOrgSlug, onboardingProgress, onboardingSteps, orgCan, slugifyOrg,
 } from "@/lib/organisations";
 import {
     OrgBadge, OrgTier, calculateOrgPoints, getNextOrgTier, getOrgTier, orgBadges,
@@ -605,6 +605,347 @@ export async function saveOrgNotes(id: string, notes: string): Promise<ResponseD
         });
         revalidatePath(`/app/admin/organisations/${id}`);
         return { success: true, message: "Notes saved", data: null };
+    } catch (error: any) {
+        return { success: false, message: error.message, data: null };
+    }
+}
+
+/* ── Admin-created organisations, and claiming them ────────────────────── */
+
+const INVITES = "orgInvites";
+
+/**
+ * A slug that is free, derived from the name.
+ *
+ * Slugs are public URLs, so a clash has to be resolved at write time rather
+ * than discovered later by two organisations sharing a page.
+ */
+async function freeSlug(name: string, preferred?: string): Promise<string> {
+    let slug = slugifyOrg(preferred?.trim() || name);
+    if (!isValidOrgSlug(slug)) slug = `org-${Date.now().toString(36)}`;
+
+    const clash = await db.collection(ORGS).where("slug", "==", slug).limit(1).get();
+    if (!clash.empty) slug = `${slug}-${Math.random().toString(36).slice(2, 6)}`;
+    return slug;
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+export interface AdminOrgInput {
+    name: string;
+    type: OrgType;
+    slug?: string;
+    contactName: string;
+    contactEmail: string;
+    contactPhone?: string;
+    registrationNumber?: string;
+    website?: string;
+    locationName?: string;
+    tagline?: string;
+    about?: string;
+    logoUrl?: string;
+    coverUrl?: string;
+    internalNotes?: string;
+    /** Make the storefront public straight away, still marked unclaimed. */
+    publish?: boolean;
+}
+
+/**
+ * Create an organisation on their behalf, before they have ever heard of us.
+ *
+ * There is no owner yet, so no `orgMembers` row is written — the page belongs
+ * to nobody until somebody accepts an invitation. It is stamped `createdByAdmin`
+ * and `claim: "unclaimed"`, which is what the public storefront reads in order
+ * to say so out loud.
+ */
+export async function adminCreateOrganisation(
+    input: AdminOrgInput
+): Promise<ResponseData<{ id: string; slug: string } | null>> {
+    try {
+        const actor = await requireOrgAdmin();
+
+        const name = input.name?.trim();
+        if (!name || name.length < 2) throw new Error("What is the organisation called?");
+        if (!input.contactName?.trim()) throw new Error("Give a contact name — you'll be inviting them.");
+        if (!EMAIL_RE.test(input.contactEmail?.trim() ?? "")) {
+            throw new Error("That email address doesn't look right.");
+        }
+        if (input.slug?.trim() && !isValidOrgSlug(slugifyOrg(input.slug))) {
+            throw new Error("That slug isn't usable — try lowercase words with hyphens.");
+        }
+
+        const slug = await freeSlug(name, input.slug);
+        const now = iso();
+
+        const ref = await db.collection(ORGS).add({
+            name,
+            slug,
+            type: input.type,
+            // Publishing makes the page visible; "unclaimed" is about who runs
+            // it, which is a separate question the storefront answers itself.
+            status: (input.publish ? "active" : "approved") as OrgStatus,
+            contactName: input.contactName.trim(),
+            contactEmail: input.contactEmail.trim().toLowerCase(),
+            contactPhone: input.contactPhone?.trim() ?? "",
+            registrationNumber: input.registrationNumber?.trim() ?? "",
+            website: input.website?.trim() ?? "",
+            locationName: input.locationName?.trim() ?? "",
+            tagline: input.tagline?.trim() ?? "",
+            about: (input.about ?? "").slice(0, 8000),
+            logoUrl: input.logoUrl?.trim() ?? "",
+            coverUrl: input.coverUrl?.trim() ?? "",
+            internalNotes: (input.internalNotes ?? "").slice(0, 4000),
+            motivation: "",
+            // Verification means an admin checked real evidence. Building a page
+            // is not evidence, so this stays false however the page was made.
+            verified: false,
+            createdByAdmin: true,
+            claim: "unclaimed" as ClaimStatus,
+            createdBy: actor,
+            createdAt: now,
+            updatedAt: now,
+            ...(input.publish ? { activatedAt: now } : {}),
+        });
+
+        await recordAudit({
+            action: "org.create",
+            targetId: ref.id,
+            targetLabel: name,
+            detail: input.publish ? "created and published, unclaimed" : "created as a draft",
+        });
+
+        revalidatePath("/app/admin/organisations");
+        revalidatePath("/organisations");
+        return { success: true, message: "Organisation created", data: { id: ref.id, slug } };
+    } catch (error: any) {
+        return { success: false, message: error.message, data: null };
+    }
+}
+
+/** A token with enough entropy that guessing one is not a strategy. */
+function inviteToken(): string {
+    const bytes = new Uint8Array(24);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * Invite someone to take ownership of a prepared page.
+ *
+ * Returns the link rather than emailing it. Sending mail on an admin's behalf
+ * is a separate decision from creating the invitation, and an admin holding the
+ * link can put it in whatever channel the contact actually reads — which here
+ * is usually WhatsApp rather than email.
+ */
+export async function createOrgInvite(
+    orgId: string,
+    input: { email: string; name?: string; role?: OrgRole }
+): Promise<ResponseData<OrgInvite | null>> {
+    try {
+        const actor = await requireOrgAdmin();
+
+        const orgSnap = await db.collection(ORGS).doc(orgId).get();
+        if (!orgSnap.exists) throw new Error("Organisation not found");
+        const org = orgSnap.data() as Organisation;
+
+        const email = input.email?.trim().toLowerCase();
+        if (!EMAIL_RE.test(email ?? "")) throw new Error("That email address doesn't look right.");
+
+        const now = iso();
+        const invite: OrgInvite = {
+            orgId,
+            orgName: org.name,
+            orgSlug: org.slug,
+            token: inviteToken(),
+            email,
+            name: input.name?.trim() || "",
+            role: input.role ?? "owner",
+            status: "pending",
+            invitedBy: actor,
+            createdAt: now,
+            expiresAt: inviteExpiry(),
+        };
+
+        const ref = await db.collection(INVITES).add(invite);
+
+        // Any earlier pending invitation for the same person is superseded —
+        // two live links to one page is one more than anybody needs.
+        const older = await db.collection(INVITES)
+            .where("orgId", "==", orgId)
+            .where("email", "==", email)
+            .where("status", "==", "pending")
+            .get();
+        await Promise.all(
+            older.docs
+                .filter((d) => d.id !== ref.id)
+                .map((d) => d.ref.update({ status: "revoked" }))
+        );
+
+        await db.collection(ORGS).doc(orgId).update({ claim: "invited" as ClaimStatus, updatedAt: now });
+
+        await recordAudit({
+            action: "org.invite",
+            targetId: orgId,
+            targetLabel: org.name,
+            detail: `invited ${email} as ${invite.role}`,
+        });
+
+        revalidatePath(`/app/admin/organisations/${orgId}`);
+        return { success: true, message: "Invitation created", data: { ...invite, id: ref.id } };
+    } catch (error: any) {
+        return { success: false, message: error.message, data: null };
+    }
+}
+
+export async function listOrgInvites(orgId: string): Promise<ResponseData<OrgInvite[]>> {
+    try {
+        await requireOrgAdmin();
+        const snap = await db.collection(INVITES).where("orgId", "==", orgId).get();
+        return {
+            success: true,
+            message: "ok",
+            data: snap.docs
+                .map((d) => ({ ...(d.data() as OrgInvite), id: d.id }))
+                .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+        };
+    } catch (error: any) {
+        return { success: false, message: error.message, data: [] };
+    }
+}
+
+export async function revokeOrgInvite(inviteId: string): Promise<ResponseData<null>> {
+    try {
+        await requireOrgAdmin();
+        const snap = await db.collection(INVITES).doc(inviteId).get();
+        if (!snap.exists) throw new Error("Not found");
+        const invite = snap.data() as OrgInvite;
+        if (invite.status === "accepted") throw new Error("That one has already been accepted.");
+
+        await snap.ref.update({ status: "revoked" });
+
+        await recordAudit({
+            action: "org.invite.revoke",
+            targetId: invite.orgId,
+            targetLabel: invite.orgName,
+            detail: `withdrew the invitation to ${invite.email}`,
+        });
+
+        revalidatePath(`/app/admin/organisations/${invite.orgId}`);
+        return { success: true, message: "Invitation withdrawn", data: null };
+    } catch (error: any) {
+        return { success: false, message: error.message, data: null };
+    }
+}
+
+export interface InvitePreview {
+    orgName: string;
+    orgSlug: string;
+    orgType: OrgType;
+    logoUrl?: string;
+    invitedName?: string;
+    invitedEmail: string;
+    role: OrgRole;
+    problem: string | null;
+}
+
+/**
+ * What the invitation is for, shown before anyone signs in.
+ *
+ * Deliberately thin: a token in a forwarded message should reveal the
+ * organisation it concerns and nothing else about it.
+ */
+export async function getOrgInvite(token: string): Promise<InvitePreview | null> {
+    try {
+        const snap = await db.collection(INVITES).where("token", "==", token).limit(1).get();
+        if (snap.empty) return null;
+
+        const invite = snap.docs[0].data() as OrgInvite;
+        const orgSnap = await db.collection(ORGS).doc(invite.orgId).get();
+        if (!orgSnap.exists) return null;
+        const org = orgSnap.data() as Organisation;
+
+        return {
+            orgName: org.name,
+            orgSlug: org.slug,
+            orgType: org.type,
+            logoUrl: org.logoUrl || undefined,
+            invitedName: invite.name || undefined,
+            invitedEmail: invite.email,
+            role: invite.role,
+            problem: inviteProblem(invite),
+        };
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Accept an invitation and take the page over.
+ *
+ * The accepting account does not have to match the invited address. The token
+ * is the capability, and insisting on a matching email would strand anyone who
+ * signed up with a personal address — which, in practice, is most people.
+ */
+export async function acceptOrgInvite(token: string): Promise<ResponseData<{ slug: string } | null>> {
+    try {
+        const uid = await signedInUid();
+
+        const snap = await db.collection(INVITES).where("token", "==", token).limit(1).get();
+        if (snap.empty) throw new Error("That invitation link isn't valid.");
+
+        const doc = snap.docs[0];
+        const invite = doc.data() as OrgInvite;
+
+        const problem = inviteProblem(invite);
+        if (problem) throw new Error(problem);
+
+        const orgSnap = await db.collection(ORGS).doc(invite.orgId).get();
+        if (!orgSnap.exists) throw new Error("That organisation is no longer here.");
+        const org = orgSnap.data() as Organisation;
+
+        // Somebody already in an organisation cannot be quietly moved into
+        // another one by following a link.
+        const existing = await db.collection(MEMBERS).where("uid", "==", uid).limit(1).get();
+        if (!existing.empty && existing.docs[0].data().orgId !== invite.orgId) {
+            throw new Error("You already belong to another organisation on Givny.");
+        }
+
+        const now = iso();
+        const userSnap = await db.collection(USERS).doc(uid).get();
+
+        await db.collection(MEMBERS).doc(`${invite.orgId}_${uid}`).set({
+            uid,
+            orgId: invite.orgId,
+            role: invite.role,
+            name: userSnap.data()?.name ?? invite.name ?? "",
+            email: userSnap.data()?.email ?? invite.email,
+            addedBy: invite.invitedBy,
+            addedAt: now,
+        });
+
+        await doc.ref.update({ status: "accepted", acceptedAt: now, acceptedBy: uid });
+
+        await db.collection(ORGS).doc(invite.orgId).update({
+            claim: "claimed" as ClaimStatus,
+            claimedAt: now,
+            claimedBy: uid,
+            // Claiming publishes the page: the organisation now stands behind it.
+            status: org.status === "approved" ? ("active" as OrgStatus) : org.status,
+            ...(org.activatedAt ? {} : { activatedAt: now }),
+            updatedAt: now,
+        });
+
+        await recordAudit({
+            action: "org.claim",
+            targetId: invite.orgId,
+            targetLabel: org.name,
+            detail: `claimed by ${userSnap.data()?.email ?? uid}`,
+        });
+
+        revalidatePath("/app/admin/organisations");
+        revalidatePath("/organisations");
+        revalidatePath(`/o/${org.slug}`);
+        return { success: true, message: `You now manage ${org.name}`, data: { slug: org.slug } };
     } catch (error: any) {
         return { success: false, message: error.message, data: null };
     }

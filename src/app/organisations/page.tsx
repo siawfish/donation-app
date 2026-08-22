@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BadgeCheck, ArrowRight } from "lucide-react";
 import { listActiveOrgs } from "@/app/app/actions/organisations";
-import { ORG_TYPE_LABELS } from "@/lib/organisations";
+import { ORG_TYPE_LABELS, isUnclaimed } from "@/lib/organisations";
 import { siteUrl } from "@/lib/seo";
 import { FollowedStrip } from "@/components/organisations/FollowedStrip";
 
@@ -65,7 +65,16 @@ export default async function OrganisationsDirectory() {
                                         <span className="truncate">{org.name}</span>
                                         {org.verified && <BadgeCheck className="w-4 h-4 text-primary flex-shrink-0" />}
                                     </p>
-                                    <p className="text-xs text-gray-400 mt-0.5">{ORG_TYPE_LABELS[org.type]}</p>
+                                    <p className="text-xs text-gray-400 mt-0.5">
+                                        {ORG_TYPE_LABELS[org.type]}
+                                        {/* A page we prepared is labelled here too, so the
+                                            directory never implies participation. */}
+                                        {isUnclaimed(org) && (
+                                            <span className="ml-1.5 text-[10px] font-bold text-gray-500 bg-sand px-2 py-0.5 rounded-full">
+                                                Not claimed
+                                            </span>
+                                        )}
+                                    </p>
                                     {org.tagline && (
                                         <p className="text-sm text-gray-500 mt-1.5 line-clamp-2 leading-relaxed">{org.tagline}</p>
                                     )}

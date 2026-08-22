@@ -32,7 +32,11 @@ export type AuditAction =
     | "org.verify"
     | "org.unverify"
     | "comment.hide"
-    | "comment.restore";
+    | "comment.restore"
+    | "org.create"
+    | "org.invite"
+    | "org.invite.revoke"
+    | "org.claim";
 
 export const AUDIT_LABELS: Record<AuditAction, string> = {
     "member.suspend": "Suspended a member",
@@ -57,6 +61,10 @@ export const AUDIT_LABELS: Record<AuditAction, string> = {
     "org.unverify": "Removed organisation verification",
     "comment.hide": "Hid a comment",
     "comment.restore": "Restored a comment",
+    "org.create": "Created an organisation",
+    "org.invite": "Invited an organisation owner",
+    "org.invite.revoke": "Withdrew an invitation",
+    "org.claim": "An organisation claimed its page",
 };
 
 /** How alarming an entry should look when scanning the list. */
@@ -87,6 +95,12 @@ export const AUDIT_SEVERITY: Record<AuditAction, AuditSeverity> = {
     // though it is reversible.
     "comment.hide": "destructive",
     "comment.restore": "notable",
+    // Creating a page on someone's behalf, and handing one over, both change
+    // who is publicly represented — worth flagging on a scan of the log.
+    "org.create": "notable",
+    "org.invite": "notable",
+    "org.invite.revoke": "info",
+    "org.claim": "notable",
 };
 
 export const SEVERITY_TONE: Record<AuditSeverity, "neutral" | "warn" | "bad"> = {

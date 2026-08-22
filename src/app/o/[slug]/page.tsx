@@ -6,7 +6,7 @@ import { getTokens } from "next-firebase-auth-edge";
 import { getStorefront } from "@/app/app/actions/organisations";
 import { getFollowState } from "@/app/app/actions/orgSocial";
 import { authConfig } from "@/firebase/config/server-config";
-import { impactSentence } from "@/lib/organisations";
+import { impactSentence, isUnclaimed } from "@/lib/organisations";
 import { renderMarkdown, excerptFrom } from "@/lib/markdown";
 import { absoluteUrl, jsonLd } from "@/lib/seo";
 import { StorefrontGrid } from "@/components/organisations/StorefrontGrid";
@@ -29,8 +29,13 @@ export async function generateMetadata({ params }: { params: { slug: string } })
         excerptFrom(org.about ?? "", 155) ||
         impactSentence(org, impact);
 
+    const unclaimed = isUnclaimed(org);
+
     return {
         title: `${org.name} — Givny`,
+        // A page the organisation has never seen should not compete in search
+        // under their name. It becomes indexable the moment they claim it.
+        robots: unclaimed ? { index: false, follow: true } : undefined,
         description,
         alternates: { canonical: absoluteUrl(`/o/${org.slug}`) },
         openGraph: {
@@ -88,6 +93,25 @@ export default async function StorefrontPage({ params }: { params: { slug: strin
     return (
         <>
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(schema) }} />
+
+            {isUnclaimed(org) && (
+                <div className="bg-sand border-b border-gray-200/70">
+                    <div className="max-w-[1100px] mx-auto px-4 py-3 flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="text-sm font-bold text-ink">
+                            This page was prepared by Givny.
+                        </span>
+                        <span className="text-sm text-gray-600">
+                            {org.name} hasn&rsquo;t claimed it yet, so nothing here is listed by them.
+                        </span>
+                        <Link
+                            href="/for-organisations"
+                            className="text-sm font-bold text-forest hover:underline ml-auto"
+                        >
+                            Is this your organisation?
+                        </Link>
+                    </div>
+                </div>
+            )}
 
             <StorefrontHeader
                 org={org}

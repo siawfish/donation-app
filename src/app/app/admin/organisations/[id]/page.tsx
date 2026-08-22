@@ -9,6 +9,7 @@ import {
 } from "@/lib/organisations";
 import { Badge, Panel, Stat } from "@/components/admin/ui";
 import { OrgDecision } from "@/components/admin/organisations/OrgDecision";
+import { InvitePanel } from "@/components/admin/organisations/InvitePanel";
 
 export const metadata = { title: "Organisation — Admin" };
 
@@ -141,6 +142,14 @@ export default async function OrgDetailPage({ params }: { params: { id: string }
                         verified={!!org.verified}
                         notes={org.internalNotes ?? ""}
                         canManage={can(role, "organisations.manage")}
+                    />
+
+                    <InvitePanel
+                        orgId={org.id!}
+                        orgName={org.name}
+                        claim={org.claim}
+                        contactEmail={org.contactEmail}
+                        contactName={org.contactName}
                     />
 
                     <Panel title="Setup progress">

@@ -155,6 +155,13 @@ service cloud.firestore {
     // one-per-person, which rules cannot enforce across a set of documents, and
     // the follower list is a list of people — not something to hand to the page
     // that would most like to have it.
+    // Invitations to take over an organisation's page. The token in one of
+    // these documents grants ownership, so a client that could read the
+    // collection could claim every prepared page on the platform.
+    match /orgInvites/{inviteId} {
+      allow read, write: if false;
+    }
+
     match /orgFollowers/{followId} {
       allow read, write: if false;
     }
