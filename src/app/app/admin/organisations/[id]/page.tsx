@@ -10,6 +10,7 @@ import {
 import { Badge, Panel, Stat } from "@/components/admin/ui";
 import { OrgDecision } from "@/components/admin/organisations/OrgDecision";
 import { InvitePanel } from "@/components/admin/organisations/InvitePanel";
+import { OrgStorefrontEditor } from "@/components/admin/organisations/OrgStorefrontEditor";
 
 export const metadata = { title: "Organisation — Admin" };
 
@@ -83,6 +84,8 @@ export default async function OrgDetailPage({ params }: { params: { id: string }
 
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 items-start">
                 <div className="space-y-4 min-w-0">
+                    <OrgStorefrontEditor org={org} claim={org.claim} />
+
                     {org.motivation && (
                         <Panel title="Why they applied">
                             <p className="text-[13px] text-ink whitespace-pre-line leading-relaxed">{org.motivation}</p>

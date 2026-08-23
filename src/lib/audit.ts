@@ -36,7 +36,8 @@ export type AuditAction =
     | "org.create"
     | "org.invite"
     | "org.invite.revoke"
-    | "org.claim";
+    | "org.claim"
+    | "org.edit";
 
 export const AUDIT_LABELS: Record<AuditAction, string> = {
     "member.suspend": "Suspended a member",
@@ -65,6 +66,7 @@ export const AUDIT_LABELS: Record<AuditAction, string> = {
     "org.invite": "Invited an organisation owner",
     "org.invite.revoke": "Withdrew an invitation",
     "org.claim": "An organisation claimed its page",
+    "org.edit": "Edited an organisation's storefront",
 };
 
 /** How alarming an entry should look when scanning the list. */
@@ -101,6 +103,8 @@ export const AUDIT_SEVERITY: Record<AuditAction, AuditSeverity> = {
     "org.invite": "notable",
     "org.invite.revoke": "info",
     "org.claim": "notable",
+    // Editing a page somebody else owns is worth seeing on a scan of the log.
+    "org.edit": "notable",
 };
 
 export const SEVERITY_TONE: Record<AuditSeverity, "neutral" | "warn" | "bad"> = {

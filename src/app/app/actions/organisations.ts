@@ -950,3 +950,125 @@ export async function acceptOrgInvite(token: string): Promise<ResponseData<{ slu
         return { success: false, message: error.message, data: null };
     }
 }
+
+/* ── Editing a storefront as an admin ──────────────────────────────────── */
+
+export interface AdminOrgEdit {
+    name: string;
+    type: OrgType;
+    slug: string;
+    tagline?: string;
+    about?: string;
+    logoUrl?: string;
+    coverUrl?: string;
+    website?: string;
+    locationName?: string;
+    contactName?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    registrationNumber?: string;
+}
+
+/**
+ * Edit an organisation's public page from the admin side.
+ *
+ * Mostly used to build out a page we prepared, before anyone has claimed it.
+ * It also works on a claimed organisation, because support needs to be able to
+ * fix a broken logo or a libellous line without waiting for the owner — but
+ * that is someone else's words being changed, so every edit names the fields it
+ * touched in the audit log, and the UI says whose page it is.
+ */
+export async function adminUpdateOrganisation(
+    id: string,
+    input: AdminOrgEdit
+): Promise<ResponseData<{ slug: string } | null>> {
+    try {
+        await requireOrgAdmin();
+
+        const snap = await db.collection(ORGS).doc(id).get();
+        if (!snap.exists) throw new Error("Organisation not found");
+        const prev = snap.data() as Organisation;
+
+        const name = input.name?.trim();
+        if (!name || name.length < 2) throw new Error("The organisation needs a name.");
+
+        let slug = slugifyOrg(input.slug?.trim() || name);
+        if (!isValidOrgSlug(slug)) throw new Error("That slug isn't usable — try lowercase words with hyphens.");
+
+        // A slug is a public URL. Two organisations sharing one is a silent 404
+        // for whichever loses the race, so a clash is refused rather than
+        // quietly suffixed the way it is at creation time.
+        if (slug !== prev.slug) {
+            const clash = await db.collection(ORGS).where("slug", "==", slug).limit(1).get();
+            if (!clash.empty && clash.docs[0].id !== id) {
+                throw new Error(`The address "${slug}" is already taken by another organisation.`);
+            }
+        }
+
+        const next = {
+            name,
+            slug,
+            type: input.type,
+            tagline: (input.tagline ?? "").trim().slice(0, 120),
+            about: (input.about ?? "").slice(0, 8000),
+            logoUrl: (input.logoUrl ?? "").trim(),
+            coverUrl: (input.coverUrl ?? "").trim(),
+            website: (input.website ?? "").trim(),
+            locationName: (input.locationName ?? "").trim(),
+            contactName: (input.contactName ?? "").trim(),
+            contactEmail: (input.contactEmail ?? "").trim().toLowerCase(),
+            contactPhone: (input.contactPhone ?? "").trim(),
+            registrationNumber: (input.registrationNumber ?? "").trim(),
+            updatedAt: iso(),
+        };
+
+        // Name the fields that actually changed. "Edited the storefront" tells
+        // nobody anything a month later.
+        const changed = Object.keys(next).filter((key) => {
+            if (key === "updatedAt") return false;
+            const before = (prev as unknown as Record<string, unknown>)[key] ?? "";
+            const after = (next as unknown as Record<string, unknown>)[key] ?? "";
+            return before !== after;
+        });
+
+        if (!changed.length) {
+            return { success: true, message: "Nothing to save", data: { slug } };
+        }
+
+        await db.collection(ORGS).doc(id).update(next);
+
+        // The organisation's name and slug are copied onto every item it lists,
+        // so a card can name the lister without an extra read. A rename has to
+        // fan out or those cards keep showing the old name for ever.
+        if (name !== prev.name || slug !== prev.slug) {
+            const items = await db.collection(ITEMS).where("orgId", "==", id).get();
+            for (let i = 0; i < items.docs.length; i += 400) {
+                const batch = db.batch();
+                for (const doc of items.docs.slice(i, i + 400)) {
+                    batch.update(doc.ref, { orgName: name, orgSlug: slug });
+                }
+                await batch.commit();
+            }
+        }
+
+        await recordAudit({
+            action: "org.edit",
+            targetId: id,
+            targetLabel: prev.name,
+            detail: `changed ${changed.join(", ")}${
+                prev.claim === "claimed" ? " on a claimed page" : ""
+            }`,
+        });
+
+        revalidatePath("/app/admin/organisations");
+        revalidatePath(`/app/admin/organisations/${id}`);
+        revalidatePath("/organisations");
+        revalidatePath(`/o/${slug}`);
+        // The old address stops resolving, so its cache entry has to go too.
+        if (slug !== prev.slug) revalidatePath(`/o/${prev.slug}`);
+
+        return { success: true, message: "Storefront saved", data: { slug } };
+    } catch (error: any) {
+        return { success: false, message: error.message, data: null };
+    }
+}

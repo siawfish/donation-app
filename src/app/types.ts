@@ -66,9 +66,9 @@ export interface ItemType {
      * The organisation's name and slug, copied at listing time.
      *
      * Denormalised deliberately: every card in a grid would otherwise need its
-     * own read of the organisation just to name the lister. There is no rename
-     * path today (the name is fixed at application); if one is ever added it
-     * must fan out to the organisation's existing items.
+     * own read of the organisation just to name the lister. `adminUpdateOrganisation`
+     * fans a rename out across these, which is the only path that can change
+     * either value — anything else that renames an organisation must do the same.
      */
     orgName?: string;
     orgSlug?: string;
