@@ -14,7 +14,7 @@ export interface AdminNavItem {
     label: string;
     capability: Capability;
     /** Which pending counter, if any, belongs on this item. */
-    badge?: "verifications" | "applications" | "tasks" | "ambassadors" | "orgs";
+    badge?: "verifications" | "applications" | "tasks" | "ambassadors" | "orgs" | "contact";
     /** Icon name resolved in the sidebar, so this file stays free of JSX. */
     icon: string;
     /** Marks the section landing page, which must match exactly. */
@@ -90,6 +90,20 @@ export const ADMIN_NAV: AdminNavGroup[] = [
         items: [
             { href: "/app/admin/blog", label: "Journal", capability: "blog.manage", icon: "BookOpen" },
             { href: "/app/admin/blog/comments", label: "Comments", capability: "blog.manage", icon: "MessageSquare" },
+            { href: "/app/admin/team", label: "Team page", capability: "team.manage", icon: "Contact" },
+        ],
+    },
+    {
+        id: "inbox",
+        label: "Inbox",
+        items: [
+            {
+                href: "/app/admin/contact",
+                label: "Messages",
+                capability: "contact.manage",
+                icon: "Mail",
+                badge: "contact",
+            },
         ],
     },
     {
@@ -110,6 +124,7 @@ export interface AttentionCounts {
     tasks: number;
     ambassadors: number;
     orgs: number;
+    contact: number;
 }
 
 export const EMPTY_ATTENTION: AttentionCounts = {
@@ -118,4 +133,5 @@ export const EMPTY_ATTENTION: AttentionCounts = {
     tasks: 0,
     ambassadors: 0,
     orgs: 0,
+    contact: 0,
 };

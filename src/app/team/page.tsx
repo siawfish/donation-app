@@ -1,78 +1,29 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import PublicShell from "@/components/PublicShell";
 import Image from "next/image";
+import { ArrowRight, MapPin } from "lucide-react";
 import { InfiniteSlider } from "@/components/ui/infinite-slider";
+import { listPublicTeam } from "@/app/app/actions/team";
+import { listOpenJobs } from "@/app/app/actions/jobs";
+import { EMPLOYMENT_LABELS, WORK_MODE_LABELS } from "@/lib/jobs";
+import { initialsOf } from "@/lib/team";
+import { absoluteUrl } from "@/lib/seo";
 
-const teamMembers = [
-  {
-    name: "Christian Owusu Amoako",
-    role: "Founder & CEO",
-    bio: "Several years of experience in Social entrepreneurship and sustainability and leading several social innovation initiatives in Ghana and Europe.",
-    image: "/placeholder.svg"
-  },
-  {
-    name: "Kenneth Anku",
-    role: "Co-Founder & Product Manager",
-    bio: "Extensive experience in eCommerce and business Development from building high-impact social startups in Ghana.",
-    image: "/placeholder.svg"
-  },
-  {
-    name: "Gerald Amanor",
-    role: "CTO",
-    bio: "Lead software engineer with over 5 years of experience in software development and management.",
-    image: "/placeholder.svg"
-  },
-  {
-    name: "Elorm Akoto",
-    role: "Head of Logistics and Marketing ",
-    bio: "Over 6 years of experience working in operations, marketing, delivery and logistics from companies like Jumia Group, Uber, Kobo 360",
-    image: "/placeholder.svg"
-  }
-];
+export const metadata: Metadata = {
+    title: "The team behind Givny",
+    description:
+        "The people building Givny in Ghana — and the roles we're hiring for right now.",
+    alternates: { canonical: absoluteUrl("/team") },
+};
 
-const jobListings = [
-  {
-    category: "Software Development",
-    jobs: [
-      {
-        title: "Software Developer Intern",
-        tag: "Software",
-        description: "We're looking for a passionate software developer intern to join our team.",
-        location: "Accra, Ghana",
-        type: "Full-time",
-        salary: "GHS 1,500 - 2,000"
-      }
-    ]
-  },
-  {
-    category: "Operations",
-    jobs: [
-      {
-        title: "Operations Manager",
-        tag: "Operations",
-        description: "We're looking for an experienced operations manager to oversee our daily operations.",
-        location: "Accra, Ghana",
-        type: "Full-time",
-        salary: "GHS 5,000 - 7,000"
-      }
-    ]
-  },
-  {
-    category: "IT Support",
-    jobs: [
-      {
-        title: "IT Admin Support",
-        tag: "IT",
-        description: "We're looking for an IT admin support specialist to maintain our systems and assist team members.",
-        location: "Accra, Ghana",
-        type: "Full-time",
-        salary: "GHS 3,000 - 4,500"
-      }
-    ]
-  }
-];
+// People and open roles both change without a deploy, so this page cannot be
+// baked at build time.
+export const revalidate = 300;
 
-export default function Team() {
+export default async function Team() {
+  const [team, jobs] = await Promise.all([listPublicTeam(), listOpenJobs()]);
+
   return (
     <PublicShell>
       <>
@@ -89,22 +40,23 @@ export default function Team() {
           </div>
           
           <InfiniteSlider duration={40} gap={16} className="py-8">
-            {teamMembers.map((member) => (
-              <div 
-                key={member.name} 
-                className="w-[250px] md:w-[300px] flex-shrink-0 rounded-2xl p-4 bg-secondary/20"
-              >
-                <div className="aspect-square relative mb-4 rounded-xl overflow-hidden">
-                  <Image
-                    src={member.image}
-                    alt={member.name}
-                    fill
-                    className="object-cover"
-                  />
+            {team.map((member) => (
+              <div key={member.id} className="w-[240px] md:w-[280px] flex-shrink-0 px-3">
+                <div className="relative aspect-square rounded-2xl overflow-hidden mb-4 bg-sand flex items-center justify-center">
+                  {member.photoUrl ? (
+                    <Image
+                      src={member.photoUrl}
+                      alt={member.name}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <span className="text-4xl font-bold text-forest">{initialsOf(member.name)}</span>
+                  )}
                 </div>
                 <h3 className="text-lg md:text-xl font-semibold mb-1">{member.name}</h3>
                 <p className="text-gray-600 font-medium mb-2">{member.role}</p>
-                <p className="text-gray-500 text-sm">{member.bio}</p>
+                {member.bio && <p className="text-gray-500 text-sm">{member.bio}</p>}
               </div>
             ))}
           </InfiniteSlider>
@@ -155,41 +107,75 @@ export default function Team() {
             </div>
           </div>
 
-          <div className="space-y-4 md:space-y-6">
-            {jobListings.map((category) => (
-              <div key={category.category}>
-                <h3 className="text-xl md:text-2xl font-semibold pt-6 md:pt-8 pb-3 md:pb-4">{category.category}</h3>
-                <div className="space-y-3 md:space-y-4">
-                  {category.jobs.map((job) => (
-                    <div key={job.title} className="border rounded-xl p-4 md:p-6">
-                      <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-4">
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2 mb-2">
-                            <h4 className="text-lg md:text-xl font-semibold">{job.title}</h4>
-                            <span className="px-2 py-1 bg-gray-100 rounded-full text-sm">{job.tag}</span>
-                          </div>
-                          <p className="text-gray-600 text-sm md:text-base">{job.description}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="px-3 py-1 bg-gray-100 rounded-full text-sm">{job.location}</span>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-4 md:gap-6 text-gray-600 text-sm md:text-base">
-                        <div className="flex items-center gap-2">
-                          <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                          <span>{job.type}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                          <span>{job.salary}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+          {/* Open roles come from the careers system now. The list here used to
+              be hard-coded and had drifted out of step with what was actually
+              open — two sources of truth for hiring is one too many. */}
+          <div className="space-y-3 md:space-y-4">
+            {jobs.length === 0 ? (
+              <div className="border border-gray-200/70 rounded-2xl p-8 text-center bg-white">
+                <p className="font-bold text-ink">No open roles right now</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Nothing is open at the moment, but that changes. Have a look at what we
+                  have advertised before, or write to us.
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-4 mt-4">
+                  <Link href="/careers" className="text-sm font-bold text-forest hover:underline">
+                    Careers page
+                  </Link>
+                  <Link href="/contact?topic=other" className="text-sm font-bold text-forest hover:underline">
+                    Get in touch
+                  </Link>
                 </div>
               </div>
-            ))}
+            ) : (
+              jobs.map((job) => (
+                <Link
+                  key={job.id}
+                  href={`/careers/${job.slug}`}
+                  className="block border border-gray-200/70 rounded-2xl p-4 md:p-6 bg-white card-hover"
+                >
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                        <h4 className="text-lg md:text-xl font-semibold text-ink">{job.title}</h4>
+                        {job.department && (
+                          <span className="px-2 py-1 bg-primary-light text-primary rounded-full text-xs font-bold">
+                            {job.department}
+                          </span>
+                        )}
+                      </div>
+                      {job.salaryRange && (
+                        <p className="text-gray-600 text-sm md:text-base">{job.salaryRange}</p>
+                      )}
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 text-sm font-bold text-forest flex-shrink-0">
+                      View role <ArrowRight className="w-4 h-4" />
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-gray-500 text-sm mt-4">
+                    {job.location && (
+                      <span className="inline-flex items-center gap-1.5">
+                        <MapPin className="w-4 h-4 text-primary" /> {job.location}
+                      </span>
+                    )}
+                    <span>{EMPLOYMENT_LABELS[job.employmentType]}</span>
+                    <span>{WORK_MODE_LABELS[job.workMode]}</span>
+                  </div>
+                </Link>
+              ))
+            )}
           </div>
+
+          {jobs.length > 0 && (
+            <Link
+              href="/careers"
+              className="inline-flex items-center gap-2 text-sm font-bold text-forest hover:underline mt-6"
+            >
+              All {jobs.length} open role{jobs.length === 1 ? "" : "s"} <ArrowRight className="w-4 h-4" />
+            </Link>
+          )}
+
         </section>
       </>
       </PublicShell>

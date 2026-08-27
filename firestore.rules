@@ -158,6 +158,20 @@ service cloud.firestore {
     // Invitations to take over an organisation's page. The token in one of
     // these documents grants ownership, so a client that could read the
     // collection could claim every prepared page on the platform.
+    // Contact form submissions. They contain a stranger's name, email and
+    // phone number, so no client reads them and no client writes one either —
+    // submission goes through a server action that rate-limits by address.
+    match /contactMessages/{messageId} {
+      allow read, write: if false;
+    }
+
+    // The team page. Published members are public because the page is; editing
+    // is admin-only through a server action.
+    match /teamMembers/{memberId} {
+      allow read: if resource.data.published == true;
+      allow write: if false;
+    }
+
     match /orgInvites/{inviteId} {
       allow read, write: if false;
     }
