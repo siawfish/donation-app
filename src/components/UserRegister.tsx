@@ -87,8 +87,14 @@ export default function RegisterPage({
       if (!success) {
         toast.error("Registration failed", { description: message });
       } else {
+        // Confirm first, then move. The toast was raised after the push, which
+        // meant the message and the new page raced each other.
+        const firstName = values.name.trim().split(/\s+/)[0];
+        toast.success(`Your account is ready${firstName ? `, ${firstName}` : ""}`, {
+          description: "Have a look at what neighbours near you are passing on.",
+          duration: 6000,
+        });
         router.push("/app");
-        toast.success("Welcome to Givny!");
       }
       setSubmitting(false);
     });

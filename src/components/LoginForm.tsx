@@ -33,12 +33,21 @@ export default function LoginForm({ loginAction }: LoginFormProps) {
     { setSubmitting }: { setSubmitting: (value: boolean) => void }
   ) => {
     startTransition(async () => {
-      const { success, message } = await loginAction(values.email, values.password);
+      const { success, message, data } = await loginAction(values.email, values.password);
       if (!success) {
         toast.error("Login failed", { description: message });
         setSubmitting(false);
         return;
       }
+
+      // Confirm before navigating. The Toaster lives in the root layout, so the
+      // message survives the route change and lands on the page they arrive at
+      // — otherwise a successful sign-in is silent and reads as a page that
+      // simply moved on its own.
+      const firstName = data?.name?.trim().split(/\s+/)[0];
+      toast.success(firstName ? `Welcome back, ${firstName}` : "Welcome back", {
+        description: "You're signed in.",
+      });
       router.push(redirect || "/app");
     });
   };
