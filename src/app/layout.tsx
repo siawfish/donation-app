@@ -11,6 +11,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { InstallPrompt } from "@/components/pwa/InstallPrompt"
 import { authConfig } from "@/firebase/config/server-config";
 import Script from 'next/script';
+import { MetaPixel } from '@/components/MetaPixel';
 
 export const metadata: Metadata = {
   title: "Givny — give your things a second life",
@@ -69,6 +70,10 @@ export default async function RootLayout({
             })(window, document, "clarity", "script", "oyzg9ybknl");
           `}
         </Script>
+
+        <Suspense fallback={null}>
+          <MetaPixel />
+        </Suspense>
       </head>
       <body>
         <Suspense fallback={<div>Loading...</div>}>
