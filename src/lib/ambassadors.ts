@@ -13,12 +13,23 @@
  * channel.
  */
 
-export type AmbassadorType = "campus" | "town";
+export type AmbassadorType = "campus" | "community";
 
 export const TYPE_LABELS: Record<AmbassadorType, string> = {
     campus: "Campus",
-    town: "Town",
+    community: "Community",
 };
+
+/**
+ * Read a stored type, tolerating the old value.
+ *
+ * These were called "town" ambassadors until the programme was renamed, and
+ * records written before that still say so. Normalising on read means one
+ * missed document cannot render a blank label or fall out of a filter.
+ */
+export function normaliseAmbassadorType(value: unknown): AmbassadorType {
+    return value === "campus" ? "campus" : "community";
+}
 
 export type AmbassadorStatus = "applicant" | "active" | "paused" | "ended";
 

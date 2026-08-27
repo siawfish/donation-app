@@ -31,7 +31,7 @@ const ANSWERS = [
     },
     {
         q: "Are you hiring?",
-        a: "Open roles are on the careers page, including campus and town ambassadors.",
+        a: "Open roles are on the careers page, including campus and community ambassadors.",
         href: "/careers",
     },
 ];

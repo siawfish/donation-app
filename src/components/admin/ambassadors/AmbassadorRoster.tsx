@@ -16,7 +16,7 @@ import {
 } from "../ui";
 
 const COLS = 8;
-type Filter = "all" | "campus" | "town";
+type Filter = "all" | "campus" | "community";
 
 /** Progress bar sized to a monthly target. */
 function Bar({ actual, target }: { actual: number; target: number }) {
@@ -86,7 +86,7 @@ export function AmbassadorRoster({ canManage }: { canManage: boolean }) {
                             options={[
                                 { id: "all", label: "All", count: rows.length },
                                 { id: "campus", label: "Campus", count: rows.filter((r) => r.type === "campus").length },
-                                { id: "town", label: "Town", count: rows.filter((r) => r.type === "town").length },
+                                { id: "community", label: "Community", count: rows.filter((r) => r.type === "community").length },
                             ]}
                             onChange={setFilter}
                         />
@@ -257,7 +257,7 @@ function AddForm({ onDone }: { onDone: () => void }) {
                 <div className="flex flex-wrap items-center gap-2">
                     <Segmented
                         value={type}
-                        options={[{ id: "campus" as const, label: "Campus" }, { id: "town" as const, label: "Town" }]}
+                        options={[{ id: "campus" as const, label: "Campus" }, { id: "community" as const, label: "Community" }]}
                         onChange={setType}
                     />
                     <Input

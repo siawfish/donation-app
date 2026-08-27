@@ -221,7 +221,7 @@ export function AmbassadorDetailView({ initial }: { initial: AmbassadorDetail })
                         <div className="mt-1">
                             <Segmented
                                 value={type}
-                                options={[{ id: "campus" as const, label: "Campus" }, { id: "town" as const, label: "Town" }]}
+                                options={[{ id: "campus" as const, label: "Campus" }, { id: "community" as const, label: "Community" }]}
                                 onChange={setType}
                             />
                         </div>

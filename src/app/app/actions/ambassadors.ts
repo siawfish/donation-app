@@ -12,6 +12,7 @@ import { recordAudit } from "./audit";
 import {
     ActivityKind, Ambassador, AmbassadorActivity, AmbassadorKpis, AmbassadorStatus,
     AmbassadorTargets, AmbassadorType, DEFAULT_TARGETS, EMPTY_KPIS,
+    normaliseAmbassadorType,
 } from "@/lib/ambassadors";
 
 const AMB = "ambassadors";
@@ -122,6 +123,7 @@ export async function listAmbassadors(): Promise<ResponseData<AmbassadorRow[]>> 
         const [snap, kpis] = await Promise.all([db.collection(AMB).get(), computeAllKpis()]);
         const rows = snap.docs.map((d) => ({
             ...(d.data() as Ambassador),
+            type: normaliseAmbassadorType(d.data().type),
             uid: d.id,
             kpis: kpis.get(d.id) ?? { ...EMPTY_KPIS },
         }));
@@ -175,7 +177,11 @@ async function buildDetail(uid: string): Promise<ResponseData<AmbassadorDetail |
         success: true,
         message: "ok",
         data: {
-            ambassador: { ...(snap.data() as Ambassador), uid: snap.id },
+            ambassador: {
+                ...(snap.data() as Ambassador),
+                type: normaliseAmbassadorType(snap.data()?.type),
+                uid: snap.id,
+            },
             kpis: kpisAll.get(uid) ?? { ...EMPTY_KPIS },
             activities,
             referred,
@@ -204,7 +210,7 @@ export async function addAmbassador(input: {
     try {
         const { uid: actor } = await requireAdmin();
         const territory = input.territory?.trim();
-        if (!territory) throw new Error("Give them a campus or town.");
+        if (!territory) throw new Error("Give them a campus or community.");
 
         const userSnap = await db.collection(USERS).doc(input.uid).get();
         if (!userSnap.exists) throw new Error("That member doesn't exist.");

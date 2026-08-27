@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { toast } from "sonner";
 import { Loader2, Upload, Check, FileText, X, AlertCircle } from "lucide-react";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { storage } from "@/firebase/auth/firebase";
@@ -24,6 +25,19 @@ export function ApplyForm({ jobId, jobTitle }: { jobId: string; jobTitle: string
     const [progress, setProgress] = useState<number | null>(null);
     const [file, setFile] = useState<File | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const doneRef = useRef<HTMLDivElement>(null);
+
+    /**
+     * Put the confirmation where the person is looking.
+     *
+     * The form is long, so send is pressed near the bottom of the page. The
+     * panel that replaces it is short, and on a phone it can end up above the
+     * viewport entirely — which is exactly how a successful application comes
+     * to look like nothing happened at all.
+     */
+    useEffect(() => {
+        if (done) doneRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, [done]);
 
     const [form, setForm] = useState({ name: "", email: "", phone: "", coverNote: "" });
     const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
@@ -83,14 +97,25 @@ export function ApplyForm({ jobId, jobTitle }: { jobId: string; jobTitle: string
 
         startTransition(async () => {
             const res = await submitApplication({ jobId, ...form, resumePath, resumeName });
-            if (!res.success) { setError(res.message); return; }
+            if (!res.success) {
+                setError(res.message);
+                // The error sits at the foot of a long form, which is not
+                // necessarily where the person is looking after pressing send.
+                toast.error("Couldn't send your application", { description: res.message });
+                return;
+            }
+
             setDone(true);
+            toast.success("Application sent", {
+                description: `We'll be in touch at ${form.email}.`,
+                duration: 6000,
+            });
         });
     };
 
     if (done) {
         return (
-            <div className="bg-forest rounded-3xl p-8 md:p-10 text-center">
+            <div ref={doneRef} className="bg-forest rounded-3xl p-8 md:p-10 text-center">
                 <span className="inline-flex w-12 h-12 rounded-full bg-lime text-forest items-center justify-center mb-4">
                     <Check className="w-6 h-6" />
                 </span>

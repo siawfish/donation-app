@@ -107,7 +107,7 @@ export function AmbassadorPortal({ initial }: { initial: AmbassadorDetail }) {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <p className="text-xs font-bold tracking-[0.2em] uppercase text-lime mb-1.5">
-                            {a.type === "campus" ? "Campus" : "Town"} ambassador
+                            {a.type === "campus" ? "Campus" : "Community"} ambassador
                         </p>
                         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{a.territory}</h1>
                         <p className="text-white/60 text-sm mt-1">

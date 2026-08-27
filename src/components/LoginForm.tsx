@@ -138,7 +138,7 @@ export default function LoginForm({ loginAction }: LoginFormProps) {
                 />
 
                 <div className="flex justify-end -mt-1">
-                  <Link href="/contact" className="text-primary text-sm font-medium hover:underline underline-offset-4">
+                  <Link href="/auth/forgot-password" className="text-primary text-sm font-medium hover:underline underline-offset-4">
                     Forgot password?
                   </Link>
                 </div>

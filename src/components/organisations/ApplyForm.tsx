@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { toast } from "sonner";
+import { useEffect, useState, useTransition, useRef } from "react";
 import Link from "next/link";
 import { Check, Loader2, AlertCircle, ArrowRight } from "lucide-react";
 import { applyAsOrganisation } from "@/app/app/actions/organisations";
@@ -21,18 +22,36 @@ export function OrgApplyForm({ signedIn }: { signedIn: boolean }) {
 
     const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
+    const doneRef = useRef<HTMLDivElement>(null);
+
+    // Send is pressed at the foot of a long form; the confirmation that replaces
+    // it is short and can land outside the viewport, which reads as nothing
+    // having happened.
+    useEffect(() => {
+        if (done) doneRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, [done]);
+
     const submit = () => {
         setError(null);
         startTransition(async () => {
             const res = await applyAsOrganisation({ ...form, type });
-            if (!res.success) { setError(res.message); return; }
+            if (!res.success) {
+                setError(res.message);
+                toast.error("Couldn't send your application", { description: res.message });
+                return;
+            }
+
             setDone(true);
+            toast.success("Application received", {
+                description: `We'll email ${form.contactEmail} within a couple of working days.`,
+                duration: 6000,
+            });
         });
     };
 
     if (done) {
         return (
-            <div className="forest-panel rounded-3xl p-8 md:p-10 text-center">
+            <div ref={doneRef} className="forest-panel rounded-3xl p-8 md:p-10 text-center">
                 <span className="inline-flex w-12 h-12 rounded-full bg-lime text-forest items-center justify-center mb-4">
                     <Check className="w-6 h-6" />
                 </span>
