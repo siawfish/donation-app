@@ -144,3 +144,90 @@ function escapeHtml(value: string): string {
 function escapeAttr(value: string): string {
     return escapeHtml(value).replace(/'/g, "&#39;");
 }
+
+
+/* ── Transactional replies ─────────────────────────────────────────────── */
+
+export interface ReplyShell {
+    /** What they wrote to us, quoted underneath so the reply makes sense alone. */
+    originalMessage: string;
+    replyBody: string;
+    recipientName: string;
+    siteUrl: string;
+}
+
+/**
+ * A reply to somebody's own enquiry.
+ *
+ * Deliberately not the campaign shell. This is transactional — they asked us a
+ * question and we are answering it — so it carries no unsubscribe link, no
+ * tracking pixel and no marketing furniture. Putting an unsubscribe footer on a
+ * support reply invites somebody to opt out of hearing back from us, which is
+ * not a thing anybody means to do.
+ *
+ * Their original message is quoted underneath, because a reply arriving days
+ * later to an address somebody contacted once is otherwise context-free.
+ */
+export function renderReplyEmail(shell: ReplyShell): string {
+    const paragraphs = shell.replyBody
+        .split(/\n{2,}/)
+        .map((p) => `<p style="margin:0 0 14px;">${escapeHtml(p).replace(/\n/g, "<br>")}</p>`)
+        .join("");
+
+    return `<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:${CANVAS};">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${CANVAS};">
+  <tr>
+    <td align="center" style="padding:24px 12px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+             style="max-width:560px;background:#ffffff;border-radius:16px;border:1px solid #e5e7eb;">
+        <tr>
+          <td style="padding:28px 28px 0;">
+            <a href="${escapeAttr(shell.siteUrl)}"
+               style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:bold;
+                      color:${FOREST};text-decoration:none;">Givny</a>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 28px 0;font-family:Arial,Helvetica,sans-serif;font-size:16px;
+                     line-height:1.65;color:${INK};">
+            ${paragraphs}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:8px 28px 28px;">
+            <div style="border-left:3px solid #e5e7eb;padding:2px 0 2px 14px;margin-top:18px;">
+              <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:${MUTED};">
+                You wrote:
+              </p>
+              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.6;
+                        color:${MUTED};white-space:pre-line;">${escapeHtml(shell.originalMessage.slice(0, 1200))}</p>
+            </div>
+            <p style="margin:20px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:${MUTED};">
+              Just reply to this email if you need anything else.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>`;
+}
+
+export function renderReplyText(shell: ReplyShell): string {
+    return [
+        shell.replyBody,
+        "",
+        "---",
+        "You wrote:",
+        shell.originalMessage.slice(0, 1200),
+        "",
+        "Just reply to this email if you need anything else.",
+        `Givny · ${shell.siteUrl}`,
+        "",
+    ].join("\n");
+}

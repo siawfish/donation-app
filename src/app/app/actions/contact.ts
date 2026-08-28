@@ -19,9 +19,12 @@ import { can } from "@/lib/roles";
 import { getMyAdminRole } from "./admin";
 import { recordAudit } from "./audit";
 import {
-    ContactMessage, ContactStatus, ContactTopic, MESSAGE_MAX, NAME_MAX,
-    TOPIC_LABELS, validateContact,
+    ContactMessage, ContactReply, ContactStatus, ContactTopic, MESSAGE_MAX, NAME_MAX,
+    TOPIC_LABELS, validateContact, validateReply,
 } from "@/lib/contact";
+import { renderReplyEmail, renderReplyText } from "@/lib/email/template";
+import { sendEmail } from "@/lib/email/provider";
+import { siteUrl } from "@/lib/seo";
 
 const MESSAGES = "contactMessages";
 
@@ -211,6 +214,97 @@ export async function deleteContactMessage(id: string): Promise<ResponseData<nul
 
         revalidatePath("/app/admin/contact");
         return { success: true, message: "Deleted", data: null };
+    } catch (error: any) {
+        return { success: false, message: error.message, data: null };
+    }
+}
+
+/* ── Replying ──────────────────────────────────────────────────────────── */
+
+/**
+ * Answer a contact message from inside the admin.
+ *
+ * The reply is stored on the message whether or not it was delivered, and the
+ * record says which. Losing track of what was promised because the mail bounced
+ * is worse than the bounce: the next person to open the thread would answer as
+ * if nothing had been said.
+ */
+export async function replyToContactMessage(
+    id: string,
+    body: string,
+    options?: { resolve?: boolean }
+): Promise<ResponseData<ContactMessage | null>> {
+    try {
+        const actor = await requireContactAdmin();
+
+        const problem = validateReply(body);
+        if (problem) throw new Error(problem);
+
+        const ref = db.collection(MESSAGES).doc(id);
+        const snap = await ref.get();
+        if (!snap.exists) throw new Error("That message is no longer here.");
+        const message = { ...(snap.data() as ContactMessage), id: snap.id };
+
+        if (message.status === "spam") {
+            throw new Error("That one is marked as spam. Un-mark it first if you meant to reply.");
+        }
+
+        const who = await db.collection("users").doc(actor).get();
+        const senderName = who.data()?.name ?? "Givny";
+
+        const shell = {
+            originalMessage: message.message,
+            replyBody: body.trim(),
+            recipientName: message.name,
+            siteUrl: siteUrl(),
+        };
+
+        const result = await sendEmail({
+            to: message.email,
+            subject: `Re: your message to Givny`,
+            html: renderReplyEmail(shell),
+            text: renderReplyText(shell),
+        });
+
+        const reply: ContactReply = {
+            body: body.trim(),
+            sentBy: actor,
+            sentByName: senderName,
+            sentAt: iso(),
+            delivered: result.ok && result.provider !== "dry-run",
+            ...(result.ok ? {} : { error: result.error ?? "The provider refused it." }),
+        };
+
+        await ref.update({
+            replies: [...(message.replies ?? []), reply],
+            // Replying moves it out of "nobody has looked", and optionally
+            // closes it — most replies are the end of the conversation.
+            status: options?.resolve ? "resolved" : "open",
+            handledBy: actor,
+            handledAt: iso(),
+            updatedAt: iso(),
+        });
+
+        revalidatePath("/app/admin/contact");
+
+        const fresh = await ref.get();
+        const data = { ...(fresh.data() as ContactMessage), id: fresh.id };
+
+        if (!result.ok) {
+            return {
+                success: false,
+                message: `Saved, but not delivered: ${result.error ?? "the provider refused it"}`,
+                data,
+            };
+        }
+
+        return {
+            success: true,
+            message: result.provider === "dry-run"
+                ? "Saved to the thread — no email provider is configured, so nothing was delivered."
+                : `Replied to ${message.name}`,
+            data,
+        };
     } catch (error: any) {
         return { success: false, message: error.message, data: null };
     }

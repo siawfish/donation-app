@@ -1,13 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
-import { Loader2, Mail, Phone, Trash2, User } from "lucide-react";
+import { CornerUpLeft, Loader2, Mail, Phone, Send, Trash2, TriangleAlert, User } from "lucide-react";
 import { toast } from "sonner";
 import {
-    deleteContactMessage, listContactMessages, saveContactNotes, setContactStatus,
+    deleteContactMessage, listContactMessages, replyToContactMessage,
+    saveContactNotes, setContactStatus,
 } from "@/app/app/actions/contact";
 import {
-    STATUS_LABELS, STATUS_TONE, TOPIC_LABELS, contactPreview,
+    REPLY_MAX, STATUS_LABELS, STATUS_TONE, TOPIC_LABELS, contactPreview, validateReply,
     type ContactMessage, type ContactStatus,
 } from "@/lib/contact";
 import { Badge, Button, Panel, Segmented, Textarea } from "../ui";
@@ -29,6 +30,7 @@ export function ContactInbox() {
     const [filter, setFilter] = useState<Filter>("new");
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [notes, setNotes] = useState("");
+    const [reply, setReply] = useState("");
     const [busy, setBusy] = useState<string | null>(null);
     const [, startTransition] = useTransition();
 
@@ -58,6 +60,10 @@ export function ContactInbox() {
 
     // Keep the notes box in step with whichever message is open.
     useEffect(() => { setNotes(selected?.notes ?? "") }, [selected?.id, selected?.notes]);
+
+    // Drop any half-written reply when moving to another message. Carrying a
+    // draft across threads is how the wrong person gets answered.
+    useEffect(() => { setReply("") }, [selected?.id]);
 
     const act = (id: string, fn: () => Promise<{ success: boolean; message: string }>) => {
         setBusy(id);
@@ -153,16 +159,91 @@ export function ContactInbox() {
                             {selected.message}
                         </p>
 
-                        <div className="flex flex-wrap items-center gap-2 mt-5 pt-4 border-t border-gray-100">
-                            <a
-                                href={`mailto:${selected.email}?subject=${encodeURIComponent(
-                                    `Re: your message to Givny`
-                                )}&body=${encodeURIComponent(`Hi ${selected.name.split(" ")[0]},\n\n`)}`}
-                                className="inline-flex items-center gap-1.5 rounded-md border border-forest bg-forest px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-forest-dark transition-colors"
-                            >
-                                <Mail className="w-3.5 h-3.5" /> Reply by email
-                            </a>
+                        {/* What we have already said. Kept on the message so
+                            the next person to open it does not answer twice. */}
+                        {(selected.replies ?? []).length > 0 && (
+                            <ul className="mt-5 space-y-3">
+                                {(selected.replies ?? []).map((r, i) => (
+                                    <li key={i} className="bg-sand rounded-lg px-4 py-3">
+                                        <p className="flex flex-wrap items-center gap-2 text-[11px] text-gray-500">
+                                            <CornerUpLeft className="w-3 h-3" />
+                                            <span className="font-semibold text-ink">{r.sentByName}</span>
+                                            <span>{when(r.sentAt)}</span>
+                                            {!r.delivered && (
+                                                <Badge tone="warn">{r.error ? "Not delivered" : "Not emailed"}</Badge>
+                                            )}
+                                        </p>
+                                        <p className="text-[13px] text-ink whitespace-pre-line leading-relaxed mt-1.5">
+                                            {r.body}
+                                        </p>
+                                        {r.error && (
+                                            <p className="text-[11px] text-amber-700 mt-1.5">{r.error}</p>
+                                        )}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
 
+                        <div className="mt-5 pt-4 border-t border-gray-100">
+                            <label className="block">
+                                <span className="flex items-baseline justify-between gap-3">
+                                    <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-gray-500">
+                                        Reply to {selected.name.split(" ")[0]}
+                                    </span>
+                                    <span className="text-[11px] text-gray-400 tabular-nums">
+                                        {reply.trim().length} / {REPLY_MAX}
+                                    </span>
+                                </span>
+                                <Textarea
+                                    rows={5}
+                                    value={reply}
+                                    onChange={(e) => setReply(e.target.value)}
+                                    placeholder={`Hi ${selected.name.split(" ")[0]},`}
+                                    className="w-full mt-1"
+                                />
+                            </label>
+
+                            {reply.trim() && validateReply(reply) && (
+                                <p className="flex items-start gap-1.5 text-[11px] text-amber-800 mt-1.5">
+                                    <TriangleAlert className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                                    {validateReply(reply)}
+                                </p>
+                            )}
+
+                            <div className="flex flex-wrap items-center gap-2 mt-2">
+                                <Button
+                                    variant="primary"
+                                    onClick={() =>
+                                        act(selected.id!, async () => {
+                                            const res = await replyToContactMessage(selected.id!, reply);
+                                            if (res.success) setReply("");
+                                            return res;
+                                        })
+                                    }
+                                    disabled={busy === selected.id || !reply.trim() || !!validateReply(reply)}
+                                >
+                                    {busy === selected.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                                    Send reply
+                                </Button>
+                                <Button
+                                    onClick={() =>
+                                        act(selected.id!, async () => {
+                                            const res = await replyToContactMessage(selected.id!, reply, { resolve: true });
+                                            if (res.success) setReply("");
+                                            return res;
+                                        })
+                                    }
+                                    disabled={busy === selected.id || !reply.trim() || !!validateReply(reply)}
+                                >
+                                    Send and resolve
+                                </Button>
+                                <span className="text-[11px] text-gray-400">
+                                    Goes to {selected.email}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2 mt-5 pt-4 border-t border-gray-100">
                             {selected.status !== "open" && (
                                 <Button onClick={() => act(selected.id!, () => setContactStatus(selected.id!, "open"))} disabled={busy === selected.id}>
                                     Mark in progress

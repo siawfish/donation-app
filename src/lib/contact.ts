@@ -49,6 +49,33 @@ export const STATUS_TONE: Record<ContactStatus, "info" | "warn" | "good" | "neut
     spam: "neutral",
 };
 
+/**
+ * A reply we sent back, kept on the message it answers.
+ *
+ * Stored rather than left in whoever's sent folder, so the next person to open
+ * the thread can see what was already promised — the single most common way a
+ * support conversation goes wrong is two people answering it differently.
+ */
+export interface ContactReply {
+    body: string;
+    sentBy: string;
+    sentByName: string;
+    sentAt: string;
+    /** False when no provider was configured and nothing actually left. */
+    delivered: boolean;
+    /** Present when the provider refused it. */
+    error?: string;
+}
+
+export const REPLY_MAX = 5000;
+
+export function validateReply(body: string): string | null {
+    const trimmed = (body ?? "").trim();
+    if (trimmed.length < 5) return "Write a little more than that.";
+    if (trimmed.length > REPLY_MAX) return `Keep the reply under ${REPLY_MAX} characters.`;
+    return null;
+}
+
 export interface ContactMessage {
     id?: string;
     name: string;
@@ -65,6 +92,8 @@ export interface ContactMessage {
 
     /** Internal only — never returned to the sender. */
     notes?: string;
+    /** Everything we have sent back, oldest first. */
+    replies?: ContactReply[];
     handledBy?: string;
     handledAt?: string;
 
