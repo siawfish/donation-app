@@ -4,16 +4,17 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-    LayoutDashboard, BadgeCheck, Briefcase, Contact, Users, Megaphone, Package,
+    LayoutDashboard, BadgeCheck, Briefcase, Users, Megaphone, Package,
     BookOpen, ToggleLeft, ScrollText, ShieldCheck, PanelLeftClose, PanelLeftOpen, Building2,
-    Menu, X, ArrowLeft, MessageSquare, Mail, Send,
+    Menu, X, ArrowLeft, MessageSquare, Mail, Send, Inbox, ListChecks, IdCard,
 } from "lucide-react";
 import { AdminNavGroup, AttentionCounts } from "@/lib/adminNav";
 import { ROLE_LABELS, type AdminRole } from "@/lib/roles";
 
 const ICONS: Record<string, typeof Users> = {
-    LayoutDashboard, BadgeCheck, Briefcase, Contact, Users, Megaphone, Package,
+    LayoutDashboard, BadgeCheck, Briefcase, Users, Megaphone, Package,
     BookOpen, ToggleLeft, ScrollText, ShieldCheck, Building2, MessageSquare, Mail, Send,
+    Inbox, ListChecks, IdCard,
 };
 
 const STORAGE_KEY = "givny.admin.sidebar";

@@ -22,7 +22,7 @@ import { sendEmail } from "@/lib/email/provider";
 import { renderCampaignEmail, renderCampaignText } from "@/lib/email/template";
 import {
     ResolvedTemplate, TEMPLATES, TemplateKey, TemplateOverride,
-    checkTemplate, exampleValues, fillVars, hasBlockingError, resolveTemplate,
+    checkTemplate, exampleValues, fillBody, fillVars, hasBlockingError, resolveTemplate,
 } from "@/lib/email/templates";
 import { siteUrl } from "@/lib/seo";
 
@@ -87,7 +87,7 @@ export async function previewEmailTemplate(
         const shell = {
             subject: fillVars(draft.subject, values),
             preheader: fillVars(draft.preheader, values),
-            bodyMarkdown: fillVars(draft.body, values),
+            bodyMarkdown: fillBody(draft.body, values),
             ctaLabel: draft.ctaLabel ? fillVars(draft.ctaLabel, values) : undefined,
             ctaUrl: draft.ctaUrl ? fillVars(draft.ctaUrl, values) : undefined,
             // Only marketing gets an opt-out footer, so a preview of a
@@ -240,7 +240,7 @@ export async function sendTemplated(
         const shell = {
             subject: fillVars(template.subject, filled),
             preheader: fillVars(template.preheader, filled),
-            bodyMarkdown: fillVars(template.body, filled),
+            bodyMarkdown: fillBody(template.body, filled),
             ctaLabel: template.ctaLabel ? fillVars(template.ctaLabel, filled) : undefined,
             ctaUrl: template.ctaUrl ? fillVars(template.ctaUrl, filled) : undefined,
             unsubscribeUrl: template.unsubscribable

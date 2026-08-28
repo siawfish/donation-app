@@ -184,6 +184,13 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Invitations to join. The token in one of these is a live signup link and
+    // the document holds an address the person never gave us themselves, so the
+    // registration page reads it through a server action rather than directly.
+    match /memberInvites/{inviteId} {
+      allow read, write: if false;
+    }
+
     match /orgFollowers/{followId} {
       allow read, write: if false;
     }

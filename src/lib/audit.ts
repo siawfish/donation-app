@@ -13,6 +13,9 @@
 export type AuditAction =
     | "member.suspend"
     | "member.reinstate"
+    | "member.delete"
+    | "member.invite"
+    | "member.invite.revoke"
     | "listing.remove"
     | "role.grant"
     | "role.revoke"
@@ -49,6 +52,9 @@ export type AuditAction =
 export const AUDIT_LABELS: Record<AuditAction, string> = {
     "member.suspend": "Suspended a member",
     "member.reinstate": "Reinstated a member",
+    "member.delete": "Deleted a member for good",
+    "member.invite": "Invited someone to join",
+    "member.invite.revoke": "Withdrew an invitation",
     "listing.remove": "Removed a listing",
     "role.grant": "Granted an admin role",
     "role.revoke": "Revoked an admin role",
@@ -89,6 +95,9 @@ export type AuditSeverity = "info" | "notable" | "destructive";
 export const AUDIT_SEVERITY: Record<AuditAction, AuditSeverity> = {
     "member.suspend": "destructive",
     "member.reinstate": "notable",
+    "member.delete": "destructive",
+    "member.invite": "notable",
+    "member.invite.revoke": "notable",
     "listing.remove": "destructive",
     "role.grant": "destructive",
     "role.revoke": "destructive",

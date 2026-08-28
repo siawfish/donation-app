@@ -54,11 +54,18 @@ export default function RegisterPage({
   registerUserAction,
   referredBy,
   inviterName,
+  invited = false,
+  inviteToken,
+  invitedEmail,
 }: {
   categories: CategoryType[];
   registerUserAction: (payload: UserRegisterPayload) => Promise<ResponseData<UserType | null>>;
   referredBy?: string;
   inviterName?: string | null;
+  /** Arrived from an admin's invitation email, with a token that still works. */
+  invited?: boolean;
+  inviteToken?: string;
+  invitedEmail?: string;
 }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [_, startTransaction] = useTransition();
@@ -78,6 +85,7 @@ export default function RegisterPage({
         lng: values.lng,
         password: values.password,
         referredBy,
+        inviteToken,
         id: "",
         lastLogin: "",
         createdAt: "",
@@ -141,7 +149,7 @@ export default function RegisterPage({
           </div>
 
           {/* Invite banner */}
-          {referredBy && (
+          {(referredBy || invited) && (
             <div className="mb-6 flex items-center gap-3 bg-lime rounded-2xl px-4 py-3.5">
               <span className="text-xl leading-none">🎁</span>
               <p className="text-sm text-forest leading-snug">
@@ -175,7 +183,9 @@ export default function RegisterPage({
           </div>
 
           <Formik
-            initialValues={initialValues}
+            // Prefilled from the invitation, but still editable — the address
+            // an admin had may not be the one somebody wants an account on.
+            initialValues={{ ...initialValues, email: invitedEmail ?? "" }}
             validationSchema={schemas[currentStep]}
             onSubmit={currentStep < steps.length - 1 ? () => {} : handleSubmit}
             validateOnBlur

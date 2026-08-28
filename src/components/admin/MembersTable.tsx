@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { Search, Ban, RotateCcw, Loader2, BadgeCheck, ShieldCheck } from "lucide-react";
+import { Search, Ban, RotateCcw, Loader2, BadgeCheck, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminUserRow, listMembers, setMemberSuspended } from "@/app/app/actions/admin";
 import { AdminRole, ROLE_LABELS } from "@/lib/roles";
@@ -10,16 +10,18 @@ import {
     Badge, Button, EmptyRow, Initials, Input, Num, Panel,
     SkeletonRows, Table, TableWrap, Td, Th, Tr,
 } from "./ui";
+import { DeleteMemberDialog } from "./DeleteMemberDialog";
 
-export function MembersTable({ canSuspend }: { canSuspend: boolean }) {
+export function MembersTable({ canSuspend, canDelete }: { canSuspend: boolean; canDelete: boolean }) {
     const [rows, setRows] = useState<AdminUserRow[]>([]);
     const [search, setSearch] = useState("");
     const [draft, setDraft] = useState("");
     const [loading, setLoading] = useState(true);
     const [busy, setBusy] = useState<string | null>(null);
+    const [deleting, setDeleting] = useState<AdminUserRow | null>(null);
     const [, startTransition] = useTransition();
 
-    const cols = canSuspend ? 7 : 6;
+    const cols = 6 + (canSuspend ? 1 : 0) + (canDelete ? 1 : 0);
 
     const load = useCallback(async (q: string) => {
         const res = await listMembers({ search: q });
@@ -78,6 +80,7 @@ export function MembersTable({ canSuspend }: { canSuspend: boolean }) {
                             <Th align="right" width="90px">Role</Th>
                             <Th align="right" width="70px">CRM</Th>
                             {canSuspend && <Th align="right" width="110px" />}
+                            {canDelete && <Th align="right" width="90px" />}
                         </tr>
                     </thead>
                     <tbody>
@@ -145,12 +148,38 @@ export function MembersTable({ canSuspend }: { canSuspend: boolean }) {
                                             </Button>
                                         </Td>
                                     )}
+                                    {canDelete && (
+                                        <Td align="right">
+                                            <Button
+                                                size="xs"
+                                                variant="danger"
+                                                onClick={() => setDeleting(row)}
+                                                disabled={!!row.role}
+                                                title={
+                                                    row.role
+                                                        ? "Remove their admin access first"
+                                                        : "Delete this account and everything on it"
+                                                }
+                                            >
+                                                <Trash2 className="w-3 h-3" />
+                                                Delete
+                                            </Button>
+                                        </Td>
+                                    )}
                                 </Tr>
                             ))
                         )}
                     </tbody>
                 </Table>
             </TableWrap>
+
+            {deleting && (
+                <DeleteMemberDialog
+                    member={deleting}
+                    onClose={() => setDeleting(null)}
+                    onDeleted={() => { setDeleting(null); load(search); }}
+                />
+            )}
         </Panel>
     );
 }

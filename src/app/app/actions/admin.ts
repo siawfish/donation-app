@@ -1,7 +1,10 @@
 'use server';
 
 import { cache } from "react";
-import { db } from "@/firebase/init";
+import { revalidatePath } from "next/cache";
+import { FieldValue } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
+import { db, getFirebaseAdminApp } from "@/firebase/init";
 import { authConfig } from "@/firebase/config/server-config";
 import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
@@ -9,8 +12,39 @@ import { FirebaseErrors } from "@/firebase/errors";
 import { ItemType, ResponseData, UserType } from "@/app/types";
 import { AdminRole, AdminRoleRecord, Capability, can, isAdminRole } from "@/lib/roles";
 import { recordAudit } from "./audit";
+import { deleteAuthUser } from "@/lib/adminAuth";
+import {
+    LISTING_DEPENDANTS, PURGE_BY_DOC_ID, PURGE_BY_UID, chunk, deleteQuery,
+} from "@/lib/memberPurge";
 
 const ROLES = "adminRoles";
+
+/** Best-effort: a photo that was never written, or already gone, is fine. */
+async function deleteStoredFile(path?: string) {
+    if (!path) return;
+    try {
+        await getStorage(getFirebaseAdminApp())
+            .bucket(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET)
+            .file(path)
+            .delete();
+    } catch { /* nothing useful to do */ }
+}
+
+async function deleteStoredFolder(prefix: string) {
+    try {
+        await getStorage(getFirebaseAdminApp())
+            .bucket(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET)
+            .deleteFiles({ prefix });
+    } catch { /* nothing useful to do */ }
+}
+
+export interface DeleteMemberReport {
+    name: string;
+    email: string;
+    /** Everything removed outside the listings themselves. */
+    documents: number;
+    listings: number;
+}
 
 /**
  * The current viewer's admin role, or null.
@@ -214,6 +248,127 @@ export async function setMemberSuspended({
         });
 
         return { success: true, message: suspended ? "Member suspended" : "Member reinstated", data: null };
+    } catch (error: any) {
+        return { success: false, message: FirebaseErrors[error.code] || error.message, data: null };
+    }
+}
+
+/**
+ * Delete a member and everything that identifies them.
+ *
+ * Suspension is the reversible tool and should be the usual answer. This is for
+ * the cases where nothing else will do: somebody asking to be erased, or an
+ * account that should never have existed.
+ *
+ * Two things make this safe to have in the admin at all:
+ *
+ *   - it is super-admin only, and
+ *   - it will not run unless the caller types the member's email address back.
+ *
+ * The order matters. The sign-in account goes first and the data second: if the
+ * data went first and the account deletion then failed, somebody would still be
+ * able to sign in to a profile that no longer exists. The other way round, a
+ * failure leaves orphaned data an admin can still see and retry on.
+ */
+export async function deleteMember({
+    uid,
+    confirmEmail,
+}: {
+    uid: string;
+    confirmEmail: string;
+}): Promise<ResponseData<DeleteMemberReport | null>> {
+    try {
+        const { tokens } = await requireCapability("users.delete");
+
+        if (uid === tokens.decodedToken.uid) {
+            throw new Error("You cannot delete your own account from here.");
+        }
+
+        const snap = await db.collection("users").doc(uid).get();
+        if (!snap.exists) throw new Error("That member no longer exists.");
+        const member = snap.data() as UserType;
+
+        // Same guard as suspension: deleting an admin would be a way around the
+        // role checks, and it should be a deliberate two-step.
+        const roleSnap = await db.collection(ROLES).doc(uid).get();
+        if (roleSnap.exists) throw new Error("Remove their admin access first.");
+
+        // Typing the address back is the whole safety net. Two members called
+        // "Ama" one row apart is not a hypothetical.
+        const typed = confirmEmail.trim().toLowerCase();
+        if (!typed || typed !== (member.email ?? "").trim().toLowerCase()) {
+            throw new Error("The email address you typed doesn't match this member.");
+        }
+
+        const label = member.name || member.email || uid;
+
+        // First, and throws on failure — see the note above.
+        await deleteAuthUser(uid);
+
+        const report: DeleteMemberReport = { name: label, email: member.email ?? "", documents: 0, listings: 0 };
+
+        // Listings and everything pointing at them. Done before the generic
+        // sweep so that requests and wishlist entries belonging to *other*
+        // people's copies of this member's listings go too — those reference
+        // the item, not the member, so nothing else would catch them.
+        const items = await db.collection("items").where("createdBy", "==", uid).get();
+        const itemIds = items.docs.map((d) => d.id);
+        report.listings = itemIds.length;
+
+        for (const ids of chunk(itemIds)) {
+            for (const collection of LISTING_DEPENDANTS) {
+                report.documents += await deleteQuery(
+                    db,
+                    db.collection(collection).where("itemId", "in", ids)
+                );
+            }
+        }
+
+        for (const { collection, field } of PURGE_BY_UID) {
+            report.documents += await deleteQuery(db, db.collection(collection).where(field, "==", uid));
+        }
+
+        // The ID photo, if a verification was ever submitted. Read before the
+        // document goes, since the path only lives on the document.
+        const verification = await db.collection("verifications").doc(uid).get();
+        await deleteStoredFile(verification.data()?.imagePath as string | undefined);
+
+        for (const collection of PURGE_BY_DOC_ID) {
+            await db.collection(collection).doc(uid).delete();
+            report.documents += 1;
+        }
+
+        // Contact messages are kept but stripped. An admin may be mid-reply,
+        // and the thread is the platform's own record of handling it — but
+        // there is no reason for it to keep naming somebody who is gone.
+        const contact = await db.collection("contactMessages").where("uid", "==", uid).get();
+        for (const doc of contact.docs) {
+            await doc.ref.update({
+                uid: FieldValue.delete(),
+                name: "Deleted member",
+                email: "",
+                phone: "",
+                updatedAt: new Date().toISOString(),
+            });
+            report.documents += 1;
+        }
+
+        // Uploaded photos live under one prefix per member, so the whole
+        // folder goes in one call.
+        await deleteStoredFolder(`donor/${uid}`);
+
+        // Recorded with the name and address spelled out, because after this
+        // there is nothing left to look the uid up against. An audit line
+        // reading only "deleted 8f3a…" answers no question anybody will ask.
+        await recordAudit({
+            action: "member.delete",
+            targetId: uid,
+            targetLabel: label,
+            detail: `deleted ${member.email ?? "no address"} — ${report.listings} listing${report.listings === 1 ? "" : "s"}, ${report.documents} records removed`,
+        });
+
+        revalidatePath("/app/admin/members");
+        return { success: true, message: `${label} has been deleted`, data: report };
     } catch (error: any) {
         return { success: false, message: FirebaseErrors[error.code] || error.message, data: null };
     }

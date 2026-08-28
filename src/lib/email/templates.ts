@@ -16,6 +16,7 @@ export type TemplateCategory = "transactional" | "marketing";
 
 export type TemplateKey =
     | "welcome"
+    | "member_invite"
     | "org_invite"
     | "org_approved"
     | "org_declined"
@@ -58,6 +59,9 @@ const V = {
     claim_url: { name: "claim_url", description: "One-time link to take over the page", example: "https://www.givny.com/claim/…" },
     job_title: { name: "job_title", description: "The role applied for", example: "Community Ambassador" },
     reason: { name: "reason", description: "Why it was declined", example: "We couldn't verify the registration number." },
+    invite_url: { name: "invite_url", description: "One-time link to join", example: "https://www.givny.com/auth/register?invite=..." },
+    inviter_name: { name: "inviter_name", description: "Who is inviting them", example: "Kenneth" },
+    invite_note: { name: "invite_note", description: "Optional line from the inviter, blank if none", example: "Thought of you when I saw the sewing machines." },
 };
 
 /**
@@ -85,6 +89,25 @@ export const TEMPLATES: EmailTemplateDef[] = [
         ctaLabel: "See what's nearby",
         ctaUrl: "{{site_url}}/explore",
         vars: [V.first_name, V.site_url],
+        unsubscribable: false,
+        live: true,
+    },
+    {
+        key: "member_invite",
+        name: "Invitation to join",
+        trigger: "An admin invites someone by email from the Members page.",
+        category: "transactional",
+        subject: "{{inviter_name}} thinks Givny is your kind of thing",
+        preheader: "Free stuff from neighbours. No catch, no bidding, no fees.",
+        body:
+            "Hi,\n\n" +
+            "{{inviter_name}} invited you to Givny — a place where people in Ghana pass on " +
+            "things they no longer need. Everything on it is free. Nothing is for sale.\n\n" +
+            "{{invite_note}}\n\n" +
+            "Your invitation link is below. It works once, and it expires in 30 days.",
+        ctaLabel: "Join Givny",
+        ctaUrl: "{{invite_url}}",
+        vars: [V.inviter_name, V.invite_note, V.invite_url, V.site_url],
         unsubscribable: false,
         live: true,
     },
@@ -286,6 +309,25 @@ export function fillVars(text: string, values: Record<string, string>): string {
     return (text ?? "").replace(VAR_RE, (whole, name: string) =>
         name in values ? values[name] : whole
     );
+}
+
+/**
+ * Fill the variables in an email body, then close the holes the empty ones left.
+ *
+ * Several templates have a variable that stands alone on its own line and is
+ * legitimately blank — an invitation with no note from the sender, a rejection
+ * recorded without a reason. Substituting an empty string there leaves two
+ * consecutive blank lines, which markdown renders as a visible gap in the
+ * middle of the mail: not broken exactly, but it reads as though a sentence
+ * failed to load.
+ *
+ * Only for bodies. A subject line has no paragraphs to collapse.
+ */
+export function fillBody(text: string, values: Record<string, string>): string {
+    return fillVars(text, values)
+        .replace(/\r\n/g, "\n")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
 }
 
 /** Variables in the copy that this template does not define — they'd ship raw. */

@@ -3,10 +3,18 @@ import type { Capability } from "./roles";
 /**
  * Admin navigation, grouped by when you use it rather than when it was built.
  *
- * The previous order was the order features landed, which meant Verifications —
- * a queue somebody is waiting in — sat between Listings and Blog. These groups
- * follow the working day instead: what needs you now, then the people, then the
- * things they post, then what the public sees, then settings you touch monthly.
+ * The organising rule is the badge. Every item that can show a pending count
+ * lives in "Today", because those are the only ones where the answer to "is
+ * there anything to do?" changes hour to hour — and an admin should get that
+ * answer from one glance at one group, not by scanning every heading for a
+ * number. Organisations and Ambassadors moved up for exactly that reason;
+ * Messages moved out of a group of its own, which was a heading earning its
+ * place by holding a single link.
+ *
+ * Everything below Today is a place you go on purpose: the directories, then
+ * what you send out, then what the public reads, then settings you touch
+ * monthly. Admins sits in System rather than People — it is a permissions
+ * table that happens to contain names.
  */
 
 export interface AdminNavItem {
@@ -29,6 +37,10 @@ export interface AdminNavGroup {
 
 export const ADMIN_NAV: AdminNavGroup[] = [
     {
+        // Everything somebody is waiting on, in one place. If a badge can
+        // appear on an item, the item belongs in this group — an admin who
+        // opens the sidebar should be able to see the whole queue without
+        // scanning six headings for a number.
         id: "today",
         label: "Today",
         items: [
@@ -38,6 +50,13 @@ export const ADMIN_NAV: AdminNavGroup[] = [
                 capability: "analytics.view",
                 icon: "LayoutDashboard",
                 exact: true,
+            },
+            {
+                href: "/app/admin/contact",
+                label: "Messages",
+                capability: "contact.manage",
+                icon: "Inbox",
+                badge: "contact",
             },
             {
                 href: "/app/admin/verifications",
@@ -53,16 +72,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
                 icon: "Briefcase",
                 badge: "applications",
             },
-        ],
-    },
-    {
-        id: "people",
-        label: "People",
-        items: [
-            { href: "/app/admin/crm", label: "CRM", capability: "crm.view", icon: "Contact", badge: "tasks" },
-            { href: "/app/admin/campaigns", label: "Campaigns", capability: "crm.manage", icon: "Send" },
-            { href: "/app/admin/email", label: "Email templates", capability: "crm.manage", icon: "Mail" },
-            { href: "/app/admin/members", label: "Members", capability: "users.view", icon: "Users" },
+            { href: "/app/admin/crm", label: "Follow-ups", capability: "crm.view", icon: "ListChecks", badge: "tasks" },
             {
                 href: "/app/admin/organisations",
                 label: "Organisations",
@@ -80,10 +90,22 @@ export const ADMIN_NAV: AdminNavGroup[] = [
         ],
     },
     {
-        id: "marketplace",
-        label: "Marketplace",
+        // Who is on the platform, as opposed to what needs doing about them.
+        id: "people",
+        label: "People",
         items: [
+            { href: "/app/admin/members", label: "Members", capability: "users.view", icon: "Users" },
             { href: "/app/admin/listings", label: "Listings", capability: "listings.view", icon: "Package" },
+        ],
+    },
+    {
+        // Outbound. Split from People because writing a campaign and looking
+        // somebody up are different jobs at different times of the week.
+        id: "outreach",
+        label: "Outreach",
+        items: [
+            { href: "/app/admin/campaigns", label: "Campaigns", capability: "crm.manage", icon: "Send" },
+            { href: "/app/admin/email", label: "Email templates", capability: "crm.manage", icon: "Mail" },
         ],
     },
     {
@@ -92,20 +114,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
         items: [
             { href: "/app/admin/blog", label: "Journal", capability: "blog.manage", icon: "BookOpen" },
             { href: "/app/admin/blog/comments", label: "Comments", capability: "blog.manage", icon: "MessageSquare" },
-            { href: "/app/admin/team", label: "Team page", capability: "team.manage", icon: "Contact" },
-        ],
-    },
-    {
-        id: "inbox",
-        label: "Inbox",
-        items: [
-            {
-                href: "/app/admin/contact",
-                label: "Messages",
-                capability: "contact.manage",
-                icon: "Mail",
-                badge: "contact",
-            },
+            { href: "/app/admin/team", label: "Team page", capability: "team.manage", icon: "IdCard" },
         ],
     },
     {
@@ -113,8 +122,8 @@ export const ADMIN_NAV: AdminNavGroup[] = [
         label: "System",
         items: [
             { href: "/app/admin/settings", label: "Features", capability: "settings.manage", icon: "ToggleLeft" },
-            { href: "/app/admin/audit", label: "Audit log", capability: "users.view", icon: "ScrollText" },
             { href: "/app/admin/roles", label: "Admins", capability: "roles.manage", icon: "ShieldCheck" },
+            { href: "/app/admin/audit", label: "Audit log", capability: "users.view", icon: "ScrollText" },
         ],
     },
 ];

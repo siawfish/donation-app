@@ -18,6 +18,8 @@ export type Capability =
     | "analytics.view"
     | "users.view"
     | "users.suspend"
+    | "users.invite"
+    | "users.delete"
     | "listings.view"
     | "listings.remove"
     | "verifications.review"
@@ -42,6 +44,8 @@ const CAPABILITIES: Record<AdminRole, Capability[]> = {
         "analytics.view",
         "users.view",
         "users.suspend",
+        "users.invite",
+        "users.delete",
         "listings.view",
         "listings.remove",
         "verifications.review",
@@ -63,6 +67,7 @@ const CAPABILITIES: Record<AdminRole, Capability[]> = {
         "analytics.view",
         "users.view",
         "users.suspend",
+        "users.invite",
         "listings.view",
         "listings.remove",
         "verifications.review",
@@ -89,8 +94,8 @@ export const ROLE_LABELS: Record<AdminRole, string> = {
 };
 
 export const ROLE_BLURB: Record<AdminRole, string> = {
-    super_admin: "Full access, including granting and removing other admins.",
-    admin: "Manage members and listings, review verifications, see analytics, switch features on and off.",
+    super_admin: "Full access, including granting and removing other admins, and deleting accounts for good.",
+    admin: "Manage members and listings, invite new people, review verifications, see analytics, switch features on and off. Cannot delete accounts.",
     moderator: "Review verifications and listings, read the CRM, triage job applicants. No member management, no publishing.",
 };
 

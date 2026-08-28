@@ -8,6 +8,8 @@ export enum ConditionType {
 
 export interface UserRegisterPayload extends UserType {
     password: string;
+    /** Token from an admin's invitation email, so acceptance can be recorded. */
+    inviteToken?: string;
 }
 
 export interface UserType {

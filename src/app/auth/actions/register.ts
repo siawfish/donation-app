@@ -6,10 +6,11 @@ import { db } from '@/firebase/init';
 import { ResponseData, UserRegisterPayload, UserType } from '@/app/types';
 import { FirebaseErrors } from '@/firebase/errors';
 import { sendTemplated } from '@/app/app/actions/emailTemplates';
+import { acceptMemberInvite } from '@/app/app/actions/memberInvites';
 
 export async function registerUserAction(payload: UserRegisterPayload): Promise<ResponseData<UserType | null>> {
     try {
-        const { email, password, name, preferedLocation, preferedCategories, lat, lng, referredBy } = payload;
+        const { email, password, name, preferedLocation, preferedCategories, lat, lng, referredBy, inviteToken } = payload;
         const credential = await createUserWithEmailAndPassword(
             getFirebaseAuth(),
             email,
@@ -46,6 +47,11 @@ export async function registerUserAction(payload: UserRegisterPayload): Promise<
         void sendTemplated('welcome', email, {
             first_name: (name ?? '').trim().split(/\s+/)[0] || 'there',
         });
+
+        // Closes the loop on an admin's invitation. Not awaited and never
+        // throws: whether we can mark a row accepted is our bookkeeping
+        // problem, not a reason to fail somebody's signup.
+        if (inviteToken) void acceptMemberInvite(inviteToken, user.uid, email);
 
         return {
             success: true,

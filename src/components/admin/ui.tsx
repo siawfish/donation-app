@@ -202,17 +202,19 @@ export function Button({
     );
 }
 
-export function Input({
-    className = "",
-    ...rest
-}: React.InputHTMLAttributes<HTMLInputElement>) {
+/** Forwards its ref, so a dialog can focus the field it opens on. */
+export const Input = React.forwardRef<
+    HTMLInputElement,
+    React.InputHTMLAttributes<HTMLInputElement>
+>(function Input({ className = "", ...rest }, ref) {
     return (
         <input
+            ref={ref}
             {...rest}
             className={`bg-white border border-gray-300 rounded-md px-2.5 py-1.5 text-[13px] text-ink placeholder-gray-400 outline-none focus:border-forest focus:ring-2 focus:ring-forest/10 transition-colors ${className}`}
         />
     );
-}
+});
 
 export function Select({
     className = "",
