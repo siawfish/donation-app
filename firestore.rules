@@ -161,6 +161,13 @@ service cloud.firestore {
     // Contact form submissions. They contain a stranger's name, email and
     // phone number, so no client reads them and no client writes one either —
     // submission goes through a server action that rate-limits by address.
+    // Email marketing. Sends carry a member's address and what they did with
+    // the mail, and the opt-out list is the record of who asked to be left
+    // alone — none of it belongs anywhere a client can reach.
+    match /campaigns/{campaignId}   { allow read, write: if false; }
+    match /campaignSends/{sendId}   { allow read, write: if false; }
+    match /emailOptOuts/{uid}       { allow read, write: if false; }
+
     match /contactMessages/{messageId} {
       allow read, write: if false;
     }

@@ -60,6 +60,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
         label: "People",
         items: [
             { href: "/app/admin/crm", label: "CRM", capability: "crm.view", icon: "Contact", badge: "tasks" },
+            { href: "/app/admin/campaigns", label: "Campaigns", capability: "crm.manage", icon: "Send" },
             { href: "/app/admin/members", label: "Members", capability: "users.view", icon: "Users" },
             {
                 href: "/app/admin/organisations",
