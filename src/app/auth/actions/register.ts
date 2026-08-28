@@ -5,6 +5,7 @@ import { getFirebaseAuth } from '@/firebase/auth/firebase';
 import { db } from '@/firebase/init';
 import { ResponseData, UserRegisterPayload, UserType } from '@/app/types';
 import { FirebaseErrors } from '@/firebase/errors';
+import { sendTemplated } from '@/app/app/actions/emailTemplates';
 
 export async function registerUserAction(payload: UserRegisterPayload): Promise<ResponseData<UserType | null>> {
     try {
@@ -38,6 +39,14 @@ export async function registerUserAction(payload: UserRegisterPayload): Promise<
             updatedAt: new Date().toISOString(),
         };
         await db.collection('users').doc(user.uid).set(dataWithoutPassword);
+
+        // Not awaited: somebody's account must never fail to be created because
+        // a mail server was slow, and the welcome is not worth a second of the
+        // signup form spinning.
+        void sendTemplated('welcome', email, {
+            first_name: (name ?? '').trim().split(/\s+/)[0] || 'there',
+        });
+
         return {
             success: true,
             message: "User registered successfully",

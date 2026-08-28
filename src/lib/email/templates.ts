@@ -86,7 +86,7 @@ export const TEMPLATES: EmailTemplateDef[] = [
         ctaUrl: "{{site_url}}/explore",
         vars: [V.first_name, V.site_url],
         unsubscribable: false,
-        live: false,
+        live: true,
     },
     {
         key: "org_invite",
@@ -174,7 +174,7 @@ export const TEMPLATES: EmailTemplateDef[] = [
         ctaUrl: "{{site_url}}/app/add-item",
         vars: [V.first_name, V.site_url],
         unsubscribable: false,
-        live: false,
+        live: true,
     },
     {
         key: "verification_rejected",
@@ -186,14 +186,22 @@ export const TEMPLATES: EmailTemplateDef[] = [
         body:
             "Hi {{first_name}},\n\n" +
             "We weren't able to verify the ID you sent.\n\n" +
-            "**Why:** {{reason}}\n\n" +
+            "{{reason}}\n\n" +
             "You can try again from your settings — a clear photo of the whole card, with " +
             "nothing cropped off, is usually all it takes.",
         ctaLabel: "Try again",
         ctaUrl: "{{site_url}}/app/settings",
-        vars: [V.first_name, V.reason, V.site_url],
+        vars: [
+            {
+                name: "reason",
+                description: "The reason line, already written — empty when none was recorded",
+                example: "**Why:** The photo was too blurred to read.",
+            },
+            V.first_name,
+            V.site_url,
+        ],
         unsubscribable: false,
-        live: false,
+        live: true,
     },
     {
         key: "contact_reply",

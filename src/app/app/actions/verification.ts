@@ -7,6 +7,7 @@ import { authConfig } from "@/firebase/config/server-config";
 import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
 import { FirebaseErrors } from "@/firebase/errors";
+import { sendTemplated } from "./emailTemplates";
 import { ResponseData } from "@/app/types";
 import {
     VerificationRecord,
@@ -211,6 +212,26 @@ export async function reviewVerification({
         ]);
 
         await deleteStoredImage(record.imagePath);
+
+        // Tell them the outcome. A member who submitted an ID and heard nothing
+        // assumes it is still pending and submits again.
+        const member = await db.collection("users").doc(uid).get();
+        const memberEmail = member.data()?.email as string | undefined;
+        if (memberEmail) {
+            const firstName = String(member.data()?.name ?? "").trim().split(/\s+/)[0] || "there";
+            if (approve) {
+                void sendTemplated("verification_approved", memberEmail, { first_name: firstName });
+            } else {
+                // Composed here rather than in the template: a rejection can be
+                // recorded without a reason, and a "Why:" label with nothing
+                // after it is worse than leaving the sentence out.
+                const why = reason?.trim() ? `**Why:** ${reason.trim()}` : "";
+                void sendTemplated("verification_rejected", memberEmail, {
+                    first_name: firstName,
+                    reason: why,
+                });
+            }
+        }
 
         return { success: true, message: approve ? "Member verified" : "Submission rejected", data: null };
     } catch (error: any) {
