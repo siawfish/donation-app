@@ -11,6 +11,7 @@ import { ResponseData } from "@/app/types";
 import { can } from "@/lib/roles";
 import { getMyAdminRole } from "./admin";
 import { recordAudit } from "./audit";
+import { sendTemplated } from "./emailTemplates";
 import {
     ApplicationStage, EmploymentType, Job, JobApplication, JobListItem, JobStatus, WorkMode,
     isAcceptingApplications, isValidEmail, isValidPhone, slugifyJob,
@@ -127,6 +128,13 @@ export async function submitApplication(input: {
             createdAt: now,
             updatedAt: now,
             history: [{ stage: "new", at: now, by: "applicant", byName: name }],
+        });
+
+        // Acknowledge it. Not awaited: an applicant must never lose their
+        // submission because a mail server was slow.
+        void sendTemplated("application_received", email, {
+            first_name: name.trim().split(/\s+/)[0] || "there",
+            job_title: job.title,
         });
 
         revalidatePath("/app/admin/jobs");

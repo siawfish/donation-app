@@ -164,6 +164,7 @@ service cloud.firestore {
     // Email marketing. Sends carry a member's address and what they did with
     // the mail, and the opt-out list is the record of who asked to be left
     // alone — none of it belongs anywhere a client can reach.
+    match /emailTemplates/{key}     { allow read, write: if false; }
     match /campaigns/{campaignId}   { allow read, write: if false; }
     match /campaignSends/{sendId}   { allow read, write: if false; }
     match /emailOptOuts/{uid}       { allow read, write: if false; }

@@ -43,7 +43,8 @@ export type AuditAction =
     | "team.update"
     | "team.remove"
     | "campaign.send"
-    | "campaign.delete";
+    | "campaign.delete"
+    | "email.template";
 
 export const AUDIT_LABELS: Record<AuditAction, string> = {
     "member.suspend": "Suspended a member",
@@ -79,6 +80,7 @@ export const AUDIT_LABELS: Record<AuditAction, string> = {
     "team.remove": "Removed a team member",
     "campaign.send": "Sent an email campaign",
     "campaign.delete": "Deleted a campaign",
+    "email.template": "Changed an email template",
 };
 
 /** How alarming an entry should look when scanning the list. */
@@ -124,6 +126,7 @@ export const AUDIT_SEVERITY: Record<AuditAction, AuditSeverity> = {
     // Mailing the member base is the least reversible thing in the admin.
     "campaign.send": "destructive",
     "campaign.delete": "notable",
+    "email.template": "notable",
 };
 
 export const SEVERITY_TONE: Record<AuditSeverity, "neutral" | "warn" | "bad"> = {

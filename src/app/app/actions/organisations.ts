@@ -10,6 +10,8 @@ import { ItemType, ResponseData } from "@/app/types";
 import { can } from "@/lib/roles";
 import { getMyAdminRole } from "./admin";
 import { recordAudit } from "./audit";
+import { sendTemplated } from "./emailTemplates";
+import { siteUrl } from "@/lib/seo";
 import {
     EMPTY_IMPACT, OnboardingStep, OrgImpact, OrgMember, OrgRole, OrgStatus, OrgType,
     ClaimStatus, Organisation, OrgInvite, estimateKg, inviteExpiry, inviteProblem,
@@ -554,6 +556,23 @@ export async function setOrgStatus(
             ...(status === "active" && !org.activatedAt ? { activatedAt: iso() } : {}),
         });
 
+        // Tell them. Until now an organisation waiting on a decision heard
+        // nothing either way, which is the worst part of any application.
+        const firstName = (org.contactName ?? "").trim().split(/\s+/)[0] || "there";
+        if (status === "active") {
+            void sendTemplated("org_approved", org.contactEmail, {
+                first_name: firstName,
+                org_name: org.name,
+                org_url: `${siteUrl()}/o/${org.slug}`,
+            });
+        } else if (status === "rejected") {
+            void sendTemplated("org_declined", org.contactEmail, {
+                first_name: firstName,
+                org_name: org.name,
+                reason: reason?.trim() ?? "",
+            });
+        }
+
         await recordAudit({
             action: "org.status",
             targetId: id,
@@ -782,6 +801,15 @@ export async function createOrgInvite(
         );
 
         await db.collection(ORGS).doc(orgId).update({ claim: "invited" as ClaimStatus, updatedAt: now });
+
+        // The admin still gets the link to copy — some contacts are far easier
+        // reached on WhatsApp — but the email goes too, so it does not depend
+        // on somebody remembering to paste it.
+        void sendTemplated("org_invite", email, {
+            first_name: (invite.name || "").trim().split(/\s+/)[0] || "there",
+            org_name: org.name,
+            claim_url: `${siteUrl()}/claim/${invite.token}`,
+        });
 
         await recordAudit({
             action: "org.invite",

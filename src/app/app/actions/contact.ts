@@ -23,10 +23,21 @@ import {
     TOPIC_LABELS, validateContact, validateReply,
 } from "@/lib/contact";
 import { renderReplyEmail, renderReplyText } from "@/lib/email/template";
+import { fillVars, resolveTemplate, type TemplateOverride } from "@/lib/email/templates";
 import { sendEmail } from "@/lib/email/provider";
 import { siteUrl } from "@/lib/seo";
 
 const MESSAGES = "contactMessages";
+
+/** The subject line for replies is editable in Admin → Email templates. */
+async function loadReplyOverride(): Promise<TemplateOverride | null> {
+    try {
+        const snap = await db.collection("emailTemplates").doc("contact_reply").get();
+        return snap.exists ? (snap.data() as TemplateOverride) : null;
+    } catch {
+        return null;
+    }
+}
 
 const iso = () => new Date().toISOString();
 
@@ -259,9 +270,14 @@ export async function replyToContactMessage(
             siteUrl: siteUrl(),
         };
 
+        const template = resolveTemplate("contact_reply", await loadReplyOverride());
+        const subject = fillVars(template.subject, {
+            first_name: message.name.trim().split(/\s+/)[0] || "there",
+        });
+
         const result = await sendEmail({
             to: message.email,
-            subject: `Re: your message to Givny`,
+            subject,
             html: renderReplyEmail(shell),
             text: renderReplyText(shell),
         });

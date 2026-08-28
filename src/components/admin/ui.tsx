@@ -229,17 +229,18 @@ export function Select({
     );
 }
 
-export function Textarea({
-    className = "",
-    ...rest
-}: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+export const Textarea = React.forwardRef<
+    HTMLTextAreaElement,
+    React.TextareaHTMLAttributes<HTMLTextAreaElement>
+>(function Textarea({ className = "", ...rest }, ref) {
     return (
         <textarea
+            ref={ref}
             {...rest}
             className={`w-full bg-white border border-gray-300 rounded-md px-2.5 py-2 text-[13px] text-ink placeholder-gray-400 outline-none focus:border-forest focus:ring-2 focus:ring-forest/10 transition-colors resize-y ${className}`}
         />
     );
-}
+});
 
 /** Segmented filter control — replaces the row of pill buttons. */
 export function Segmented<T extends string>({

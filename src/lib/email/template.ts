@@ -21,8 +21,14 @@ export interface EmailShell {
     bodyMarkdown: string;
     ctaLabel?: string;
     ctaUrl?: string;
-    /** Absolute, one-click, unique per recipient. Required — see below. */
-    unsubscribeUrl: string;
+    /**
+     * Absolute, one-click, unique per recipient.
+     *
+     * Required for marketing. Omitted for transactional mail — putting an
+     * unsubscribe link on a password reset or an approval invites somebody to
+     * opt out of the messages the product needs to send them.
+     */
+    unsubscribeUrl?: string;
     /** 1×1 image that records an open. Omitted for previews and test sends. */
     openPixelUrl?: string;
     siteUrl: string;
@@ -99,13 +105,15 @@ ${preheader}
         <tr>
           <td style="padding:28px;">
             <hr style="border:0;border-top:1px solid #e5e7eb;margin:0 0 16px;">
-            <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;
+            ${shell.unsubscribeUrl
+                ? `<p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;
                       line-height:1.6;color:${MUTED};">
               You're getting this because you have a Givny account.
               <a href="${escapeAttr(shell.unsubscribeUrl)}" style="color:${MUTED};">
                 Stop receiving these emails
               </a>.
-            </p>
+            </p>`
+                : ""}
             <p style="margin:10px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:${MUTED};">
               Givny · Ghana · <a href="${escapeAttr(shell.siteUrl)}" style="color:${MUTED};">givny.com</a>
             </p>
