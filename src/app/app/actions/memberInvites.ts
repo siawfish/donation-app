@@ -20,7 +20,6 @@ import { can } from "@/lib/roles";
 import { getMyAdminRole } from "./admin";
 import { recordAudit } from "./audit";
 import { sendTemplated } from "./emailTemplates";
-import { findAuthUserByEmail } from "@/lib/adminAuth";
 import { siteUrl } from "@/lib/seo";
 import {
     EMAIL_RE, MAX_PER_BATCH, MemberInvite, inviteExpiry, parseEmails,
@@ -105,12 +104,17 @@ export async function inviteMembers({
             // Two separate questions: does a sign-in account exist, and is a
             // link already out? Somebody can be in the second state without the
             // first, which is the whole point of tracking invitations.
+            //
+            // "Has an account" is answered from the users collection rather
+            // than Firebase Auth: the Identity Toolkit client this used to go
+            // through has been removed for now, and a profile document is
+            // written for every completed registration anyway.
             const [account, pending] = await Promise.all([
-                findAuthUserByEmail(email),
+                db.collection("users").where("email", "==", email).limit(1).get(),
                 db.collection(INVITES).where("email", "==", email).where("status", "==", "pending").get(),
             ]);
 
-            if (account) { outcome.alreadyMembers.push(email); continue; }
+            if (!account.empty) { outcome.alreadyMembers.push(email); continue; }
             if (!pending.empty) { outcome.alreadyInvited.push(email); continue; }
 
             const invite: MemberInvite = {

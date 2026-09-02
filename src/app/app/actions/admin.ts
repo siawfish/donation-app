@@ -12,12 +12,23 @@ import { FirebaseErrors } from "@/firebase/errors";
 import { ItemType, ResponseData, UserType } from "@/app/types";
 import { AdminRole, AdminRoleRecord, Capability, can, isAdminRole } from "@/lib/roles";
 import { recordAudit } from "./audit";
-import { deleteAuthUser } from "@/lib/adminAuth";
 import {
     LISTING_DEPENDANTS, PURGE_BY_DOC_ID, PURGE_BY_UID, chunk, deleteQuery,
 } from "@/lib/memberPurge";
 
 const ROLES = "adminRoles";
+
+/**
+ * Member deletion is switched off for now.
+ *
+ * It used to remove the sign-in account first, through the Identity Toolkit
+ * REST API (see the history of `src/lib/adminAuth.ts`), and only then purge
+ * the member's data. That client has been removed, and purging the data while
+ * the account can still sign in would leave somebody logged into a profile
+ * that no longer exists — so the whole action is disabled rather than run
+ * half-way. Flip this back on once account deletion is wired up again.
+ */
+const MEMBER_DELETION_ENABLED = false;
 
 /** Best-effort: a photo that was never written, or already gone, is fine. */
 async function deleteStoredFile(path?: string) {
@@ -280,6 +291,10 @@ export async function deleteMember({
     try {
         const { tokens } = await requireCapability("users.delete");
 
+        if (!MEMBER_DELETION_ENABLED) {
+            throw new Error("Deleting members is temporarily unavailable. Suspend the account instead.");
+        }
+
         if (uid === tokens.decodedToken.uid) {
             throw new Error("You cannot delete your own account from here.");
         }
@@ -302,8 +317,8 @@ export async function deleteMember({
 
         const label = member.name || member.email || uid;
 
-        // First, and throws on failure — see the note above.
-        await deleteAuthUser(uid);
+        // The sign-in account used to be deleted here, first and throwing on
+        // failure — see the note above and MEMBER_DELETION_ENABLED.
 
         const report: DeleteMemberReport = { name: label, email: member.email ?? "", documents: 0, listings: 0 };
 
