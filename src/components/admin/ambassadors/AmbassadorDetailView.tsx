@@ -16,8 +16,8 @@ import {
     Badge, Button, EmptyRow, Initials, Input, Num, Panel, Segmented, Select,
     Stat, Table, TableWrap, Td, Th, Tr,
 } from "../ui";
+import { PUBLIC_SITE_URL as SITE } from "@/lib/seo";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://givny.com";
 
 export function AmbassadorDetailView({ initial }: { initial: AmbassadorDetail }) {
     const [data, setData] = useState(initial);

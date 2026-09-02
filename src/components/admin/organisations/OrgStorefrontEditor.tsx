@@ -9,10 +9,10 @@ import {
     ORG_TYPE_LABELS, type ClaimStatus, type OrgType, type Organisation, slugifyOrg,
 } from "@/lib/organisations";
 import { Button, Input, Panel, Textarea } from "../ui";
+import { PUBLIC_SITE_URL as SITE } from "@/lib/seo";
 
 const LABEL = "block text-[11px] font-semibold uppercase tracking-[0.06em] text-gray-500";
 const HINT = "text-[11px] text-gray-400 mt-1";
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://givny.com";
 
 /**
  * Edit an organisation's public page from the admin side.

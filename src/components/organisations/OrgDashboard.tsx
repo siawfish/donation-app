@@ -16,10 +16,10 @@ import {
     ABOUT_MIN_CHARS, ORG_ROLE_BLURB, ORG_ROLE_LABELS, ORG_STATUS_LABELS,
     ORG_TYPE_LABELS, OrgRole, impactSentence, onboardingProgress, orgCan,
 } from "@/lib/organisations";
+import { PUBLIC_SITE_URL as SITE } from "@/lib/seo";
 
 type Tab = "overview" | "storefront" | "team";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://givny.com";
 const FIELD =
     "w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-ink outline-none focus:border-forest focus:ring-2 focus:ring-forest/10 transition-all";
 

@@ -8,8 +8,8 @@ import {
 } from "@/app/app/actions/organisations";
 import { CLAIM_LABELS, type ClaimStatus, type OrgInvite, type OrgRole } from "@/lib/organisations";
 import { Badge, Button, Input, Panel } from "../ui";
+import { PUBLIC_SITE_URL as SITE } from "@/lib/seo";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://givny.com";
 
 const inviteUrl = (token: string) => `${SITE}/claim/${token}`;
 

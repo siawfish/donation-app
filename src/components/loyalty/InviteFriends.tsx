@@ -5,6 +5,7 @@ import { Check, Copy, Share2, Mail, MessageCircle, Gift } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/firebase/auth/AuthContext";
 import { POINTS, buildInviteUrl, displayCode } from "@/lib/loyalty";
+import { PUBLIC_SITE_URL } from "@/lib/seo";
 
 const SHARE_TEXT =
     "I'm giving away things I no longer need on Givny — a free community marketplace. Everything on it is free. Join me:";
@@ -21,11 +22,16 @@ export function InviteFriends({
     const [copied, setCopied] = useState(false);
     const [canNativeShare, setCanNativeShare] = useState(false);
 
-    // Built after mount — window.location isn't available during SSR, and
-    // rendering a different href on the server would break hydration.
+    // The origin is a build-time constant rather than `window.location.origin`,
+    // which was the third different way this app decided what its own address
+    // is. It also meant a referral link inherited whatever host the member
+    // happened to be on — a preview deployment, or the apex domain that only
+    // redirects — so two members could share genuinely different URLs for the
+    // same thing. Still set in an effect because the uid arrives with the
+    // client-side auth state, not because the origin needs the browser.
     useEffect(() => {
         if (!user?.uid) return;
-        setInviteUrl(buildInviteUrl(window.location.origin, user.uid));
+        setInviteUrl(buildInviteUrl(PUBLIC_SITE_URL, user.uid));
         setCanNativeShare(typeof navigator !== "undefined" && !!navigator.share);
     }, [user?.uid]);
 

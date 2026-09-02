@@ -13,8 +13,8 @@ import { Button } from "./button"
 import { ActivityAction } from "@/app/types"
 
 import { listingShareMessage } from "@/lib/listingCopy"
+import { PUBLIC_SITE_URL as SITE } from "@/lib/seo";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://givny.com";
 
 interface ImageCardProps {
     image: string;

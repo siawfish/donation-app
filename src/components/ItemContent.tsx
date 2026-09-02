@@ -27,8 +27,8 @@ import DeliveryEstimate from "./DeliveryEstimate"
 import { VerifiedBadge } from "./verification/VerifiedBadge"
 import { ShareButtons } from "./ShareButtons"
 import { listingShareMessage } from "@/lib/listingCopy"
+import { PUBLIC_SITE_URL as SITE } from "@/lib/seo";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://givny.com";
 
 /** Status shown in the decision column, derived from request + item state. */
 type Standing =

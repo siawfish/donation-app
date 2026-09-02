@@ -17,6 +17,7 @@ import { renderMarkdown, excerptFrom, readingTimeMinutes } from "@/lib/markdown"
 import { Badge, Button, Input, Panel, Textarea } from "../ui";
 import { IMAGE_TYPES, imageRejectionReason, uploadBlogImage } from "./uploadBlogImage";
 import { PollEditor } from "./PollEditor";
+import { PUBLIC_SITE_URL as SITE } from "@/lib/seo";
 
 const EMPTY: PostInput = {
     title: "",
@@ -34,7 +35,6 @@ const EMPTY: PostInput = {
     poll: null,
 };
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://givny.com";
 
 export function BlogEditor({ post }: { post?: BlogPost }) {
     const router = useRouter();

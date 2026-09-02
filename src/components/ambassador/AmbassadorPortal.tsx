@@ -15,8 +15,8 @@ import {
     progressPct, referralUrl,
 } from "@/lib/ambassadors";
 import { todayISO } from "@/lib/crm";
+import { PUBLIC_SITE_URL as SITE } from "@/lib/seo";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://givny.com";
 
 /** Ring showing progress toward a monthly target. */
 function Ring({ label, actual, target }: { label: string; actual: number; target: number }) {

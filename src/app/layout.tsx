@@ -8,12 +8,18 @@ import { getTokens } from "next-firebase-auth-edge";
 import { toUser } from "@/firebase/user";
 import { AuthProvider } from "@/firebase/auth/AuthProvider";
 import { Toaster } from "@/components/ui/sonner"
+import { siteUrl } from "@/lib/seo"
 import { InstallPrompt } from "@/components/pwa/InstallPrompt"
 import { authConfig } from "@/firebase/config/server-config";
 import Script from 'next/script';
 import { MetaPixel } from '@/components/MetaPixel';
 
 export const metadata: Metadata = {
+  // Without this, Next resolves every relative URL in metadata — Open Graph
+  // images especially — against localhost, and warns about it at build time.
+  // Setting it once here means a page can hand it a relative path and still
+  // emit an absolute URL on the right host.
+  metadataBase: new URL(siteUrl()),
   title: "Givny — give your things a second life",
   description:
     "Givny is a free community marketplace for passing things on. Find what you need from neighbours nearby, or give something you no longer use a second life. No money, no fees, ever — just less waste and more use out of what already exists.",

@@ -21,14 +21,36 @@
  * environment keeps working and is still the better answer if the domain ever
  * changes. This is the floor, not a replacement for it.
  */
-const PRODUCTION_ORIGIN = "https://www.givny.com";
+export const CANONICAL_ORIGIN = "https://www.givny.com";
+
+/**
+ * The base URL for links built in the browser.
+ *
+ * Client components cannot call `siteUrl()`: `VERCEL_ENV` and `VERCEL_URL` are
+ * server-only and are not inlined into the bundle, so it would quietly resolve
+ * to localhost in production. They get this constant instead — same origin,
+ * same override, resolved at build time.
+ *
+ * Both are derived from CANONICAL_ORIGIN so the two cannot drift apart. They
+ * had: nine components each carried their own `https://givny.com` while the
+ * server said `https://www.givny.com`, so a listing shared from the detail
+ * sheet and the same listing shared from its own page produced different URLs.
+ *
+ * Locally and on previews this constant still says the live domain, because a
+ * client bundle has nothing else to go on. Set NEXT_PUBLIC_SITE_URL in
+ * `.env.local` (to http://localhost:3000) and both sides follow it — otherwise
+ * a share button in dev hands you a link to production.
+ */
+export const PUBLIC_SITE_URL = (
+    process.env.NEXT_PUBLIC_SITE_URL || CANONICAL_ORIGIN
+).replace(/\/+$/, "");
 
 export function siteUrl(): string {
     const raw =
         process.env.NEXT_PUBLIC_SITE_URL ||
         // Preview deployments genuinely do want their own hostname; only
         // production gets the canonical domain.
-        (process.env.VERCEL_ENV === "production" ? PRODUCTION_ORIGIN : "") ||
+        (process.env.VERCEL_ENV === "production" ? CANONICAL_ORIGIN : "") ||
         (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
         "http://localhost:3000";
     return raw.replace(/\/+$/, "");

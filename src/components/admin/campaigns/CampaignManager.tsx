@@ -17,9 +17,9 @@ import {
 } from "@/lib/campaigns";
 import { SEGMENTS, type SegmentId } from "@/lib/crm";
 import { Badge, Button, Input, Panel, Stat, Textarea } from "../ui";
+import { PUBLIC_SITE_URL as SITE } from "@/lib/seo";
 
 const LABEL = "block text-[11px] font-semibold uppercase tracking-[0.06em] text-gray-500";
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://givny.com";
 
 /** Example values, used only to show the admin what a merge tag resolves to. */
 const SAMPLE = {
