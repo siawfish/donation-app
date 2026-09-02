@@ -1,5 +1,5 @@
 import "server-only";
-import { GoogleAuth } from "google-auth-library";
+import { createSign } from "crypto";
 
 /**
  * Firebase Auth admin operations, over REST rather than the Admin SDK.
@@ -15,14 +15,31 @@ import { GoogleAuth } from "google-auth-library";
  * Firestore rules deployment uses, and the reason `src/lib/roles.ts` keeps
  * admin roles in a document instead of a custom claim.
  *
+ * The OAuth2 handshake is done by hand rather than with `google-auth-library`.
+ * It is a signed JWT posted to a token endpoint — about thirty lines — and the
+ * library was a second copy of a package `firebase-admin` already depends on,
+ * for one call. Node's `crypto` and `fetch` cover it.
+ *
  * If the SDK is ever fixed, this file is the only thing that needs replacing.
  */
 
+const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const SCOPES = [
     "https://www.googleapis.com/auth/identitytoolkit",
     "https://www.googleapis.com/auth/firebase",
     "https://www.googleapis.com/auth/cloud-platform",
-];
+].join(" ");
+
+/** One hour is the maximum Google allows, and the longest useful. */
+const TOKEN_TTL_SECONDS = 3600;
+
+/**
+ * Re-minting a token per request would add a round trip to Google in front of
+ * every call. Renewed a minute early so a token can never expire in flight.
+ */
+const RENEW_MARGIN_MS = 60_000;
+
+let cached: { token: string; expiresAt: number } | null = null;
 
 function projectId(): string {
     const id = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
@@ -30,24 +47,90 @@ function projectId(): string {
     return id;
 }
 
-function serviceAccount() {
+function serviceAccount(): { clientEmail: string; privateKey: string } {
     const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
     const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, "\n");
     if (!clientEmail || !privateKey) {
         throw new Error("The Firebase admin service account is not configured on this environment.");
     }
-    return { client_email: clientEmail, private_key: privateKey };
+    return { clientEmail, privateKey };
+}
+
+/** JWTs use base64url, which is base64 with two characters swapped and no padding. */
+function base64url(input: string | Buffer): string {
+    return Buffer.from(input)
+        .toString("base64")
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/, "");
+}
+
+/** A service-account assertion: the JWT Google exchanges for an access token. */
+function signedAssertion(): string {
+    const { clientEmail, privateKey } = serviceAccount();
+    const now = Math.floor(Date.now() / 1000);
+
+    const header = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+    const claims = base64url(
+        JSON.stringify({
+            iss: clientEmail,
+            scope: SCOPES,
+            aud: TOKEN_URL,
+            iat: now,
+            exp: now + TOKEN_TTL_SECONDS,
+        })
+    );
+
+    const signature = base64url(
+        createSign("RSA-SHA256").update(`${header}.${claims}`).sign(privateKey)
+    );
+
+    return `${header}.${claims}.${signature}`;
+}
+
+async function accessToken(): Promise<string> {
+    if (cached && cached.expiresAt - RENEW_MARGIN_MS > Date.now()) return cached.token;
+
+    const res = await fetch(TOKEN_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+            grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+            assertion: signedAssertion(),
+        }),
+    });
+
+    const data = (await res.json()) as { access_token?: string; expires_in?: number; error_description?: string; error?: string };
+    if (!res.ok || !data.access_token) {
+        throw new Error(`Could not authenticate with Google: ${data.error_description ?? data.error ?? res.statusText}`);
+    }
+
+    cached = {
+        token: data.access_token,
+        expiresAt: Date.now() + (data.expires_in ?? TOKEN_TTL_SECONDS) * 1000,
+    };
+    return cached.token;
 }
 
 async function call<T>(path: string, body: unknown): Promise<T> {
-    const auth = new GoogleAuth({ credentials: serviceAccount(), scopes: SCOPES });
-    const client = await auth.getClient();
-    const res = await client.request<T>({
-        url: `https://identitytoolkit.googleapis.com/v1/projects/${projectId()}/${path}`,
-        method: "POST",
-        data: body,
-    });
-    return res.data;
+    const res = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/projects/${projectId()}/${path}`,
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${await accessToken()}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+        }
+    );
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        const detail = (data as any)?.error?.message ?? res.statusText;
+        throw new Error(String(detail));
+    }
+    return data as T;
 }
 
 export interface AuthAccount {
@@ -80,7 +163,7 @@ export async function deleteAuthUser(uid: string): Promise<void> {
     try {
         await call("accounts:delete", { localId: uid });
     } catch (error: any) {
-        const detail = error?.response?.data?.error?.message ?? error?.message ?? "unknown error";
+        const detail = error?.message ?? "unknown error";
         // Already gone is the outcome we wanted, so it is not a failure.
         if (String(detail).includes("USER_NOT_FOUND")) return;
         throw new Error(`Could not delete the sign-in account: ${detail}`);
