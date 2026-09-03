@@ -5,9 +5,12 @@ import { Bell, BellOff, Loader2, Info, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/firebase/auth/AuthContext";
 import {
-    getExistingPushToken, onForegroundMessage, requestPushToken, vapidConfigured,
-} from "@/firebase/auth/messaging";
-import { isPushRegistered, registerPushToken, unregisterPushToken } from "@/app/app/actions/push";
+    getExistingSubscription, subscribeToPush, unsubscribeFromPush, vapidConfigured,
+} from "@/lib/pushClient";
+import {
+    isPushRegistered, registerPushSubscription, unregisterPushSubscription,
+} from "@/app/app/actions/push";
+import type { WebPushSubscription } from "@/lib/webpush.types";
 import { pushBlockedReason } from "@/lib/push";
 
 /**
@@ -20,7 +23,7 @@ import { pushBlockedReason } from "@/lib/push";
 export function PushOptIn() {
     const { user } = useAuth();
     const [on, setOn] = useState(false);
-    const [token, setToken] = useState<string | null>(null);
+    const [subscription, setSubscription] = useState<WebPushSubscription | null>(null);
     const [busy, setBusy] = useState(false);
     const [checked, setChecked] = useState(false);
     const [blocked, setBlocked] = useState<string | null>(null);
@@ -31,36 +34,39 @@ export function PushOptIn() {
         let cancelled = false;
         (async () => {
             setBlocked(pushBlockedReason());
-            const existing = await getExistingPushToken();
+            const existing = await getExistingSubscription();
             if (cancelled) return;
-            setToken(existing);
-            if (existing) setOn(await isPushRegistered(existing));
+            setSubscription(existing);
+            if (existing) setOn(await isPushRegistered(existing.endpoint));
             setChecked(true);
         })();
         return () => { cancelled = true };
     }, [user?.uid]);
 
-    // A message arriving while the app is open never reaches the service
-    // worker, so show it in-app instead of dropping it.
+    // The push service can retire a subscription on its own. The worker tells
+    // us when that happens; re-subscribing quietly is the whole fix, and doing
+    // nothing would mean notifications simply stopping with no clue why.
     useEffect(() => {
-        let unsub: (() => void) | undefined;
-        onForegroundMessage(({ title, body, url }) => {
-            toast(title || "Givny", {
-                description: body,
-                action: url ? { label: "Open", onClick: () => (window.location.href = url) } : undefined,
-            });
-        }).then((fn) => (unsub = fn));
-        return () => unsub?.();
+        if (!("serviceWorker" in navigator)) return;
+        const onMessage = async (event: MessageEvent) => {
+            if (event.data?.type !== "push-subscription-changed") return;
+            const res = await subscribeToPush();
+            if (!res.ok) return;
+            await registerPushSubscription(res.subscription, navigator.userAgent.slice(0, 60));
+            setSubscription(res.subscription);
+        };
+        navigator.serviceWorker.addEventListener("message", onMessage);
+        return () => navigator.serviceWorker.removeEventListener("message", onMessage);
     }, []);
 
     const enable = useCallback(async () => {
         setBusy(true);
         try {
-            const res = await requestPushToken();
+            const res = await subscribeToPush();
             if (!res.ok) { toast.error(res.reason); setBlocked(pushBlockedReason()); return; }
-            const saved = await registerPushToken(res.token, navigator.userAgent.slice(0, 60));
+            const saved = await registerPushSubscription(res.subscription, navigator.userAgent.slice(0, 60));
             if (!saved.success) { toast.error(saved.message); return; }
-            setToken(res.token);
+            setSubscription(res.subscription);
             setOn(true);
             toast.success("Notifications are on");
         } finally {
@@ -69,17 +75,22 @@ export function PushOptIn() {
     }, []);
 
     const disable = useCallback(async () => {
-        if (!token) return;
+        if (!subscription) return;
         setBusy(true);
         try {
-            const res = await unregisterPushToken(token);
+            const res = await unregisterPushSubscription(subscription.endpoint);
             if (!res.success) { toast.error(res.message); return; }
+            // Dropped in the browser too. Leaving it subscribed means the push
+            // service keeps accepting messages for an endpoint we no longer
+            // send to — harmless, but it is not really "off".
+            await unsubscribeFromPush();
+            setSubscription(null);
             setOn(false);
             toast.success("Notifications are off");
         } finally {
             setBusy(false);
         }
-    }, [token]);
+    }, [subscription]);
 
     if (!user) return null;
 
@@ -136,8 +147,8 @@ export function PushOptIn() {
                 <p className="flex gap-2 mt-4 text-sm text-gray-500 bg-sand border border-gray-200 rounded-2xl px-4 py-3 leading-relaxed">
                     <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
                     <span>
-                        Push isn&rsquo;t switched on for this site yet. An admin needs to add the Web Push
-                        key from Firebase to the environment.
+                        Push isn&rsquo;t switched on for this site yet. An admin needs to add the VAPID
+                        keys to the environment.
                     </span>
                 </p>
             )}
