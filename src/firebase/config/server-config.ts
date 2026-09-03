@@ -1,3 +1,25 @@
+const SERVICE_ACCOUNT_ENV = {
+  projectId: 'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
+  clientEmail: 'FIREBASE_ADMIN_CLIENT_EMAIL',
+  privateKey: 'FIREBASE_ADMIN_PRIVATE_KEY',
+} as const;
+
+function getServiceAccount() {
+  const missing = Object.values(SERVICE_ACCOUNT_ENV).filter((name) => !process.env[name]);
+  if (missing.length > 0) {
+    throw new Error(
+      `Firebase Admin service account is not configured. Missing env vars: ${missing.join(', ')}. ` +
+        'Next only loads .env.production for `next build`/`next start`; for `next dev` put these in .env.local.'
+    );
+  }
+
+  return {
+    projectId: process.env[SERVICE_ACCOUNT_ENV.projectId]!,
+    clientEmail: process.env[SERVICE_ACCOUNT_ENV.clientEmail]!,
+    privateKey: process.env[SERVICE_ACCOUNT_ENV.privateKey]!.replace(/\\n/g, '\n'),
+  };
+}
+
 export const serverConfig = {
   cookieName: process.env.AUTH_COOKIE_NAME!,
   firebaseApiKey: process.env.FIREBASE_API_KEY!,
@@ -9,14 +31,7 @@ export const serverConfig = {
     sameSite: "lax" as const,
     maxAge: 12 * 60 * 60 * 24,
   },
-  serviceAccount: {
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
-    clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL!,
-    privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(
-      /\\n/g,
-      '\n'
-    )!,
-  }
+  serviceAccount: getServiceAccount(),
 };
 
 export const authConfig = {
