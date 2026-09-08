@@ -19,8 +19,6 @@ export interface UserType {
     phone?: string;
     address?: string;
     city?: string;
-    state?: string;
-    zip?: string;
     country?: string;
     lastLogin: string;
     createdAt: string;

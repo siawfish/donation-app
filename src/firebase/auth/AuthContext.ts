@@ -12,8 +12,6 @@ export interface User extends UserInfo {
   lastLogin: string;
   address: string;
   city: string;
-  state: string;
-  zip: string;
   country: string;
   profileUrl?: string;
   bio?: string;

@@ -1,4 +1,3 @@
-import { getCategories } from '@/app/app/actions/categories';
 import { getInviterName } from '@/app/app/actions/leaderboard';
 import UserRegister from '@/components/UserRegister'
 import React from 'react'
@@ -19,8 +18,7 @@ export default async function RegisterPage({
     const ref = typeof searchParams.ref === 'string' ? searchParams.ref : undefined;
     const inviteToken = typeof searchParams.invite === 'string' ? searchParams.invite : undefined;
 
-    const [categories, referrerName, invite] = await Promise.all([
-        getCategories(),
+    const [referrerName, invite] = await Promise.all([
         getInviterName(ref),
         previewMemberInvite(inviteToken ?? ''),
     ]);
@@ -31,7 +29,6 @@ export default async function RegisterPage({
     return (
         <UserRegister
             registerUserAction={registerUserAction}
-            categories={categories.data!}
             referredBy={ref}
             inviterName={referrerName ?? invite?.inviterName ?? null}
             invited={!!invite}

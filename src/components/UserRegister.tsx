@@ -4,22 +4,22 @@ import { useState, useTransition } from "react";
 import { Progress } from "@/components/ui/progress";
 import CustomButton from "./Button";
 import { ArrowRightIcon, SendIcon } from "lucide-react";
-import MultiSelectInput from "./MultiSelectInput";
 import { Form, Formik } from "formik";
-import { CategoryType, ResponseData, UserRegisterPayload, UserType } from "@/app/types";
+import { ResponseData, UserRegisterPayload, UserType } from "@/app/types";
 import * as yup from "yup";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import CustomInput from "./CustomInput";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { GoogleButton, OrDivider } from "./GoogleButton";
 
-// Leaflet must be loaded client-side only
-const LocationPicker = dynamic(() => import("./LocationPicker"), { ssr: false });
+// Leaflet must be loaded client-side only, and only if the map is ever needed.
+const LocationConfirm = dynamic(() => import("./LocationConfirm"), { ssr: false });
 
 const steps = [
   { title: "Create your account", description: "Just the basics to get you started" },
-  { title: "Your area", description: "Pin your location and choose what you care about" },
+  { title: "Your area", description: "Confirm where you are so we can show you what's nearby" },
   { title: "Set a password", description: "Keep your account secure" },
 ];
 
@@ -29,7 +29,6 @@ const initialValues = {
   lat: 0,
   lng: 0,
   preferedLocation: "",
-  preferedCategories: [] as string[],
   password: "",
   confirmPassword: "",
 };
@@ -40,8 +39,7 @@ const schemas = [
     email: yup.string().email("Invalid email address").required("Email is required"),
   }),
   yup.object().shape({
-    preferedLocation: yup.string().min(1, "Please pick a location on the map").required("Location is required"),
-    preferedCategories: yup.array(yup.string()).min(1, "Pick at least one category").required(),
+    preferedLocation: yup.string().min(1, "Confirm your area to continue").required("Location is required"),
   }),
   yup.object().shape({
     password: yup.string().min(8, "At least 8 characters").required("Password is required"),
@@ -50,7 +48,6 @@ const schemas = [
 ];
 
 export default function RegisterPage({
-  categories,
   registerUserAction,
   referredBy,
   inviterName,
@@ -58,7 +55,6 @@ export default function RegisterPage({
   inviteToken,
   invitedEmail,
 }: {
-  categories: CategoryType[];
   registerUserAction: (payload: UserRegisterPayload) => Promise<ResponseData<UserType | null>>;
   referredBy?: string;
   inviterName?: string | null;
@@ -70,6 +66,15 @@ export default function RegisterPage({
   const [currentStep, setCurrentStep] = useState(0);
   const [_, startTransaction] = useTransition();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Somebody sent to sign up from a page they wanted should land back on it.
+  // Only a path is accepted: an absolute URL here would be an open redirect,
+  // and this value comes from the address bar.
+  const redirect = searchParams.get("redirect");
+  const destination = redirect && redirect.startsWith("/") && !redirect.startsWith("//")
+    ? redirect
+    : "/app";
 
   const handleSubmit = (
     values: typeof initialValues,
@@ -80,7 +85,9 @@ export default function RegisterPage({
         name: values.name,
         email: values.email,
         preferedLocation: values.preferedLocation,
-        preferedCategories: values.preferedCategories,
+        // No longer asked at signup — chosen later from the app, where there is
+        // something to see. Made a three-step form feel like an interrogation.
+        preferedCategories: [],
         lat: values.lat,
         lng: values.lng,
         password: values.password,
@@ -95,14 +102,15 @@ export default function RegisterPage({
       if (!success) {
         toast.error("Registration failed", { description: message });
       } else {
-        // Confirm first, then move. The toast was raised after the push, which
-        // meant the message and the new page raced each other.
+        // The action now signs them in as well, so this actually lands. It
+        // used to push a member with no session at a guarded route, and the
+        // middleware bounced them straight back to the sign-in page.
         const firstName = values.name.trim().split(/\s+/)[0];
         toast.success(`Your account is ready${firstName ? `, ${firstName}` : ""}`, {
           description: "Have a look at what neighbours near you are passing on.",
-          duration: 6000,
         });
-        router.push("/app");
+        router.replace(destination);
+        router.refresh();
       }
       setSubmitting(false);
     });
@@ -195,6 +203,22 @@ export default function RegisterPage({
                 {/* Step 1 — Account */}
                 {currentStep === 0 && (
                   <>
+                    <GoogleButton
+                      label="Sign up with Google"
+                      referredBy={referredBy}
+                      inviteToken={inviteToken}
+                      disabled={isSubmitting}
+                      onSignedIn={({ name, needsLocation }) => {
+                        const first = name.trim().split(/\s+/)[0];
+                        toast.success(`Welcome${first ? `, ${first}` : ""}`);
+                        // Google gives us a name and an email but never an
+                        // area, so a new member still needs that one step.
+                        // Somebody signing in again just goes where they meant.
+                        router.replace(needsLocation ? "/auth/area" : destination);
+                        router.refresh();
+                      }}
+                    />
+                    <OrDivider />
                     <CustomInput
                       label="Full Name"
                       name="name"
@@ -219,10 +243,10 @@ export default function RegisterPage({
                   </>
                 )}
 
-                {/* Step 2 — Location + Categories */}
+                {/* Step 2 — Location */}
                 {currentStep === 1 && (
                   <>
-                    <LocationPicker
+                    <LocationConfirm
                       lat={values.lat || undefined}
                       lng={values.lng || undefined}
                       locationName={values.preferedLocation}
@@ -236,16 +260,6 @@ export default function RegisterPage({
                     {touched.preferedLocation && errors.preferedLocation && (
                       <p className="text-xs text-red-500 -mt-1">{errors.preferedLocation}</p>
                     )}
-                    <MultiSelectInput
-                      label="What categories interest you?"
-                      placeholder="Select categories…"
-                      options={categories.map((c) => ({ label: c.name, value: c.id }))}
-                      values={values.preferedCategories}
-                      onChange={(v) => setFieldValue("preferedCategories", v)}
-                      error={touched.preferedCategories && errors.preferedCategories ? errors.preferedCategories as string : undefined}
-                      onTouched={() => setFieldTouched("preferedCategories", true)}
-                      disabled={isSubmitting}
-                    />
                   </>
                 )}
 
@@ -306,7 +320,7 @@ export default function RegisterPage({
                         const errs = await validateForm();
                         const stepFields: Record<number, string[]> = {
                           0: ["name", "email"],
-                          1: ["preferedLocation", "preferedCategories"],
+                          1: ["preferedLocation"],
                         };
                         const hasErr = stepFields[currentStep]?.some((f) => (errs as any)[f]);
                         stepFields[currentStep]?.forEach((f) => setFieldTouched(f, true));

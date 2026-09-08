@@ -1,7 +1,10 @@
 'use server';
 
 import {createUserWithEmailAndPassword} from 'firebase/auth';
+import {refreshCookiesWithIdToken} from 'next-firebase-auth-edge/lib/next/cookies';
+import {cookies, headers} from 'next/headers';
 import { getFirebaseAuth } from '@/firebase/auth/firebase';
+import { authConfig } from '@/firebase/config/server-config';
 import { db } from '@/firebase/init';
 import { ResponseData, UserRegisterPayload, UserType } from '@/app/types';
 import { FirebaseErrors } from '@/firebase/errors';
@@ -40,6 +43,20 @@ export async function registerUserAction(payload: UserRegisterPayload): Promise<
             updatedAt: new Date().toISOString(),
         };
         await db.collection('users').doc(user.uid).set(dataWithoutPassword);
+
+        // Sign them in, which registration was never doing.
+        //
+        // Creating a Firebase user does not create a session — loginAction has
+        // always called this and registration never did, so a new member was
+        // pushed to /app with no cookie, bounced back to the sign-in page by
+        // the middleware, and had to type the password they had just chosen.
+        // Awaited, because the redirect that follows depends on it.
+        await refreshCookiesWithIdToken(
+            await user.getIdToken(),
+            await headers(),
+            await cookies(),
+            authConfig
+        );
 
         // Not awaited: somebody's account must never fail to be created because
         // a mail server was slow, and the welcome is not worth a second of the

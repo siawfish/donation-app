@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useQueryState } from "nuqs";
 import Logo from "./Logo";
+import { GoogleButton, OrDivider } from "./GoogleButton";
 
 const initialValues = { email: "", password: "" };
 
@@ -28,6 +29,11 @@ export default function LoginForm({ loginAction }: LoginFormProps) {
   const [redirect] = useQueryState("redirect");
   const router = useRouter();
 
+  // Only a path is accepted. This value comes from the address bar, and an
+  // absolute URL here would be an open redirect off the back of a sign-in.
+  const destination =
+    redirect && redirect.startsWith("/") && !redirect.startsWith("//") ? redirect : "/app";
+
   const handleSubmit = (
     values: typeof initialValues,
     { setSubmitting }: { setSubmitting: (value: boolean) => void }
@@ -40,15 +46,19 @@ export default function LoginForm({ loginAction }: LoginFormProps) {
         return;
       }
 
-      // Confirm before navigating. The Toaster lives in the root layout, so the
-      // message survives the route change and lands on the page they arrive at
-      // — otherwise a successful sign-in is silent and reads as a page that
-      // simply moved on its own.
+      // The Toaster lives in the root layout, so the message survives the
+      // route change and lands on the page they arrive at.
+      //
+      // `replace`, not `push`: the sign-in page has done its job, and leaving
+      // it in the history means Back lands a signed-in member on it. `refresh`
+      // because the session cookie was set during this request, and the server
+      // components on the destination were rendered before it existed.
       const firstName = data?.name?.trim().split(/\s+/)[0];
       toast.success(firstName ? `Welcome back, ${firstName}` : "Welcome back", {
         description: "You're signed in.",
       });
-      router.push(redirect || "/app");
+      router.replace(destination);
+      router.refresh();
     });
   };
 
@@ -106,6 +116,20 @@ export default function LoginForm({ loginAction }: LoginFormProps) {
             <h1 className="text-3xl md:text-4xl font-bold text-ink tracking-tight">Good to see you again</h1>
             <p className="text-gray-500 pt-1">Enter your credentials to continue</p>
           </div>
+
+          <GoogleButton
+            label="Continue with Google"
+            onSignedIn={({ name, needsLocation }) => {
+              const first = name.trim().split(/\s+/)[0];
+              toast.success(first ? `Welcome back, ${first}` : "Welcome back");
+              // An account made with Google before this step existed, or one
+              // that skipped it, still has no area — ask once rather than
+              // showing them an empty map of nowhere.
+              router.replace(needsLocation ? `/auth/area?redirect=${encodeURIComponent(destination)}` : destination);
+              router.refresh();
+            }}
+          />
+          <OrDivider />
 
           <Formik initialValues={initialValues} onSubmit={handleSubmit} validationSchema={validationSchema}>
             {({ values, handleChange, handleSubmit, errors, touched, isSubmitting, isValid }) => (

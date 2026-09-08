@@ -34,10 +34,6 @@ const donorValidationSchema = Yup.object().shape({
         .max(100, 'Address is too long'),
     city: Yup.string()
         .max(50, 'City is too long'),
-    state: Yup.string()
-        .max(50, 'State is too long'),
-    zip: Yup.string()
-        .max(10, 'ZIP code is too long'),
     country: Yup.string()
         .max(50, 'Country is too long'),
 });
@@ -203,34 +199,18 @@ export default function EditProfile() {
                                         error={touched.address && errors.address}
                                     />
 
+                                    {/* State and ZIP are gone: Ghana has regions
+                                        rather than states and no postcode system
+                                        that anybody writes on an address, so both
+                                        boxes were only ever left blank. */}
                                     <div className="grid grid-cols-2 gap-4">
                                         <Field
                                             as={CustomInput}
                                             id="city"
                                             name="city"
-                                            label="City"
-                                            placeholder="City"
+                                            label="City or town"
+                                            placeholder="Accra"
                                             error={touched.city && errors.city}
-                                        />
-
-                                        <Field
-                                            as={CustomInput}
-                                            id="state"
-                                            name="state"
-                                            label="State"
-                                            placeholder="State"
-                                            error={touched.state && errors.state}
-                                        />
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <Field
-                                            as={CustomInput}
-                                            id="zip"
-                                            name="zip"
-                                            label="ZIP Code"
-                                            placeholder="ZIP Code"
-                                            error={touched.zip && errors.zip}
                                         />
 
                                         <Field
@@ -238,7 +218,7 @@ export default function EditProfile() {
                                             id="country"
                                             name="country"
                                             label="Country"
-                                            placeholder="Country"
+                                            placeholder="Ghana"
                                             error={touched.country && errors.country}
                                         />
                                     </div>

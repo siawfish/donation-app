@@ -62,7 +62,12 @@ export function ProfileSidePane() {
                 <span>
                   <MapPinIcon className="w-4 h-4 text-black" />
                 </span>
-                <p className="font-cabinetLight text-base font-medium">{`${user?.address}, ${user?.city}, ${user?.state}, ${user?.zip}, ${user?.country}`}</p>
+                {/* Joined from whatever is actually set. The template literal
+                    this replaced printed "undefined, undefined" for every
+                    field left blank, which is most of them. */}
+                <p className="font-cabinetLight text-base font-medium">
+                  {[user?.address, user?.city, user?.country].filter(Boolean).join(", ") || "No address set"}
+                </p>
               </div>
             </div>
 

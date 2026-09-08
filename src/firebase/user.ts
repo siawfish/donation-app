@@ -36,8 +36,6 @@ export const toUser = async ({token, customToken, decodedToken}: Tokens): Promis
     lastLogin: userData?.lastLogin || '',
     address: userData?.address || '',
     city: userData?.city || '',
-    state: userData?.state || '',
-    zip: userData?.zip || '',
     country: userData?.country || ''
   };
 };
