@@ -1,7 +1,14 @@
+"use client";
+
 import Link from "next/link";
 import { FacebookIcon, InstagramIcon, TwitterIcon, ArrowUpRight } from "lucide-react";
+import { useAuth } from "@/firebase/auth/AuthContext";
+import { signOut } from "firebase/auth";
+import { getFirebaseAuth } from "@/firebase/auth/firebase";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
-type FooterLink = { label: string; href: string; badge?: string };
+type FooterLink = { label: string; href: string; badge?: string; action?: "signout" };
 
 const links: Record<string, FooterLink[]> = {
   Explore: [
@@ -9,11 +16,6 @@ const links: Record<string, FooterLink[]> = {
     { label: "Near me", href: "/explore?radius=5" },
     { label: "Leaderboard", href: "/leaderboard" },
     { label: "How it works", href: "/#how-it-works" },
-  ],
-  Account: [
-    { label: "Sign in", href: "/auth/login" },
-    { label: "Join free", href: "/auth/register" },
-    { label: "List an item", href: "/app/add-item" },
   ],
   Company: [
     { label: "Journal", href: "/blog" },
@@ -25,6 +27,7 @@ const links: Record<string, FooterLink[]> = {
     { label: "Careers", href: "/careers", badge: "We're hiring" },
   ],
   Legal: [
+    { label: "Safety & Trust", href: "/safety" },
     { label: "Terms of Service", href: "/terms-of-use" },
     { label: "Privacy Policy", href: "/" },
     { label: "Contact", href: "/contact" },
@@ -35,6 +38,41 @@ const links: Record<string, FooterLink[]> = {
 };
 
 export default function Footer() {
+  const { user } = useAuth();
+  const router = useRouter();
+
+  const logout = async () => {
+    try {
+      await Promise.all([
+        signOut(getFirebaseAuth()),
+        fetch("/api/logout", { method: "GET" }),
+      ]);
+      router.refresh();
+    } catch (error: any) {
+      toast.error("Error logging out", { description: error.message });
+    }
+  };
+
+  // Signed in: no point offering to join (again) or sign in (already are) —
+  // "Log out" replaces "Sign in" in the same slot so the column doesn't reflow.
+  const account: FooterLink[] = user
+    ? [
+        { label: "Log out", href: "#", action: "signout" },
+        { label: "List an item", href: "/app/add-item" },
+      ]
+    : [
+        { label: "Sign in", href: "/auth/login" },
+        { label: "Join free", href: "/auth/register" },
+        { label: "List an item", href: "/app/add-item" },
+      ];
+
+  const sections: Record<string, FooterLink[]> = {
+    Explore: links.Explore,
+    Account: account,
+    Company: links.Company,
+    Legal: links.Legal,
+  };
+
   return (
     <footer className="w-full px-3 sm:px-4 pb-4 bg-canvas">
       <div className="forest-panel max-w-[1400px] mx-auto rounded-[2rem] md:rounded-[2.5rem] overflow-hidden text-white">
@@ -75,24 +113,34 @@ export default function Footer() {
               </div>
             </div>
 
-            {Object.entries(links).map(([section, items]) => (
+            {Object.entries(sections).map(([section, items]) => (
               <div key={section}>
                 <h4 className="text-xs font-bold text-lime/80 uppercase tracking-[0.2em] mb-4">{section}</h4>
                 <ul className="space-y-2.5">
                   {items.map((item) => (
                     <li key={item.label}>
-                      <Link
-                        href={item.href}
-                        className="text-sm text-white/60 hover:text-white transition-colors inline-flex items-center gap-2 flex-wrap"
-                      >
-                        {item.label}
-                        {item.badge && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-lime/15 border border-lime/30 px-2 py-0.5 text-[10px] font-bold text-lime whitespace-nowrap">
-                            <span className="w-1.5 h-1.5 rounded-full bg-lime animate-pulse" />
-                            {item.badge}
-                          </span>
-                        )}
-                      </Link>
+                      {item.action === "signout" ? (
+                        <button
+                          type="button"
+                          onClick={logout}
+                          className="text-sm text-white/60 hover:text-white transition-colors inline-flex items-center gap-2 flex-wrap"
+                        >
+                          {item.label}
+                        </button>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          className="text-sm text-white/60 hover:text-white transition-colors inline-flex items-center gap-2 flex-wrap"
+                        >
+                          {item.label}
+                          {item.badge && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-lime/15 border border-lime/30 px-2 py-0.5 text-[10px] font-bold text-lime whitespace-nowrap">
+                              <span className="w-1.5 h-1.5 rounded-full bg-lime animate-pulse" />
+                              {item.badge}
+                            </span>
+                          )}
+                        </Link>
+                      )}
                     </li>
                   ))}
                 </ul>
