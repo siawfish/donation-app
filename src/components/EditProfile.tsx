@@ -4,7 +4,7 @@ import { useQueryState } from 'nuqs'
 import React, { useCallback, useEffect, useState, useTransition } from 'react'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { useAuth } from '@/firebase/auth/AuthContext';
-import { SaveIcon, UserCog } from 'lucide-react';
+import { SaveIcon, UserCog, Trash2 } from 'lucide-react';
 import CustomButton from './Button';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
@@ -15,6 +15,7 @@ import { storage } from "@/firebase/auth/firebase";
 import { toast } from 'sonner';
 import { updateUserProfile } from '@/app/app/actions/user';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import ImageCropDialog from './ImageCropDialog';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { firestore } from "@/firebase/auth/firebase"
@@ -66,11 +67,23 @@ export default function EditProfile() {
         fetchUser()
     }, [fetchUser, isOpen])
 
-    const handleImageUpload = async (file: File, setFieldValue: (field: string, value: any) => void) => {
+    // A picked file goes through the cropper before it ever reaches Storage —
+    // this holds the object URL feeding that dialog while it's open.
+    const [pendingImageSrc, setPendingImageSrc] = useState<string | null>(null)
+
+    const closeCropDialog = useCallback(() => {
+        if (pendingImageSrc) URL.revokeObjectURL(pendingImageSrc)
+        setPendingImageSrc(null)
+    }, [pendingImageSrc])
+
+    const handleImageUpload = async (file: Blob, setFieldValue: (field: string, value: any) => void) => {
         if (!file) return;
-        
+
         try {
-            const storageRef = ref(storage, `profiles/${user?.uid}/${file.name}`);
+            // A fixed path per user rather than the original filename: every
+            // crop overwrites the last one instead of leaving old avatars
+            // behind in Storage.
+            const storageRef = ref(storage, `profiles/${user?.uid}/avatar.jpg`);
             const uploadTask = uploadBytesResumable(storageRef, file);
 
             uploadTask.on('state_changed',
@@ -152,8 +165,8 @@ export default function EditProfile() {
                                         <AvatarImage src={values.profileUrl} />
                                         <AvatarFallback className="bg-primary-foreground text-primary">{values.name?.charAt(0)}</AvatarFallback>
                                     </Avatar>
-                                    <div className="flex flex-col items-center gap-2">
-                                        <Label htmlFor="picture" className="cursor-pointer text-primary hover:underline">
+                                    <div className="flex items-center gap-3">
+                                        <Label htmlFor="picture" className="cursor-pointer text-primary hover:underline text-sm">
                                             Change Picture
                                         </Label>
                                         <Input
@@ -165,12 +178,34 @@ export default function EditProfile() {
                                             onChange={(e) => {
                                                 const file = e.target.files?.[0];
                                                 if (file) {
-                                                    handleImageUpload(file, setFieldValue);
+                                                    // Open the cropper rather than uploading straight away — the
+                                                    // input is reset so picking the same file twice still fires onChange.
+                                                    setPendingImageSrc(URL.createObjectURL(file));
                                                 }
+                                                e.target.value = "";
                                             }}
                                         />
+                                        {values.profileUrl && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setFieldValue('profileUrl', '')}
+                                                className="flex items-center gap-1 text-sm text-red-500 hover:underline"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                                Remove
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
+
+                                <ImageCropDialog
+                                    imageSrc={pendingImageSrc}
+                                    onClose={closeCropDialog}
+                                    onCropped={(blob) => {
+                                        closeCropDialog();
+                                        handleImageUpload(blob, setFieldValue);
+                                    }}
+                                />
                                 <div className="space-y-4">
                                     <Field
                                         as={CustomInput}
