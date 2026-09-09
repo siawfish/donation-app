@@ -21,6 +21,7 @@ import EmptyState from "./EmptyState"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { ConfirmDialog } from "./ConfirmDialog"
+import { SafetyDialog } from "./SafetyDialog"
 import { sendRequest } from "@/app/app/actions/requests"
 import { formatDistance } from "@/lib/distance"
 import DeliveryEstimate from "./DeliveryEstimate"
@@ -29,6 +30,8 @@ import { ShareButtons } from "./ShareButtons"
 import { listingShareMessage } from "@/lib/listingCopy"
 import { PUBLIC_SITE_URL as SITE } from "@/lib/seo";
 
+
+const SAFETY_NOTICE_SEEN_KEY = "givny:safety-notice-seen"
 
 /** Status shown in the decision column, derived from request + item state. */
 type Standing =
@@ -53,6 +56,7 @@ export default function ItemContent() {
     const [confirmRequest, setConfirmRequest] = useState(false)
     const [request, setRequest] = useState<RequestType | null>(null)
     const [activeImage, setActiveImage] = useState(0)
+    const [showSafety, setShowSafety] = useState(false)
     const [_, startTransition] = useTransition()
 
     // Copy addresses the other person by name rather than as "the donor".
@@ -61,6 +65,20 @@ export default function ItemContent() {
     const firstName = org?.name || donor?.name?.split(" ")[0] || "the owner"
     const isMine = !!user?.uid && user.uid === item?.createdBy
     const photos = item?.assets ?? []
+
+    // Once ever, per browser — the first listing someone opens is when a
+    // safety reminder is actually useful, not the fiftieth. Skipped for your
+    // own listing, where "meet up safely" doesn't apply.
+    useEffect(() => {
+        if (!item || isMine) return
+        try {
+            if (window.localStorage.getItem(SAFETY_NOTICE_SEEN_KEY)) return
+            window.localStorage.setItem(SAFETY_NOTICE_SEEN_KEY, "1")
+            setShowSafety(true)
+        } catch {
+            // Private browsing or storage blocked — not worth failing the page over.
+        }
+    }, [item, isMine])
 
     useEffect(() => {
         (async () => {
@@ -451,6 +469,19 @@ export default function ItemContent() {
                     </span>
                 </div>
             </ConfirmDialog>
+
+            <SafetyDialog
+                open={showSafety}
+                onOpenChange={setShowSafety}
+                title="Before you get in touch"
+                intro="Givny connects neighbours directly — a couple of things worth knowing."
+                tips={[
+                    "Meet in a public place, or bring a friend along if you can.",
+                    "Everything here is free — never send money, even for \"shipping\" or a \"deposit\".",
+                    "Check the item matches the photos and description before you commit to picking it up.",
+                    "Keep the conversation in Givny messages until you've arranged a pickup.",
+                ]}
+            />
         </SheetContent>
     )
 }

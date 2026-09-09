@@ -7,10 +7,11 @@ import CustomTextarea from "./CustomTextarea"
 import DragAndDrop, { UploadItem, isUploadedAsset } from "./ui/drag-n-drop"
 import { Form, Formik, FormikProps } from "formik"
 import * as yup from "yup"
-import { AssetType, CategoryType, ItemType, ResponseData } from "@/app/types"
+import { AssetType, ItemType, ResponseData } from "@/app/types"
 import { useEffect, useMemo, useState, useTransition } from "react"
 import { storage, firestore } from "@/firebase/auth/firebase"
-import MultiSelectInput from "./MultiSelectInput"
+import CategoryPicker from "./CategoryPicker"
+import { SafetyDialog } from "./SafetyDialog"
 import SelectInput from "./SelectInput"
 import { Conditions } from "@/lib/utils"
 import { PARCEL_SIZES } from "@/lib/delivery"
@@ -43,7 +44,6 @@ const INITIAL_VALUES: ItemType = {
 interface AddDonationProps {
   addItem: (item: ItemType) => Promise<ResponseData<string | null>>
   editItem?: (item: ItemType, id: string) => Promise<ResponseData<ItemType | null>>
-  categories: CategoryType[]
   defaultValues?: ItemType
 }
 
@@ -91,10 +91,11 @@ const STEPS = [
   { id: "pickup", label: "Pickup", icon: MapPin, fields: [] as const },
 ]
 
-export default function AddDonation({ addItem, editItem, categories, defaultValues }: AddDonationProps) {
+export default function AddDonation({ addItem, editItem, defaultValues }: AddDonationProps) {
   const [initialValues, setInitialValues] = useState(INITIAL_VALUES)
   const [step, setStep] = useState(0)
   const [furthest, setFurthest] = useState(0)
+  const [showSafety, setShowSafety] = useState(false)
   const router = useRouter()
   const { user } = useAuth()
   const [_, startTransition] = useTransition()
@@ -182,12 +183,15 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
           const { success, message } = await editItem(data, defaultValues.id!)
           if (!success) throw new Error(message)
           toast.success("Listing updated", { description: "Your changes are live.", id: "saving-item" })
+          router.push("/app/my-items")
         } else {
           const { success, message } = await addItem(data)
           if (!success) throw new Error(message)
           toast.success("It's live!", { description: "Your item is now up for grabs.", id: "saving-item" })
+          // A reminder belongs at the moment it's most likely to be read — right
+          // after the item is public, not buried in help docs nobody visits.
+          setShowSafety(true)
         }
-        router.push("/app/my-items")
       })
     } catch (error: any) {
       toast.error("Something went wrong", { description: error.message, id: "saving-item" })
@@ -197,6 +201,7 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
   }
 
   return (
+    <>
     <Formik
       initialValues={initialValues}
       validationSchema={validationSchema}
@@ -315,17 +320,11 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <MultiSelectInput
+                  <CategoryPicker
                     containerClassName="w-full"
                     label="Category"
-                    options={categories.map((c) => ({ label: c.name, value: c.id }))}
-                    values={values.categories.map((c) => (typeof c === "string" ? c : c.id))}
-                    onChange={(vals) =>
-                      formik.setFieldValue(
-                        "categories",
-                        vals.map((v) => categories.find((c) => c.id === v) || { id: v, name: "" })
-                      )
-                    }
+                    value={values.categories.map((c) => (typeof c === "string" ? { id: c, name: "" } : c))}
+                    onChange={(vals) => formik.setFieldValue("categories", vals)}
                     error={stepError("categories")}
                     onTouched={() => setFieldTouched("categories", true)}
                     disabled={busy}
@@ -486,6 +485,24 @@ export default function AddDonation({ addItem, editItem, categories, defaultValu
         )
       }}
     </Formik>
+
+    <SafetyDialog
+      open={showSafety}
+      onOpenChange={(open) => {
+        setShowSafety(open)
+        if (!open) router.push("/app/my-items")
+      }}
+      title="Your item is live — a few safety reminders"
+      intro="Now that people can see it, here's how to hand it over safely."
+      ctaLabel="Got it, take me to my items"
+      tips={[
+        "Meet in a public place, or somewhere you feel comfortable, in daylight hours.",
+        "Never send or ask for money — everything on Givny is always free.",
+        "Keep the conversation in Givny messages until you've met.",
+        "Trust your instincts — you can always say no or cancel a pickup.",
+      ]}
+    />
+    </>
   )
 }
 
