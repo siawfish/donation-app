@@ -1,8 +1,10 @@
+'use client'
+
 import React, { useCallback, useEffect, useState, useTransition } from "react"
 import { SheetContent, SheetTitle } from "./ui/sheet"
 import {
     CalendarIcon, EyeIcon, HandIcon, LockIcon, MapPin, MessageCircleIcon,
-    PencilIcon, ChevronLeft, ChevronRight, ShieldCheck, Sparkles, Building2,
+    PencilIcon, ChevronLeft, ChevronRight, ShieldCheck, Sparkles, Building2, Trash2Icon,
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import CustomButton from "./Button"
@@ -19,10 +21,12 @@ import { getInitials } from "@/lib/utils"
 import ItemLoader from "./ItemLoader"
 import EmptyState from "./EmptyState"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
+import { useQueryState } from "nuqs"
 import { ConfirmDialog } from "./ConfirmDialog"
 import { SafetyDialog } from "./SafetyDialog"
 import { sendRequest } from "@/app/app/actions/requests"
+import { deleteItem } from "@/app/app/actions/items"
 import { formatDistance } from "@/lib/distance"
 import DeliveryEstimate from "./DeliveryEstimate"
 import { VerifiedBadge } from "./verification/VerifiedBadge"
@@ -51,13 +55,15 @@ export default function ItemContent() {
      */
     const [org, setOrg] = useState<{ name: string; slug: string; logoUrl?: string; verified?: boolean } | null>(null)
     const [loading, setLoading] = useState(false)
-    const searchParams = useSearchParams()
-    const id = searchParams.get('id')
+    const router = useRouter()
+    const [id, setId] = useQueryState('id')
     const [confirmRequest, setConfirmRequest] = useState(false)
+    const [confirmDelete, setConfirmDelete] = useState(false)
     const [request, setRequest] = useState<RequestType | null>(null)
     const [activeImage, setActiveImage] = useState(0)
     const [showSafety, setShowSafety] = useState(false)
     const [_, startTransition] = useTransition()
+    const [deleting, startDeleteTransition] = useTransition()
 
     // Copy addresses the other person by name rather than as "the donor".
     // An organisation's listing is answered in the organisation's name, so the
@@ -174,6 +180,26 @@ export default function ItemContent() {
                 })
             } finally {
                 getResource()
+            }
+        })
+    }
+
+    const handleDelete = () => {
+        if (deleting) return
+        startDeleteTransition(async () => {
+            try {
+                if (!id) throw new Error('Missing item')
+                const { success, message } = await deleteItem(id)
+                if (!success) throw new Error(message)
+                toast.success('Listing deleted', { position: 'bottom-left' })
+                setConfirmDelete(false)
+                setId(null) // closes the sheet
+                router.refresh() // the grid behind it is stale otherwise
+            } catch (error: any) {
+                toast.error('Could not delete listing', {
+                    description: FirebaseErrors[error.code] || error.message,
+                    position: 'bottom-left',
+                })
             }
         })
     }
@@ -431,6 +457,8 @@ export default function ItemContent() {
                                     id={id}
                                     busy={_}
                                     onAsk={() => setConfirmRequest(true)}
+                                    onDelete={() => setConfirmDelete(true)}
+                                    deleting={deleting}
                                 />
                             </div>
                         </div>
@@ -447,6 +475,8 @@ export default function ItemContent() {
                             id={id}
                             busy={_}
                             onAsk={() => setConfirmRequest(true)}
+                            onDelete={() => setConfirmDelete(true)}
+                            deleting={deleting}
                         />
                     </div>
                 </>
@@ -470,6 +500,18 @@ export default function ItemContent() {
                 </div>
             </ConfirmDialog>
 
+            <ConfirmDialog
+                title={`Delete ${item?.name}?`}
+                onConfirm={handleDelete}
+                submitLabel="Yes, delete it"
+                open={confirmDelete}
+                onOpenChange={setConfirmDelete}
+            >
+                <p className="text-ink text-base font-medium">
+                    This removes the listing for good — anyone who&apos;s asked for it will no longer be able to reach you about it. This can&apos;t be undone.
+                </p>
+            </ConfirmDialog>
+
             <SafetyDialog
                 open={showSafety}
                 onOpenChange={setShowSafety}
@@ -488,7 +530,7 @@ export default function ItemContent() {
 
 /** Shared by the desktop column and the mobile bar so both stay in step. */
 function Actions({
-    isMine, signedIn, item, request, firstName, id, busy, onAsk,
+    isMine, signedIn, item, request, firstName, id, busy, onAsk, onDelete, deleting,
 }: {
     isMine: boolean
     signedIn: boolean
@@ -498,21 +540,40 @@ function Actions({
     id: string | null
     busy: boolean
     onAsk: () => void
+    onDelete: () => void
+    deleting: boolean
 }) {
     const base = "rounded-full py-6 w-full"
 
     if (isMine) {
+        // Once it's gone, editing it doesn't mean anything — the only thing
+        // left to do with a passed-on listing is take it off the record.
+        const isGone = !!item.donatedOn
         return (
-            <Link href={`/app/edit-item/${id}`} className="block">
+            <div className="flex gap-2 w-full">
+                {!isGone && (
+                    <Link href={`/app/edit-item/${id}`} className="flex-1">
+                        <CustomButton
+                            variant="outline"
+                            className={`${base} border-forest !text-forest hover:bg-transparent`}
+                            icon={<PencilIcon className="w-4 h-4" />}
+                        >
+                            Edit listing
+                        </CustomButton>
+                    </Link>
+                )}
                 <CustomButton
+                    type="button"
                     variant="outline"
-                    className={`${base} border-forest !text-forest hover:bg-transparent`}
-                    disabled={!!item.donatedOn}
-                    icon={<PencilIcon className="w-4 h-4" />}
+                    className={`${base} ${isGone ? "" : "flex-1"} border-red-200 !text-red-600 hover:bg-red-50`}
+                    icon={<Trash2Icon className="w-4 h-4" />}
+                    onClick={onDelete}
+                    disabled={deleting}
+                    isLoading={deleting}
                 >
-                    Edit listing
+                    Delete listing
                 </CustomButton>
-            </Link>
+            </div>
         )
     }
 
