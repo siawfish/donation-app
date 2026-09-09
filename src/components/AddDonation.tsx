@@ -6,6 +6,7 @@ import CustomInput from "./CustomInput"
 import CustomTextarea from "./CustomTextarea"
 import DragAndDrop, { UploadItem, isUploadedAsset } from "./ui/drag-n-drop"
 import { Form, Formik, FormikProps } from "formik"
+import { ConfirmDialog } from "./ConfirmDialog"
 import * as yup from "yup"
 import { AssetType, ItemType, ResponseData } from "@/app/types"
 import { useEffect, useMemo, useState, useTransition } from "react"
@@ -96,6 +97,7 @@ export default function AddDonation({ addItem, editItem, defaultValues }: AddDon
   const [step, setStep] = useState(0)
   const [furthest, setFurthest] = useState(0)
   const [showSafety, setShowSafety] = useState(false)
+  const [confirmPublish, setConfirmPublish] = useState(false)
   const router = useRouter()
   const { user } = useAuth()
   const [_, startTransition] = useTransition()
@@ -460,13 +462,17 @@ export default function AddDonation({ addItem, editItem, defaultValues }: AddDon
 
                 {isLast ? (
                   <CustomButton
-                    type="submit"
+                    // Editing an already-live listing just saves; creating one is the
+                    // moment it becomes visible to everyone nearby, so that one step
+                    // stops for an explicit "yes, post it" instead of submitting on click.
+                    type={isEditing ? "submit" : "button"}
+                    onClick={isEditing ? undefined : () => setConfirmPublish(true)}
                     className="rounded-full px-7 py-3 !bg-forest hover:!bg-forest-dark min-w-[160px]"
                     icon={isEditing ? <SaveIcon className="w-4 h-4" /> : <Send className="w-4 h-4" />}
                     disabled={busy}
                     isLoading={busy}
                   >
-                    {isEditing ? "Save changes" : "Publish listing"}
+                    {isEditing ? "Save changes" : "Review & publish"}
                   </CustomButton>
                 ) : (
                   <CustomButton
@@ -481,6 +487,26 @@ export default function AddDonation({ addItem, editItem, defaultValues }: AddDon
                 )}
               </div>
             </div>
+
+            <ConfirmDialog
+              title="Publish this listing?"
+              submitLabel="Yes, publish it"
+              open={confirmPublish}
+              onOpenChange={setConfirmPublish}
+              onConfirm={() => {
+                setConfirmPublish(false)
+                formik.submitForm()
+              }}
+            >
+              <div className="flex flex-col gap-2">
+                <p className="text-ink text-base font-medium">
+                  {values.name || "This item"} will go live and be visible to everyone nearby.
+                </p>
+                <span className="text-muted-foreground tracking-tight text-sm">
+                  You can edit the details or take it down any time from My items.
+                </span>
+              </div>
+            </ConfirmDialog>
           </Form>
         )
       }}
