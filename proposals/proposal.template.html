@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Givny — An invitation to organisations</title>
+<style>
+  @font-face { font-family: "Cabinet"; font-weight: 700; src: url(data:font/otf;base64,{{bold}}); }
+  @font-face { font-family: "Cabinet"; font-weight: 400; src: url(data:font/otf;base64,{{regular}}); }
+  @font-face { font-family: "Cabinet"; font-weight: 300; src: url(data:font/otf;base64,{{light}}); }
+
+  :root {
+    --canvas:  #FAFAF7;
+    --ink:     #10150F;
+    --forest:  #0C3B2E;
+    --forest2: #0A3328;
+    --lime:    #D9F36E;
+    --sand:    #F1EFE9;
+    --primary: #35a26d;
+    --muted:   #6b7280;
+    --line:    #e5e7eb;
+  }
+
+  @page { size: A4; margin: 0; }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Cabinet", "Segoe UI", system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--canvas);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* One A4 sheet. Fixed height so a page can never spill into the next. */
+  .page {
+    width: 210mm;
+    height: 297mm;
+    padding: 18mm 16mm;
+    position: relative;
+    overflow: hidden;
+    page-break-after: always;
+    background: var(--canvas);
+  }
+  .page:last-child { page-break-after: auto; }
+
+  .dark { background: var(--forest); color: #fff; }
+  .dark .eyebrow { color: var(--lime); }
+
+  /* ── Type ─────────────────────────────────────────────── */
+  .eyebrow {
+    font-size: 8.5pt; font-weight: 700; letter-spacing: .22em;
+    text-transform: uppercase; color: var(--primary);
+  }
+  h1 { font-size: 34pt; font-weight: 700; letter-spacing: -.02em; line-height: 1.04; }
+  h2 { font-size: 21pt; font-weight: 700; letter-spacing: -.02em; line-height: 1.12; }
+  h3 { font-size: 11.5pt; font-weight: 700; letter-spacing: -.01em; }
+  p  { font-size: 10pt; line-height: 1.62; color: #3f4a45; }
+  .lead { font-size: 12pt; line-height: 1.55; color: #4b5751; }
+  .dark p, .dark .lead { color: rgba(255,255,255,.72); }
+  .small { font-size: 8.5pt; line-height: 1.5; color: var(--muted); }
+  .dark .small { color: rgba(255,255,255,.45); }
+  strong { font-weight: 700; color: var(--ink); }
+  .dark strong { color: #fff; }
+
+  .mt1 { margin-top: 4mm } .mt2 { margin-top: 7mm } .mt3 { margin-top: 11mm }
+
+  /* ── Blocks ───────────────────────────────────────────── */
+  .card {
+    background: #fff; border: 1px solid var(--line);
+    border-radius: 5mm; padding: 6mm;
+  }
+  .card.tint { background: var(--sand); border-color: transparent; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4mm; }
+
+  .num {
+    width: 8mm; height: 8mm; border-radius: 50%;
+    background: var(--lime); color: var(--forest);
+    font-weight: 700; font-size: 10pt;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .rule { height: 1px; background: var(--line); }
+  .dark .rule { background: rgba(255,255,255,.14); }
+
+  .pill {
+    display: inline-block; border-radius: 20mm;
+    padding: 1.6mm 4mm; font-size: 8.5pt; font-weight: 700;
+    background: var(--lime); color: var(--forest);
+  }
+  .pill.ghost {
+    background: transparent; color: rgba(255,255,255,.8);
+    border: 1px solid rgba(255,255,255,.25);
+  }
+
+  ul { list-style: none; }
+  li { font-size: 10pt; line-height: 1.6; color: #3f4a45; padding-left: 7mm; position: relative; margin-bottom: 2.6mm; }
+  li::before {
+    content: ""; position: absolute; left: 0; top: 2.1mm;
+    width: 3mm; height: 3mm; border-radius: 50%;
+    background: var(--primary);
+  }
+  .dark li { color: rgba(255,255,255,.75); }
+  .dark li::before { background: var(--lime); }
+
+  .foot {
+    position: absolute; left: 16mm; right: 16mm; bottom: 11mm;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 8pt; color: #9aa3a0;
+  }
+  .dark .foot { color: rgba(255,255,255,.35); }
+
+  /* Screenshot frames. A thin border and a soft shadow read as "screen"
+     without drawing a literal browser chrome, which dates badly. */
+  .shot {
+    display: block; width: 100%;
+    border: 1px solid var(--line); border-radius: 3mm;
+    box-shadow: 0 4mm 10mm rgba(12,59,46,.10);
+  }
+  .shot-phone {
+    display: block; width: 100%;
+    border: 1px solid var(--line); border-radius: 5mm;
+    box-shadow: 0 4mm 10mm rgba(12,59,46,.14);
+  }
+  .clip {
+    overflow: hidden; border: 1px solid var(--line); border-radius: 3mm;
+    box-shadow: 0 4mm 10mm rgba(12,59,46,.10);
+  }
+  .clip img { display: block; width: 100%; object-fit: cover; object-position: top; }
+
+  .caption { font-size: 8pt; color: #9aa3a0; margin-top: 2.5mm; }
+  .dark .caption { color: rgba(255,255,255,.45); }
+
+  .logo { height: 11mm; }
+  .logo-lg { height: 16mm; }
+
+  /* The wordmark is dark green, which disappears against the forest panel.
+     logo_1.png is not an alternative — it has a solid green block baked in, in
+     a different green. Knocking the transparent mark out to white is the clean
+     answer for a dark page. */
+  .dark .logo, .dark .logo-lg { filter: brightness(0) invert(1); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ 1 · COVER ══════════════ -->
+<section class="page dark" style="display:flex; flex-direction:column; justify-content:space-between;">
+  <div>
+    <img class="logo-lg" src="data:image/png;base64,{{logo}}" alt="Givny">
+  </div>
+
+  <div>
+    <p class="eyebrow">An invitation to organisations</p>
+    <h1 style="margin-top:5mm; max-width:150mm;">
+      Turn what you<br>throw away into<br><span style="color:var(--lime)">something you<br>can report on.</span>
+    </h1>
+    <p class="lead" style="margin-top:8mm; max-width:118mm;">
+      Givny is a free platform where households in Ghana pass on things they no
+      longer need. We are inviting businesses, NGOs, schools and faith groups to
+      do the same — and to keep the evidence of what that diverted.
+    </p>
+
+    <div style="margin-top:9mm;">
+      <span class="pill">Free to list</span>
+      <span class="pill ghost" style="margin-left:2mm;">No commission</span>
+      <span class="pill ghost" style="margin-left:2mm;">No contract</span>
+    </div>
+  </div>
+
+  <div>
+    <div class="rule"></div>
+    <table style="width:100%; margin-top:6mm; border-collapse:collapse;">
+      <tr>
+        <td style="width:50%; vertical-align:top;">
+          <p class="small" style="letter-spacing:.15em; text-transform:uppercase;">Prepared for</p>
+          <p style="font-size:13pt; font-weight:700; color:#fff; margin-top:1.5mm;">[ORGANISATION NAME]</p>
+        </td>
+        <td style="width:50%; vertical-align:top;">
+          <p class="small" style="letter-spacing:.15em; text-transform:uppercase;">Date</p>
+          <p style="font-size:13pt; font-weight:700; color:#fff; margin-top:1.5mm;">[DATE]</p>
+        </td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+<!-- ══════════════ 2 · THE CASE ══════════════ -->
+<section class="page">
+  <p class="eyebrow">Why this is worth five minutes</p>
+  <h2 style="margin-top:4mm; max-width:150mm;">
+    Clearing things out costs you money. It doesn&rsquo;t have to.
+  </h2>
+
+  <p class="lead mt1" style="max-width:155mm;">
+    Every organisation eventually has to move things on — an office refit, a
+    change of stock, the end of a school term. The usual answer is a skip, a
+    disposal fee, and a storeroom that fills up again anyway.
+  </p>
+
+  <div class="grid2 mt2">
+    <div class="card">
+      <h3>What it costs you today</h3>
+      <ul style="margin-top:3mm;">
+        <li>A disposal or haulage fee for things that still work</li>
+        <li>Storage space held by items nobody will use again</li>
+        <li>Staff time arranging collection and paperwork</li>
+        <li>Nothing to show for any of it afterwards</li>
+      </ul>
+    </div>
+
+    <div class="card tint">
+      <h3>What it costs on Givny</h3>
+      <ul style="margin-top:3mm;">
+        <li>Nothing — listing is free, and always will be</li>
+        <li>Someone comes to you and collects it</li>
+        <li>A few minutes per item, from any phone</li>
+        <li>A record of what was diverted, and who it reached</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card mt2" style="border-left:1.2mm solid var(--primary);">
+    <h3>The part most organisations care about</h3>
+    <p style="margin-top:2.5mm;">
+      Sustainability and CSR reporting increasingly asks what an organisation
+      diverted from landfill and who benefited. That question is difficult to
+      answer for goods given away informally, because nothing is written down.
+      Everything passed on through Givny is recorded as it happens, so the answer
+      exists before anyone asks for it.
+    </p>
+  </div>
+
+  <p class="eyebrow mt2">Who lists on Givny</p>
+  <div class="grid2" style="margin-top:4mm; gap:3mm;">
+    <div class="card" style="padding:4.5mm;">
+      <h3 style="font-size:10pt;">Businesses</h3>
+      <p class="small" style="margin-top:1.5mm;">Clear stock, fixtures and office equipment — and evidence the diversion for reporting.</p>
+    </div>
+    <div class="card" style="padding:4.5mm;">
+      <h3 style="font-size:10pt;">NGOs &amp; non-profits</h3>
+      <p class="small" style="margin-top:1.5mm;">Reach the people you serve, and source goods you would otherwise buy.</p>
+    </div>
+    <div class="card" style="padding:4.5mm;">
+      <h3 style="font-size:10pt;">Schools &amp; universities</h3>
+      <p class="small" style="margin-top:1.5mm;">Move on furniture, books and equipment at the end of a term or year.</p>
+    </div>
+    <div class="card" style="padding:4.5mm;">
+      <h3 style="font-size:10pt;">Churches, mosques &amp; faith groups</h3>
+      <p class="small" style="margin-top:1.5mm;">Coordinate giving inside your congregation and the streets around it.</p>
+    </div>
+  </div>
+  <p class="small" style="margin-top:3mm;">
+    Government and public bodies are welcome too — redistributing public assets
+    rather than disposing of them.
+  </p>
+
+  <div class="foot">
+    <span>Givny — an invitation to organisations</span><span>2</span>
+  </div>
+</section>
+
+<!-- ══════════════ 3 · WHAT YOU GET ══════════════ -->
+<section class="page">
+  <p class="eyebrow">What you get</p>
+  <h2 style="margin-top:4mm; max-width:150mm;">A page of your own, and a team that can run it.</h2>
+
+  <div class="grid2 mt2">
+    <div class="card">
+      <h3>Your own storefront</h3>
+      <p style="margin-top:2mm;">
+        A public page carrying your logo, your description and everything you
+        have listed — at <strong>givny.com/o/your-name</strong>. A link you can
+        put in a newsletter, a footer or a tender document.
+      </p>
+    </div>
+    <div class="card">
+      <h3>Your team, not your password</h3>
+      <p style="margin-top:2mm;">
+        Colleagues get their own logins. Owners, managers and listers each see a
+        different amount, so an intern can add items without touching your
+        account settings. Staff leave; the listings stay yours.
+      </p>
+    </div>
+    <div class="card">
+      <h3>A verified badge</h3>
+      <p style="margin-top:2mm;">
+        We check that the organisation is real before your page goes public. The
+        badge tells a stranger they are dealing with a registered entity rather
+        than an anonymous account.
+      </p>
+    </div>
+    <div class="card">
+      <h3>Followers who get told</h3>
+      <p style="margin-top:2mm;">
+        People can follow your organisation. When you list something, they are
+        notified — so a clear-out reaches an audience that already wants what
+        you have, instead of sitting unseen.
+      </p>
+    </div>
+  </div>
+
+  <div class="card tint mt2">
+    <h3>An impact record you can actually use</h3>
+    <p style="margin-top:2.5mm;">
+      Your dashboard keeps a running count of what you listed, what reached a
+      household, how many separate households you reached, and an estimate of
+      the weight diverted from disposal. It produces a sentence you can paste
+      straight into a report:
+    </p>
+    <div style="background:#fff; border-radius:3mm; padding:5mm; margin-top:4mm; border:1px solid var(--line);">
+      <p style="font-size:10.5pt; color:var(--ink);">
+        &ldquo;[Your organisation] passed on 34 items to 26 households through
+        Givny, diverting an estimated 410&nbsp;kg from disposal.&rdquo;
+      </p>
+    </div>
+    <p class="small" style="margin-top:3mm;">
+      Weight is an estimate, and the platform says so wherever it appears. It is
+      calculated from the size band recorded against each item, not from weighing
+      — a stated estimate is more useful to a report than no figure at all, and
+      more honest than a false precision.
+    </p>
+  </div>
+
+  <p class="eyebrow mt2">Who on your team sees what</p>
+  <table style="width:100%; border-collapse:collapse; margin-top:3.5mm;">
+    <tr style="background:var(--forest);">
+      <td style="padding:2.5mm 4mm; border-radius:2mm 0 0 2mm;"><span style="font-size:8.5pt; font-weight:700; color:#fff;">Role</span></td>
+      <td style="padding:2.5mm 4mm;"><span style="font-size:8.5pt; font-weight:700; color:#fff;">Can do</span></td>
+    </tr>
+    <tr><td style="padding:3mm 4mm; border-bottom:1px solid var(--line); width:32mm;"><span style="font-size:9.5pt; font-weight:700;">Owner</span></td>
+        <td style="padding:3mm 4mm; border-bottom:1px solid var(--line);"><span style="font-size:9.5pt; color:#3f4a45;">Everything, including the team and account settings</span></td></tr>
+    <tr><td style="padding:3mm 4mm; border-bottom:1px solid var(--line);"><span style="font-size:9.5pt; font-weight:700;">Manager</span></td>
+        <td style="padding:3mm 4mm; border-bottom:1px solid var(--line);"><span style="font-size:9.5pt; color:#3f4a45;">List, answer requests, and manage the storefront</span></td></tr>
+    <tr><td style="padding:3mm 4mm;"><span style="font-size:9.5pt; font-weight:700;">Lister</span></td>
+        <td style="padding:3mm 4mm;"><span style="font-size:9.5pt; color:#3f4a45;">Add and edit listings only</span></td></tr>
+  </table>
+
+  <div class="foot">
+    <span>Givny — an invitation to organisations</span><span>3</span>
+  </div>
+</section>
+
+<!-- ══════════════ 3b · WHAT IT LOOKS LIKE ══════════════ -->
+<section class="page">
+  <p class="eyebrow">Your storefront</p>
+  <h2 style="margin-top:4mm;">The same page, on a laptop and in a hand.</h2>
+  <p style="margin-top:3mm; max-width:150mm;">
+    Most people in Ghana will open your page on a phone. It is built for that
+    first, and scales up — one link, one page, no separate mobile version to
+    maintain.
+  </p>
+
+  <div style="margin-top:6mm;">
+    <div class="clip" style="height:74mm;">
+      <img src="data:image/png;base64,{{shot_storefront_web}}" alt="Storefront on desktop" style="height:74mm;">
+    </div>
+    <p class="caption">Storefront on desktop — cover, logo, standing, share links and everything currently listed.</p>
+  </div>
+
+  <div style="display:flex; gap:5mm; margin-top:6mm; align-items:flex-start;">
+    <div style="width:52mm; flex-shrink:0;">
+      <div class="clip" style="height:78mm; border-radius:5mm;">
+        <img src="data:image/png;base64,{{shot_storefront_mobile}}" alt="Storefront on a phone" style="height:78mm;">
+      </div>
+    </div>
+    <div style="flex:1;">
+      <h3>On a phone</h3>
+      <p style="margin-top:2mm;">
+        The same content, stacked: your logo over the cover, then your name,
+        your standing, and the follow button as the first thing a visitor can
+        act on.
+      </p>
+      <h3 style="margin-top:5mm;">One link, everywhere</h3>
+      <p style="margin-top:2mm;">
+        <strong>givny.com/o/your-name</strong> works in a WhatsApp message, an
+        email footer, a newsletter or a printed flyer.
+      </p>
+    </div>
+  </div>
+
+  <div style="margin-top:6mm;">
+    <div class="clip" style="height:44mm;">
+      <img src="data:image/png;base64,{{shot_listing_web}}" alt="A single listing" style="height:44mm;">
+    </div>
+    <p class="caption">Every item also gets its own page and its own link — shareable into WhatsApp, and findable in search.</p>
+  </div>
+
+  <div class="foot">
+    <span>Givny — an invitation to organisations</span><span>4</span>
+  </div>
+</section>
+
+<!-- ══════════════ 4 · HOW IT WORKS ══════════════ -->
+<section class="page">
+  <p class="eyebrow">How it works</p>
+  <h2 style="margin-top:4mm;">Four steps. The first one takes five minutes.</h2>
+
+  <div class="mt2">
+    <div style="display:flex; gap:5mm; align-items:flex-start;">
+      <div class="num">1</div>
+      <div style="flex:1;">
+        <h3>Apply</h3>
+        <p style="margin-top:1.5mm;">Tell us who you are, what you expect to list and who to contact. Five minutes, online.</p>
+        <div class="rule" style="margin-top:5mm;"></div>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:5mm; align-items:flex-start; margin-top:5mm;">
+      <div class="num">2</div>
+      <div style="flex:1;">
+        <h3>We check you are real</h3>
+        <p style="margin-top:1.5mm;">We verify the organisation against its registration. Usually a couple of working days. You will hear either way, with a reason.</p>
+        <div class="rule" style="margin-top:5mm;"></div>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:5mm; align-items:flex-start; margin-top:5mm;">
+      <div class="num">3</div>
+      <div style="flex:1;">
+        <h3>Set up your page</h3>
+        <p style="margin-top:1.5mm;">Add a logo, a short description of who you are, your first items and your colleagues. A checklist walks you through it.</p>
+        <div class="rule" style="margin-top:5mm;"></div>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:5mm; align-items:flex-start; margin-top:5mm;">
+      <div class="num">4</div>
+      <div style="flex:1;">
+        <h3>You go live</h3>
+        <p style="margin-top:1.5mm;">Your storefront is public, your listings reach people nearby, and your impact record starts counting from the first handover.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt3" style="border-left:1.2mm solid var(--forest);">
+    <h3>What we ask in return</h3>
+    <p style="margin-top:2mm;">
+      Nothing financial. Three commitments, because a page that breaks them
+      damages the people it was meant to help:
+    </p>
+    <ul style="margin-top:3.5mm;">
+      <li>List things that still work. Broken is fine, if you say so.</li>
+      <li>Answer requests. A page nobody replies from is worse than no page.</li>
+      <li>Hand over when you say you will — a household is planning around it.</li>
+    </ul>
+  </div>
+
+  <p class="eyebrow mt2">The questions we always get</p>
+  <div class="grid2" style="margin-top:4mm; gap:3mm;">
+    <div class="card" style="padding:4.5mm;">
+      <h3 style="font-size:9.5pt;">What does it cost?</h3>
+      <p class="small" style="margin-top:1.5mm;">Nothing. No listing fee, no commission, no subscription. Givny does not take a cut because nothing is sold.</p>
+    </div>
+    <div class="card" style="padding:4.5mm;">
+      <h3 style="font-size:9.5pt;">Who collects the items?</h3>
+      <p class="small" style="margin-top:1.5mm;">The person who asked for it, from an address and at a time you agree with them.</p>
+    </div>
+    <div class="card" style="padding:4.5mm;">
+      <h3 style="font-size:9.5pt;">Do we choose who gets it?</h3>
+      <p class="small" style="margin-top:1.5mm;">Yes. Requests arrive in your inbox and you accept or decline each one. Nothing leaves without your say-so.</p>
+    </div>
+    <div class="card" style="padding:4.5mm;">
+      <h3 style="font-size:9.5pt;">What if nobody wants it?</h3>
+      <p class="small" style="margin-top:1.5mm;">It stays on your page until someone does, or until you remove it. You are never committed to anything you list.</p>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span>Givny — an invitation to organisations</span><span>5</span>
+  </div>
+</section>
+
+<!-- ══════════════ 5 · STANDING ══════════════ -->
+<section class="page">
+  <p class="eyebrow">Recognition</p>
+  <h2 style="margin-top:4mm; max-width:150mm;">Measured on what reached people, not on volume.</h2>
+
+  <p class="lead mt1" style="max-width:155mm;">
+    Organisations hold a public standing, shown on their storefront and on a
+    leaderboard ranked separately from individual members.
+  </p>
+
+  <div class="grid3 mt2">
+    <div class="card">
+      <h3 style="font-size:10pt;">What counts</h3>
+      <p class="small" style="margin-top:2mm; line-height:1.65;">
+        Items that actually reached a household. How many <em>separate</em>
+        households — ten items to ten homes beats ten to one. Weight diverted.
+        Whether you answer people.
+      </p>
+    </div>
+    <div class="card">
+      <h3 style="font-size:10pt;">What doesn&rsquo;t</h3>
+      <p class="small" style="margin-top:2mm; line-height:1.65;">
+        Listing volume alone. A warehouse posting a thousand items nobody
+        collects ranks below a school that rehomed forty desks.
+      </p>
+    </div>
+    <div class="card">
+      <h3 style="font-size:10pt;">Why it&rsquo;s trustworthy</h3>
+      <p class="small" style="margin-top:2mm; line-height:1.65;">
+        Every figure is calculated from real handovers at the moment it is
+        shown. Nothing is self-reported, and nothing can be edited into
+        existence — including by us.
+      </p>
+    </div>
+  </div>
+
+  <div class="card mt2">
+    <h3>A crest you can put in a report</h3>
+    <p style="margin-top:2.5mm;">
+      Your standing can be downloaded as an image — for a board pack, a
+      sustainability slide, or a post announcing what your team cleared this
+      quarter. A number behind a login does not travel; an image does.
+    </p>
+  </div>
+
+  <p class="small" style="margin-top:4mm;">
+    Goods go to households near you, who ask for a specific item and collect it
+    themselves. If an item is claimed and not collected, it goes back on your page.
+  </p>
+
+  <div style="margin-top:6mm;">
+    <div class="clip" style="height:38mm;">
+      <img src="data:image/png;base64,{{shot_leaderboard_web}}" alt="The organisation leaderboard" style="height:38mm;">
+    </div>
+    <p class="caption">Organisations are ranked on their own board, separately from individual members.</p>
+  </div>
+
+  <p class="eyebrow mt2">The ladder</p>
+  <div style="display:flex; gap:2.5mm; margin-top:4mm;">
+    <div class="card" style="flex:1; padding:4mm; text-align:center;">
+      <p style="font-size:14pt;">&#127793;</p>
+      <p style="font-size:9pt; font-weight:700; margin-top:1mm;">New here</p>
+      <p class="small" style="margin-top:.5mm;">0</p>
+    </div>
+    <div class="card" style="flex:1; padding:4mm; text-align:center;">
+      <p style="font-size:14pt;">&#127807;</p>
+      <p style="font-size:9pt; font-weight:700; margin-top:1mm;">Contributor</p>
+      <p class="small" style="margin-top:.5mm;">500</p>
+    </div>
+    <div class="card" style="flex:1; padding:4mm; text-align:center;">
+      <p style="font-size:14pt;">&#129309;</p>
+      <p style="font-size:9pt; font-weight:700; margin-top:1mm;">Partner</p>
+      <p class="small" style="margin-top:.5mm;">2,000</p>
+    </div>
+    <div class="card" style="flex:1; padding:4mm; text-align:center;">
+      <p style="font-size:14pt;">&#127941;</p>
+      <p style="font-size:9pt; font-weight:700; margin-top:1mm;">Champion</p>
+      <p class="small" style="margin-top:.5mm;">6,000</p>
+    </div>
+    <div class="card" style="flex:1; padding:4mm; text-align:center; background:var(--lime); border-color:transparent;">
+      <p style="font-size:14pt;">&#127963;</p>
+      <p style="font-size:9pt; font-weight:700; margin-top:1mm; color:var(--forest);">Landmark</p>
+      <p class="small" style="margin-top:.5mm; color:rgba(12,59,46,.6);">15,000</p>
+    </div>
+  </div>
+  <p class="small" style="margin-top:3mm;">
+    Points come from handovers, households reached, weight diverted and requests
+    answered. Thresholds sit well above the ones individual members climb,
+    because an organisation clearing a single office already out-lists an active
+    neighbour.
+  </p>
+
+  <div class="foot">
+    <span>Givny — an invitation to organisations</span><span>6</span>
+  </div>
+</section>
+
+<!-- ══════════════ 6 · NEXT STEP ══════════════ -->
+<section class="page dark" style="display:flex; flex-direction:column; justify-content:space-between;">
+  <div>
+    <img class="logo" src="data:image/png;base64,{{logo}}" alt="Givny">
+  </div>
+
+  <div>
+    <p class="eyebrow">The next step</p>
+    <h2 style="margin-top:5mm; font-size:27pt; max-width:150mm;">
+      Apply in five minutes.<br>Nothing to sign.
+    </h2>
+
+    <p class="lead" style="margin-top:7mm; max-width:130mm;">
+      Start at <strong style="color:var(--lime);">givny.com/for-organisations</strong>
+      — or reply to this document and we will set you up ourselves.
+    </p>
+
+    <div style="background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.16); border-radius:5mm; padding:6mm; margin-top:9mm;">
+      <h3 style="color:#fff;">Have this ready</h3>
+      <ul style="margin-top:3.5mm;">
+        <li>Your registered organisation name and registration number</li>
+        <li>A contact name, email and phone number</li>
+        <li>Your logo, and a sentence about who you are</li>
+        <li>A rough idea of what you would list first</li>
+      </ul>
+    </div>
+  </div>
+
+  <div>
+    <div class="rule"></div>
+    <table style="width:100%; margin-top:6mm; border-collapse:collapse;">
+      <tr>
+        <td style="width:55%; vertical-align:top;">
+          <p class="small" style="letter-spacing:.15em; text-transform:uppercase;">Talk to us</p>
+          <p style="font-size:11pt; font-weight:700; color:#fff; margin-top:2mm;">[CONTACT NAME]</p>
+          <p class="small" style="margin-top:1mm;">[EMAIL]&nbsp; &middot; &nbsp;[PHONE]</p>
+        </td>
+        <td style="width:45%; vertical-align:top;">
+          <p class="small" style="letter-spacing:.15em; text-transform:uppercase;">Online</p>
+          <p style="font-size:11pt; font-weight:700; color:#fff; margin-top:2mm;">givny.com</p>
+          <p class="small" style="margin-top:1mm;">givny.com/for-organisations</p>
+        </td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+</body>
+</html>
