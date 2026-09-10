@@ -53,13 +53,13 @@ export interface EmailTemplateDef {
 
 const V = {
     first_name: { name: "first_name", description: "Their first name", example: "Ama" },
-    site_url: { name: "site_url", description: "The site address", example: "https://www.givny.com" },
+    site_url: { name: "site_url", description: "The site address", example: "https://givny.com" },
     org_name: { name: "org_name", description: "Organisation name", example: "Tema Refit Ltd" },
-    org_url: { name: "org_url", description: "Their storefront", example: "https://www.givny.com/o/tema-refit" },
-    claim_url: { name: "claim_url", description: "One-time link to take over the page", example: "https://www.givny.com/claim/…" },
+    org_url: { name: "org_url", description: "Their storefront", example: "https://givny.com/o/tema-refit" },
+    claim_url: { name: "claim_url", description: "One-time link to take over the page", example: "https://givny.com/claim/…" },
     job_title: { name: "job_title", description: "The role applied for", example: "Community Ambassador" },
     reason: { name: "reason", description: "Why it was declined", example: "We couldn't verify the registration number." },
-    invite_url: { name: "invite_url", description: "One-time link to join", example: "https://www.givny.com/auth/register?invite=..." },
+    invite_url: { name: "invite_url", description: "One-time link to join", example: "https://givny.com/auth/register?invite=..." },
     inviter_name: { name: "inviter_name", description: "Who is inviting them", example: "Kenneth" },
     invite_note: { name: "invite_note", description: "Optional line from the inviter, blank if none", example: "Thought of you when I saw the sewing machines." },
 };

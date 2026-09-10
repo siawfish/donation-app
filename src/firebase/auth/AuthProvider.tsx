@@ -49,11 +49,30 @@ export const AuthProvider: React.FunctionComponent<AuthProviderProps> = ({
     // Already the right user; re-signing in would only churn tokens.
     if (auth.currentUser?.uid === user.uid) return;
 
-    signInWithCustomToken(auth, user.customToken).catch((error) => {
-      // Non-fatal: reads still work through the server. Uploads will surface a
-      // clear message of their own rather than failing silently here.
-      console.error('Firebase client sign-in failed; uploads may be rejected', error);
-    });
+    let cancelled = false;
+    const token = user.customToken;
+
+    // A transient failure here (a network blip, the token not yet valid by
+    // clock skew) used to leave the client SDK signed out for the rest of the
+    // tab's life — nothing else ever retried it, so every Storage write kept
+    // failing with "couldn't verify your session" until a hard refresh.
+    // `awaitClientAuth`'s callers already wait up to 10s for sign-in to land,
+    // so there's room for a couple of retries first.
+    const trySignIn = (attempt: number) => {
+      signInWithCustomToken(auth, token).catch((error) => {
+        if (cancelled) return;
+        if (attempt < 2) {
+          setTimeout(() => trySignIn(attempt + 1), 1000 * (attempt + 1));
+        } else {
+          // Reads still work through the server session regardless. Uploads
+          // will surface their own clear message rather than failing silently.
+          console.error('Firebase client sign-in failed after retries; uploads may be rejected', error);
+        }
+      });
+    };
+    trySignIn(0);
+
+    return () => { cancelled = true };
   }, [user, user?.uid, user?.customToken]);
 
   return (

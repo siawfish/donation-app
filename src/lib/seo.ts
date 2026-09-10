@@ -17,11 +17,20 @@
  * unsubscribe and click tracking) pointed at a URL the recipient could not
  * reach, and the sitemap handed Google a list of the same.
  *
+ * Temporarily the apex domain rather than `www` — DNS for the `www` subdomain
+ * stopped resolving (confirmed independently of any caching/service-worker
+ * involvement: a fresh, uncached request to www.givny.com fails to connect at
+ * all, while givny.com serves the site normally). Every link built from this
+ * constant was pointing people at a domain that couldn't be reached. Switch
+ * this back to `www` once its DNS record is fixed — or better, point it at
+ * whichever of the two is confirmed to stay correct, since flip-flopping
+ * between them is what the note below is warning about.
+ *
  * `NEXT_PUBLIC_SITE_URL` still overrides this, so setting it in the hosting
  * environment keeps working and is still the better answer if the domain ever
  * changes. This is the floor, not a replacement for it.
  */
-export const CANONICAL_ORIGIN = "https://www.givny.com";
+export const CANONICAL_ORIGIN = "https://givny.com";
 
 /**
  * The base URL for links built in the browser.
