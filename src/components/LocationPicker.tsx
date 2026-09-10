@@ -246,6 +246,14 @@ export default function LocationPicker({ lat, lng, locationName, onChange, disab
           setHelp(geoHelpFor());
           return;
         }
+
+        // A retry failing doesn't erase the pin a first, successful attempt
+        // already placed — there's already a valid spot sitting right below
+        // this message, so saying "couldn't find you" on top of it read as a
+        // contradiction. With a pin already down, a failed retry just isn't
+        // worth telling them about — say nothing and leave the pin as-is.
+        if (hasPin) return;
+
         setGeoError(
           err.code === err.TIMEOUT
             ? "That took too long. Try again, or set your spot on the map."
