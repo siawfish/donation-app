@@ -121,44 +121,51 @@ export function ShareButtons({
         }
     };
 
+    // Equal-width grid cells rather than a wrapped row of differently-sized
+    // chips — with a label and four-plus targets, flex-wrap broke across
+    // lines wherever it ran out of room, landing buttons at whatever width
+    // and position was left over rather than a tidy, predictable grid.
     const chip =
-        "inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-full border border-gray-200 text-gray-600 bg-white transition-colors";
+        "inline-flex items-center justify-center gap-2 text-xs font-bold px-4 py-2.5 rounded-full border border-gray-200 text-gray-600 bg-white transition-colors";
 
     return (
-        <div className="flex flex-wrap items-center gap-2">
+        <div>
             {label && (
-                <span className="text-xs font-bold tracking-[0.12em] uppercase text-gray-400 mr-1">
+                <p className="text-xs font-bold tracking-[0.12em] uppercase text-gray-400 mb-3">
                     {label}
-                </span>
+                </p>
             )}
 
-            {targets.map((t) => (
-                <a
-                    key={t.id}
-                    href={t.href(url, title)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`${chip} ${t.hover}`}
-                >
-                    <Glyph id={t.id} />
-                    <span className="hidden sm:inline">{t.label}</span>
-                </a>
-            ))}
+            <div className="grid grid-cols-2 gap-2">
+                {targets.map((t) => (
+                    <a
+                        key={t.id}
+                        href={t.href(url, title)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`${chip} ${t.hover}`}
+                    >
+                        <Glyph id={t.id} />
+                        {t.label}
+                    </a>
+                ))}
 
-            <button onClick={copy} className={`${chip} hover:border-forest/50 hover:text-forest`}>
-                {copied ? <Check className="w-3.5 h-3.5 text-primary" /> : <Link2 className="w-3.5 h-3.5" />}
-                {copied ? "Copied" : "Copy link"}
-            </button>
-
-            {canShareNatively && (
-                <button
-                    onClick={native}
-                    className={`${chip} sm:hidden hover:border-forest/50 hover:text-forest`}
-                    aria-label="Share"
-                >
-                    <Share2 className="w-3.5 h-3.5" />
+                <button type="button" onClick={copy} className={`${chip} hover:border-forest/50 hover:text-forest`}>
+                    {copied ? <Check className="w-3.5 h-3.5 text-primary" /> : <Link2 className="w-3.5 h-3.5" />}
+                    {copied ? "Copied" : "Copy link"}
                 </button>
-            )}
+
+                {canShareNatively && (
+                    <button
+                        type="button"
+                        onClick={native}
+                        className={`${chip} sm:hidden hover:border-forest/50 hover:text-forest`}
+                    >
+                        <Share2 className="w-3.5 h-3.5" />
+                        Share
+                    </button>
+                )}
+            </div>
         </div>
     );
 }

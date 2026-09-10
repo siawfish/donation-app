@@ -11,6 +11,7 @@ import {
     listingDescription, listingHeadline, listingShareMessage,
 } from "@/lib/listingCopy";
 import { ListingGallery } from "@/components/ListingGallery";
+import { AskButton } from "@/components/listing/AskButton";
 
 /**
  * The canonical page for one listing.
@@ -241,8 +242,10 @@ export default async function ListingPage({ params }: { params: { id: string } }
                             </div>
                         )}
 
-                        {/* The action. Signed-out visitors land on the sheet, which
-                            prompts them to sign in — the same path as in-app. */}
+                        {/* The action. A signed-out visitor goes straight to sign in,
+                            rather than landing in the app first and finding out
+                            they need to there — a shared link is often someone's
+                            first ever visit. */}
                         <div className="mt-7">
                             {gone ? (
                                 <div className="bg-sand border border-gray-200/70 rounded-2xl px-5 py-4">
@@ -258,12 +261,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
                                     </Link>
                                 </div>
                             ) : (
-                                <Link
-                                    href={`/explore?id=${item.id}`}
-                                    className="inline-flex items-center justify-center gap-2 w-full bg-forest text-lime font-bold px-6 py-3.5 rounded-full hover:brightness-110 transition-all"
-                                >
-                                    Ask for this <ArrowRight className="w-4 h-4" />
-                                </Link>
+                                <AskButton itemId={item.id!} />
                             )}
 
                             <p className="flex items-center gap-1.5 text-[11px] text-gray-400 mt-3">
