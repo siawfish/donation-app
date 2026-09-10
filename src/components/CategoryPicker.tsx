@@ -3,7 +3,6 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { ChevronDown, ChevronRight, ChevronLeft, Check, X } from "lucide-react"
@@ -19,7 +18,10 @@ interface CategoryPickerProps {
   label?: string
   containerClassName?: string
   error?: string
-  /** Currently tagged subcategories — the leaves, same shape the item stores. */
+  /**
+   * The item's single category — still an array (0 or 1 leaf) so the stored
+   * shape and every existing query/filter against it stay unchanged.
+   */
   value: CategoryLeaf[]
   onChange: (value: CategoryLeaf[]) => void
   onTouched?: () => void
@@ -27,9 +29,10 @@ interface CategoryPickerProps {
 }
 
 /**
- * Vinted-style drill-down: department → category → subcategory. Picking a
- * subcategory tags the item with it (multiple picks are fine, an item can sit
- * in more than one category) — only the leaf is stored, same as before.
+ * Vinted-style drill-down: department → category → subcategory. An item sits
+ * in exactly one subcategory — picking a leaf replaces whatever was picked
+ * before and closes the sheet, the way a native select behaves, rather than
+ * collecting a set of tags.
  */
 export default function CategoryPicker({
   label,
@@ -50,18 +53,22 @@ export default function CategoryPicker({
   const activeDept = departments.find((d) => d.id === deptId) ?? null
   const activeCat = categories.find((c) => c.id === catId) ?? null
 
+  const selected = value[0] ?? null
   const selectedIds = new Set(value.map((v) => v.id))
 
-  function toggleLeaf(leaf: CategoryLeaf) {
-    if (selectedIds.has(leaf.id)) {
-      onChange(value.filter((v) => v.id !== leaf.id))
-    } else {
-      onChange([...value, leaf])
-    }
+  function selectLeaf(leaf: CategoryLeaf) {
+    onChange([leaf])
+    // Closes without also calling onTouched: that runs a validation pass off
+    // whatever Formik's `values` closure still holds at this exact tick, which
+    // can be a beat behind the onChange above and briefly flash a stale
+    // "pick a category" error even though one was just picked.
+    setOpen(false)
+    setDeptId(null)
+    setCatId(null)
   }
 
-  function removeLeaf(id: string) {
-    onChange(value.filter((v) => v.id !== id))
+  function clearSelection() {
+    onChange([])
   }
 
   function handleOpenChange(next: boolean) {
@@ -94,29 +101,30 @@ export default function CategoryPicker({
         disabled={disabled}
         onClick={() => handleOpenChange(true)}
       >
-        <div className="flex flex-wrap gap-1 items-center">
-          {value.length > 0 ? (
-            value.map((v) => (
-              <Badge key={v.id} variant="secondary" className="font-cabinetLight text-black gap-1">
-                {v.name}
-                <span
-                  role="button"
-                  tabIndex={0}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    removeLeaf(v.id)
-                  }}
-                  className="opacity-60 hover:opacity-100"
-                >
-                  <X className="h-3 w-3" />
-                </span>
-              </Badge>
-            ))
+        <div className="flex items-center gap-1 min-w-0">
+          {selected ? (
+            <span className="font-cabinetLight text-black truncate">{selected.name}</span>
           ) : (
             <span className="text-muted-foreground font-cabinetLight">Choose a category…</span>
           )}
         </div>
-        <ChevronDown className="h-4 w-4 opacity-50 min-w-4" />
+        <div className="flex items-center gap-1 shrink-0">
+          {selected && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation()
+                clearSelection()
+              }}
+              className="opacity-60 hover:opacity-100 p-1"
+              aria-label="Clear category"
+            >
+              <X className="h-3.5 w-3.5" />
+            </span>
+          )}
+          <ChevronDown className="h-4 w-4 opacity-50 min-w-4" />
+        </div>
       </Button>
 
       <p className={cn("text-xs font-cabinetLight text-red-500 absolute bottom-1 mt-1", error ? "visible" : "invisible")}>
@@ -165,14 +173,16 @@ export default function CategoryPicker({
                   key={sub.id}
                   label={sub.name}
                   checked={selectedIds.has(sub.id)}
-                  onClick={() => toggleLeaf(sub)}
+                  onClick={() => selectLeaf(sub)}
                 />
               ))}
           </div>
 
+          {/* Picking a leaf above closes the sheet immediately — this is only
+              an escape hatch for backing out without choosing anything. */}
           <div className="px-5 py-4 border-t border-gray-200/70 shrink-0">
-            <Button type="button" className="w-full" onClick={() => handleOpenChange(false)}>
-              Done{value.length > 0 ? ` (${value.length})` : ""}
+            <Button type="button" variant="outline" className="w-full" onClick={() => handleOpenChange(false)}>
+              Cancel
             </Button>
           </div>
         </SheetContent>

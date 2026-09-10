@@ -16,6 +16,7 @@ import { SafetyDialog } from "./SafetyDialog"
 import SelectInput from "./SelectInput"
 import { Conditions } from "@/lib/utils"
 import { PARCEL_SIZES } from "@/lib/delivery"
+import { sizeKindFor, sizesFor } from "@/lib/sizes"
 import Link from "next/link"
 import { useAuth } from "@/firebase/auth/AuthContext"
 import { awaitClientAuth } from "@/firebase/auth/clientAuth"
@@ -33,6 +34,7 @@ const INITIAL_VALUES: ItemType = {
   name: "",
   categories: [],
   condition: null,
+  size: "",
   description: "",
   assets: [],
   views: 0,
@@ -63,6 +65,13 @@ const validationSchema = yup.object({
     })
   ).min(1, "Pick at least one category"),
   condition: yup.string().required("Choose a condition"),
+  // Only Women's/Men's Clothing and Shoes ask for this — everything else
+  // skips it entirely, so the requirement has to look at what was picked.
+  size: yup.string().when("categories", {
+    is: (categories: { id: string }[]) => !!sizeKindFor(categories?.[0]?.id),
+    then: (schema) => schema.required("Pick a size"),
+    otherwise: (schema) => schema.notRequired(),
+  }),
   description: yup.string().required("Add a short description"),
   parcelSize: yup
     .string()
@@ -88,7 +97,7 @@ const validationSchema = yup.object({
  */
 const STEPS = [
   { id: "photos", label: "Photos", icon: Camera, fields: ["assets"] as const },
-  { id: "details", label: "Details", icon: FileText, fields: ["name", "categories", "condition", "description", "parcelSize"] as const },
+  { id: "details", label: "Details", icon: FileText, fields: ["name", "categories", "condition", "size", "description", "parcelSize"] as const },
   { id: "pickup", label: "Pickup", icon: MapPin, fields: [] as const },
 ]
 
@@ -214,6 +223,7 @@ export default function AddDonation({ addItem, editItem, defaultValues }: AddDon
         const { values, errors, touched, setFieldTouched, validateForm, isSubmitting } = formik
         const busy = isSubmitting || _
         const isLast = step === STEPS.length - 1
+        const sizeKind = sizeKindFor(values.categories[0]?.id)
 
         /** Only advance when this step's own fields are clean. */
         const goNext = async () => {
@@ -326,7 +336,15 @@ export default function AddDonation({ addItem, editItem, defaultValues }: AddDon
                     containerClassName="w-full"
                     label="Category"
                     value={values.categories.map((c) => (typeof c === "string" ? { id: c, name: "" } : c))}
-                    onChange={(vals) => formik.setFieldValue("categories", vals)}
+                    onChange={(vals) => {
+                      formik.setFieldValue("categories", vals)
+                      // A size picked for the old category rarely means anything for
+                      // the new one — "M" doesn't carry over to a UK shoe size, and
+                      // stale sizes on non-wearables would just get submitted unseen.
+                      if (sizeKindFor(vals[0]?.id) !== sizeKind) {
+                        formik.setFieldValue("size", "")
+                      }
+                    }}
                     error={stepError("categories")}
                     onTouched={() => setFieldTouched("categories", true)}
                     disabled={busy}
@@ -343,10 +361,48 @@ export default function AddDonation({ addItem, editItem, defaultValues }: AddDon
                   />
                 </div>
 
+                {/* Only Women's/Men's Clothing and Shoes ask for this — it's
+                    what "M" or "UK 7" actually means depends on which. */}
+                {sizeKind && (
+                  <div>
+                    <label className="block text-sm font-semibold text-ink mb-1">Size</label>
+                    <p className="text-xs text-gray-500 mb-3">
+                      Shown to people browsing, right alongside the description.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {sizesFor(sizeKind).map((s) => {
+                        const active = values.size === s
+                        return (
+                          <button
+                            key={s}
+                            type="button"
+                            disabled={busy}
+                            aria-pressed={active}
+                            onClick={() => {
+                              formik.setFieldValue("size", s)
+                              setFieldTouched("size", true)
+                            }}
+                            className={`min-w-[2.75rem] px-3 py-2 rounded-xl border text-sm font-bold transition-colors disabled:opacity-50 ${
+                              active
+                                ? "border-forest bg-forest text-white"
+                                : "border-gray-200 bg-white hover:border-forest/40"
+                            }`}
+                          >
+                            {s}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {stepError("size") && (
+                      <p className="text-xs text-red-500 mt-2">{stepError("size")}</p>
+                    )}
+                  </div>
+                )}
+
                 <CustomTextarea
                   label="Description"
                   name="description"
-                  placeholder="Size, colour, any scratches or missing parts…"
+                  placeholder="Colour, fit, any scratches or missing parts…"
                   value={values.description}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}

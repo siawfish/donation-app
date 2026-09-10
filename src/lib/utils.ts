@@ -11,7 +11,16 @@ export function getInitials(name: string) {
   return name.split(' ').map(n => n[0]).join('').slice(0, 2);
 }
 
+// Best to worst, both for the lister's picker and anywhere condition is displayed.
 export const Conditions = [
+  {
+    label: "New",
+    value: ConditionType.NEW
+  },
+  {
+    label: "Like New",
+    value: ConditionType.LIKE_NEW
+  },
   {
     label: "Good",
     value: ConditionType.GOOD
@@ -25,6 +34,12 @@ export const Conditions = [
     value: ConditionType.POOR
   }
 ]
+
+/** Display label for a condition value — a lookup rather than title-casing the
+ * raw enum value, since "like_new" doesn't title-case into "Like New" on its own. */
+export const ConditionLabels: Record<ConditionType, string> = Object.fromEntries(
+  Conditions.map((c) => [c.value, c.label])
+) as Record<ConditionType, string>
 
 export const debounce = <T extends (...args: any[]) => any>(
   func: T,

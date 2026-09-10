@@ -438,10 +438,18 @@ export default function ItemContent() {
                                 getting it home is part of whether to ask at all. */}
                             {!isMine && <DeliveryEstimate item={item} />}
 
-                            {item.description && (
+                            {(item.description || item.size) && (
                                 <div>
                                     <p className="text-xs font-bold tracking-[0.15em] uppercase text-gray-400 mb-2">Description</p>
-                                    <p className="text-ink text-base leading-relaxed whitespace-pre-line">{item.description}</p>
+                                    {/* Shown to everyone browsing, not just the lister — the
+                                        whole reason to structure it as its own field rather
+                                        than leaving it for someone to type into the text. */}
+                                    {item.size && (
+                                        <p className="text-ink text-base font-bold mb-1">Size: {item.size}</p>
+                                    )}
+                                    {item.description && (
+                                        <p className="text-ink text-base leading-relaxed whitespace-pre-line">{item.description}</p>
+                                    )}
                                 </div>
                             )}
 
@@ -687,32 +695,25 @@ function Actions({
                 </CustomButton>
             )
         }
-        // A simple vertical list — a paired-up grid here previously let the
-        // Share popover trigger and "Mark as given out" occupy the same
-        // rectangle at some sizes, so a tap meant for one fired the other.
+        // A clear pecking order rather than five equally-loud pills: Edit and
+        // Share are routine, so they share a row; the one action that closes
+        // the listing out is the only solid button; "reserved" is a light
+        // toggle, not a commitment; Delete stays a quiet, separate last resort.
         return (
             <div className="flex flex-col gap-2 w-full">
-                <Link href={`/app/edit-item/${id}`} className="block">
-                    <CustomButton
-                        variant="outline"
-                        className={`${base} w-full border-forest !text-forest hover:bg-transparent`}
-                        icon={<PencilIcon className="w-4 h-4" />}
-                    >
-                        Edit listing
-                    </CustomButton>
-                </Link>
-                <ShareAction url={shareUrl} title={shareTitle} className={`${base} w-full border-gray-200 !text-ink hover:bg-transparent`} />
-                <CustomButton
-                    type="button"
-                    variant="outline"
-                    className={`${base} w-full border-amber-300 !text-amber-700 hover:bg-amber-50`}
-                    icon={<BookmarkIcon className="w-4 h-4" />}
-                    onClick={onToggleReserved}
-                    disabled={reserving}
-                    isLoading={reserving}
-                >
-                    {item.reserved ? "Unmark reserved" : "Mark as reserved"}
-                </CustomButton>
+                <div className="grid grid-cols-2 gap-2">
+                    <Link href={`/app/edit-item/${id}`} className="block">
+                        <CustomButton
+                            variant="outline"
+                            className={`${base} w-full border-gray-200 !text-ink hover:bg-gray-50`}
+                            icon={<PencilIcon className="w-4 h-4" />}
+                        >
+                            Edit
+                        </CustomButton>
+                    </Link>
+                    <ShareAction url={shareUrl} title={shareTitle} className={`${base} w-full border-gray-200 !text-ink hover:bg-gray-50`} />
+                </div>
+
                 <CustomButton
                     type="button"
                     className={`${base} w-full !bg-forest hover:!bg-forest-dark`}
@@ -723,6 +724,19 @@ function Actions({
                 >
                     Mark as given out
                 </CustomButton>
+
+                <CustomButton
+                    type="button"
+                    variant="ghost"
+                    className="justify-center gap-1.5 rounded-full py-3 !text-amber-700 hover:!bg-amber-50"
+                    icon={<BookmarkIcon className="w-3.5 h-3.5" />}
+                    onClick={onToggleReserved}
+                    disabled={reserving}
+                    isLoading={reserving}
+                >
+                    {item.reserved ? "Unmark reserved" : "Mark as reserved"}
+                </CustomButton>
+
                 <button
                     type="button"
                     onClick={onDelete}

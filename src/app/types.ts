@@ -1,6 +1,8 @@
 import type { ParcelSize } from "@/lib/delivery";
 
 export enum ConditionType {
+    NEW = "new",
+    LIKE_NEW = "like_new",
     GOOD = "good",
     FAIR = "fair",
     POOR = "poor"
@@ -49,6 +51,8 @@ export interface ItemType {
     description: string;
     categories: CategoryType[];
     condition: ConditionType | null;
+    /** Clothing/shoe size — only asked for on Women's/Men's Clothing and Shoes. */
+    size?: string;
     assets: AssetType[];
     createdBy?: string;
     createdAt?: string;
