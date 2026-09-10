@@ -15,7 +15,7 @@ export type SizeKind =
   | "kids-shoes"
 
 const SIZE_SETS: Record<SizeKind, string[]> = {
-  "adult-clothing": ["S", "M", "L", "XL", "XXL"],
+  "adult-clothing": ["S", "M", "L", "XL", "XXL", "XXXL"],
   // UK sizing — what's actually printed on shoeboxes sold locally.
   "adult-shoes": ["3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"],
   "kids-clothing-2-8": ["2-3Y", "3-4Y", "4-5Y", "5-6Y", "6-7Y", "7-8Y"],
