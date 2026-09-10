@@ -5,11 +5,9 @@ import { SheetContent, SheetTitle } from "./ui/sheet"
 import {
     CalendarIcon, EyeIcon, HandIcon, LockIcon, MapPin, MessageCircleIcon,
     PencilIcon, ChevronLeft, ChevronRight, ShieldCheck, Sparkles, Building2, Trash2Icon,
-    Share2Icon, BookmarkIcon, CheckCircle2Icon,
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import CustomButton from "./Button"
-import { Button } from "./ui/button"
 import Image from "next/image"
 import { firestore } from "@/firebase/auth/firebase"
 import { collection, doc, getDoc, where, query, getDocs, updateDoc, addDoc } from "firebase/firestore"
@@ -19,7 +17,7 @@ import { FirebaseErrors } from "@/firebase/errors"
 import { useAuth } from "@/firebase/auth/AuthContext"
 import { Condition } from "./Condition"
 import { formatRelative } from "date-fns"
-import { cn, getInitials } from "@/lib/utils"
+import { getInitials } from "@/lib/utils"
 import ItemLoader from "./ItemLoader"
 import EmptyState from "./EmptyState"
 import Link from "next/link"
@@ -27,9 +25,8 @@ import { useRouter } from "next/navigation"
 import { useQueryState } from "nuqs"
 import { ConfirmDialog } from "./ConfirmDialog"
 import { SafetyDialog } from "./SafetyDialog"
-import { Popover, PopoverTrigger, PopoverContent } from "./ui/popover"
 import { sendRequest } from "@/app/app/actions/requests"
-import { deleteItem, markItemDonated, setItemReserved } from "@/app/app/actions/items"
+import { deleteItem } from "@/app/app/actions/items"
 import { formatDistance } from "@/lib/distance"
 import DeliveryEstimate from "./DeliveryEstimate"
 import { VerifiedBadge } from "./verification/VerifiedBadge"
@@ -62,14 +59,11 @@ export default function ItemContent() {
     const [id, setId] = useQueryState('id')
     const [confirmRequest, setConfirmRequest] = useState(false)
     const [confirmDelete, setConfirmDelete] = useState(false)
-    const [confirmMarkGiven, setConfirmMarkGiven] = useState(false)
     const [request, setRequest] = useState<RequestType | null>(null)
     const [activeImage, setActiveImage] = useState(0)
     const [showSafety, setShowSafety] = useState(false)
     const [_, startTransition] = useTransition()
     const [deleting, startDeleteTransition] = useTransition()
-    const [reserving, startReserveTransition] = useTransition()
-    const [marking, startMarkTransition] = useTransition()
 
     // Copy addresses the other person by name rather than as "the donor".
     // An organisation's listing is answered in the organisation's name, so the
@@ -210,65 +204,13 @@ export default function ItemContent() {
         })
     }
 
-    const handleToggleReserved = () => {
-        if (reserving || !id || !item) return
-        const next = !item.reserved
-        startReserveTransition(async () => {
-            try {
-                const { success, message } = await setItemReserved(id, next)
-                if (!success) throw new Error(message)
-                setItem((prev) => (prev ? { ...prev, reserved: next } : prev))
-                toast.success(next ? 'Marked as reserved' : 'No longer reserved', {
-                    description: next
-                        ? "It's hidden from browse until you unmark it — still here in Up for grabs."
-                        : "Back in front of everyone browsing.",
-                    position: 'bottom-left',
-                })
-            } catch (error: any) {
-                toast.error('Could not update the listing', {
-                    description: FirebaseErrors[error.code] || error.message,
-                    position: 'bottom-left',
-                })
-            }
-        })
-    }
-
-    const handleMarkGiven = () => {
-        if (marking) return
-        startMarkTransition(async () => {
-            try {
-                if (!id) throw new Error('Missing item')
-                const { success, message } = await markItemDonated(id)
-                if (!success) throw new Error(message)
-                toast.success('Marked as given out', {
-                    description: 'Moved to Passed on.',
-                    position: 'bottom-left',
-                })
-                setConfirmMarkGiven(false)
-                getResource() // reflects the new state in this sheet without closing it
-                router.refresh() // the list behind it is stale otherwise
-            } catch (error: any) {
-                toast.error('Could not update the listing', {
-                    description: FirebaseErrors[error.code] || error.message,
-                    position: 'bottom-left',
-                })
-            }
-        })
-    }
-
     /** One place deciding what the viewer is told, rather than five stacked alerts. */
     const standing: Standing = (() => {
         if (item?.donatedOn) return { tone: "closed", title: "Rehomed", body: "This one has found a new home — plenty more nearby." }
-        if (isMine) {
-            if (item?.reserved) return { tone: "pending", title: "Reserved", body: "Hidden from browse until you unmark it — still visible here in Up for grabs." }
-            return null
-        }
+        if (isMine) return null
         if (request?.status === RequestStatus.PENDING) return { tone: "pending", title: `Waiting on ${firstName}`, body: "We'll let you know as soon as they reply." }
         if (request?.status === RequestStatus.ACCEPTED) return { tone: "good", title: "It's yours", body: `${firstName} said yes — message them to arrange a pickup.` }
         if (request?.status === RequestStatus.REJECTED) return { tone: "closed", title: "Not this time", body: `${firstName} passed this one to someone else.` }
-        // Only reached with no request of your own already in flight — someone
-        // already mid-conversation about this item keeps seeing their own status.
-        if (item?.reserved) return { tone: "closed", title: "Reserved", body: "The owner already has someone lined up for this one — check back later." }
         return { tone: "info", title: "How this works", body: `Ask for it and ${firstName} decides. Once they say yes, you can message to arrange a pickup.` }
     })()
 
@@ -281,19 +223,6 @@ export default function ItemContent() {
 
     const step = (dir: -1 | 1) =>
         setActiveImage((i) => (i + dir + photos.length) % photos.length)
-
-    // Points at the listing's own page, not this sheet. `/explore?id=…` works
-    // in a browser but previews as the generic explore page, so every listing
-    // shared into WhatsApp looked the same.
-    const shareUrl = `${SITE}/listing/${id}`
-    const shareTitle = item
-        ? listingShareMessage({
-            title: item.name,
-            listerName: org?.name ?? donor?.name,
-            isOrganisation: !!org,
-            gone: !!item.donatedOn,
-        })
-        : ""
 
     return (
         <SheetContent
@@ -445,8 +374,7 @@ export default function ItemContent() {
                                 </div>
                             )}
 
-                            {/* Owner — not shown to yourself. You already know who's passing it on. */}
-                            {!isMine && (
+                            {/* Owner */}
                             <div>
                                 <p className="text-xs font-bold tracking-[0.15em] uppercase text-gray-400 mb-2">Passing it on</p>
                                 {org ? (
@@ -499,7 +427,24 @@ export default function ItemContent() {
                                     Always free. Never send money for anything on Givny.
                                 </p>
                             </div>
-                            )}
+
+                            {/* Sharing points at the listing's own page, not at
+                                this sheet. `/explore?id=…` works in a browser but
+                                previews as the generic explore page, so every
+                                listing shared into WhatsApp looked the same. */}
+                            <div className="pt-1">
+                                <ShareButtons
+                                    url={`${SITE}/listing/${id}`}
+                                    title={listingShareMessage({
+                                        title: item.name,
+                                        listerName: org?.name ?? donor?.name,
+                                        isOrganisation: !!org,
+                                        gone: !!item.donatedTo,
+                                    })}
+                                    includeLinkedIn={false}
+                                    label=""
+                                />
+                            </div>
 
                             {/* Actions — inline on desktop, pinned on mobile */}
                             <div className="hidden lg:block">
@@ -514,12 +459,6 @@ export default function ItemContent() {
                                     onAsk={() => setConfirmRequest(true)}
                                     onDelete={() => setConfirmDelete(true)}
                                     deleting={deleting}
-                                    onToggleReserved={handleToggleReserved}
-                                    reserving={reserving}
-                                    onMarkGiven={() => setConfirmMarkGiven(true)}
-                                    marking={marking}
-                                    shareUrl={shareUrl}
-                                    shareTitle={shareTitle}
                                 />
                             </div>
                         </div>
@@ -538,12 +477,6 @@ export default function ItemContent() {
                             onAsk={() => setConfirmRequest(true)}
                             onDelete={() => setConfirmDelete(true)}
                             deleting={deleting}
-                            onToggleReserved={handleToggleReserved}
-                            reserving={reserving}
-                            onMarkGiven={() => setConfirmMarkGiven(true)}
-                            marking={marking}
-                            shareUrl={shareUrl}
-                            shareTitle={shareTitle}
                         />
                     </div>
                 </>
@@ -579,18 +512,6 @@ export default function ItemContent() {
                 </p>
             </ConfirmDialog>
 
-            <ConfirmDialog
-                title={`Mark ${item?.name} as given out?`}
-                onConfirm={handleMarkGiven}
-                submitLabel="Yes, mark as given out"
-                open={confirmMarkGiven}
-                onOpenChange={setConfirmMarkGiven}
-            >
-                <p className="text-ink text-base font-medium">
-                    This closes it to new requests and moves it to Passed on — use this once you&apos;ve actually handed it over, in or outside the app.
-                </p>
-            </ConfirmDialog>
-
             <SafetyDialog
                 open={showSafety}
                 onOpenChange={setShowSafety}
@@ -607,47 +528,9 @@ export default function ItemContent() {
     )
 }
 
-/**
- * The Share trigger — a button that pops WhatsApp/X/Facebook/Copy link,
- * rather than laying them all out inline.
- *
- * Built on the plain `Button` rather than `CustomButton`: Radix's
- * `PopoverTrigger asChild` clones its child with a ref so it can measure and
- * anchor the popover, and `CustomButton` isn't `forwardRef` — the ref would
- * silently fail to attach and the popover would never find its anchor.
- */
-function ShareAction({
-    url, title, className, iconOnly = false,
-}: {
-    url: string
-    title: string
-    className?: string
-    iconOnly?: boolean
-}) {
-    return (
-        <Popover>
-            <PopoverTrigger asChild>
-                <Button
-                    type="button"
-                    variant="outline"
-                    className={cn("inline-flex items-center justify-center gap-2", className)}
-                    aria-label="Share"
-                >
-                    <Share2Icon className="w-4 h-4" />
-                    {!iconOnly && "Share"}
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-auto p-3">
-                <ShareButtons url={url} title={title} includeLinkedIn={false} label="" />
-            </PopoverContent>
-        </Popover>
-    )
-}
-
 /** Shared by the desktop column and the mobile bar so both stay in step. */
 function Actions({
     isMine, signedIn, item, request, firstName, id, busy, onAsk, onDelete, deleting,
-    onToggleReserved, reserving, onMarkGiven, marking, shareUrl, shareTitle,
 }: {
     isMine: boolean
     signedIn: boolean
@@ -659,25 +542,30 @@ function Actions({
     onAsk: () => void
     onDelete: () => void
     deleting: boolean
-    onToggleReserved: () => void
-    reserving: boolean
-    onMarkGiven: () => void
-    marking: boolean
-    shareUrl: string
-    shareTitle: string
 }) {
-    const base = "rounded-full py-6"
+    const base = "rounded-full py-6 w-full"
 
     if (isMine) {
-        // Once it's gone, nothing else about it is still true — the only thing
+        // Once it's gone, editing it doesn't mean anything — the only thing
         // left to do with a passed-on listing is take it off the record.
         const isGone = !!item.donatedOn
-        if (isGone) {
-            return (
+        return (
+            <div className="flex gap-2 w-full">
+                {!isGone && (
+                    <Link href={`/app/edit-item/${id}`} className="flex-1">
+                        <CustomButton
+                            variant="outline"
+                            className={`${base} border-forest !text-forest hover:bg-transparent`}
+                            icon={<PencilIcon className="w-4 h-4" />}
+                        >
+                            Edit listing
+                        </CustomButton>
+                    </Link>
+                )}
                 <CustomButton
                     type="button"
                     variant="outline"
-                    className={`${base} w-full border-red-200 !text-red-600 hover:bg-red-50`}
+                    className={`${base} ${isGone ? "" : "flex-1"} border-red-200 !text-red-600 hover:bg-red-50`}
                     icon={<Trash2Icon className="w-4 h-4" />}
                     onClick={onDelete}
                     disabled={deleting}
@@ -685,125 +573,58 @@ function Actions({
                 >
                     Delete listing
                 </CustomButton>
-            )
-        }
-        return (
-            <div className="flex flex-col gap-2 w-full">
-                <div className="flex gap-2 w-full">
-                    <Link href={`/app/edit-item/${id}`} className="flex-1">
-                        <CustomButton
-                            variant="outline"
-                            className={`${base} w-full border-forest !text-forest hover:bg-transparent`}
-                            icon={<PencilIcon className="w-4 h-4" />}
-                        >
-                            Edit listing
-                        </CustomButton>
-                    </Link>
-                    <ShareAction url={shareUrl} title={shareTitle} className={`${base} flex-1 border-gray-200 !text-ink hover:bg-transparent`} />
-                </div>
-                <div className="flex gap-2 w-full">
-                    <CustomButton
-                        type="button"
-                        variant="outline"
-                        className={`${base} flex-1 border-amber-300 !text-amber-700 hover:bg-amber-50`}
-                        icon={<BookmarkIcon className="w-4 h-4" />}
-                        onClick={onToggleReserved}
-                        disabled={reserving}
-                        isLoading={reserving}
-                    >
-                        {item.reserved ? "Unmark reserved" : "Mark as reserved"}
-                    </CustomButton>
-                    <CustomButton
-                        type="button"
-                        className={`${base} flex-1 !bg-forest hover:!bg-forest-dark`}
-                        icon={<CheckCircle2Icon className="w-4 h-4" />}
-                        onClick={onMarkGiven}
-                        disabled={marking}
-                        isLoading={marking}
-                    >
-                        Mark as given out
-                    </CustomButton>
-                </div>
-                <button
-                    type="button"
-                    onClick={onDelete}
-                    disabled={deleting}
-                    className="inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-red-500 hover:text-red-600 py-1 disabled:opacity-50"
-                >
-                    <Trash2Icon className="w-3.5 h-3.5" />
-                    Delete listing
-                </button>
             </div>
         )
     }
 
-    // Everything below shares one shape: a primary action plus a Share
-    // button, so sharing stays available to a visitor regardless of where
-    // they are in the ask flow.
-    let primary: React.ReactNode
-
     if (!signedIn) {
-        primary = (
-            <Link href={`/auth/login?redirect=/explore?id=${id}`} className="flex-1 block">
-                <CustomButton className={`${base} w-full !bg-forest hover:!bg-forest-dark`} icon={<LockIcon className="w-4 h-4" />}>
+        return (
+            <Link href={`/auth/login?redirect=/explore?id=${id}`} className="block">
+                <CustomButton className={`${base} !bg-forest hover:!bg-forest-dark`} icon={<LockIcon className="w-4 h-4" />}>
                     Sign in to ask
                 </CustomButton>
             </Link>
         )
-    } else if (item.donatedOn) {
-        primary = (
-            <Link href="/explore" className="flex-1 block">
-                <CustomButton className={`${base} w-full !bg-forest hover:!bg-forest-dark`}>
+    }
+
+    if (item.donatedOn) {
+        return (
+            <Link href="/explore" className="block">
+                <CustomButton className={`${base} !bg-forest hover:!bg-forest-dark`}>
                     Browse what&apos;s still available
                 </CustomButton>
             </Link>
         )
-        // Nothing left to ask for — sharing a gone listing isn't useful.
-        return <div className="flex gap-2 w-full">{primary}</div>
-    } else if (request?.status === RequestStatus.ACCEPTED) {
-        // Accepted: messaging is the next step, so it becomes the primary action.
-        primary = (
-            <Link href={`/app/messages?rid=${request.id}`} className="flex-1 block">
-                <CustomButton className={`${base} w-full !bg-forest hover:!bg-forest-dark`} icon={<MessageCircleIcon className="w-4 h-4" />}>
+    }
+
+    // Accepted: messaging is the next step, so it becomes the primary action.
+    if (request?.status === RequestStatus.ACCEPTED) {
+        return (
+            <Link href={`/app/messages?rid=${request.id}`} className="block">
+                <CustomButton className={`${base} !bg-forest hover:!bg-forest-dark`} icon={<MessageCircleIcon className="w-4 h-4" />}>
                     Message {firstName}
                 </CustomButton>
             </Link>
         )
-    } else if (request) {
-        primary = (
-            <CustomButton className={`${base} flex-1 !bg-gray-200 !text-gray-500`} disabled icon={<HandIcon className="w-4 h-4" />}>
+    }
+
+    if (request) {
+        return (
+            <CustomButton className={`${base} !bg-gray-200 !text-gray-500`} disabled icon={<HandIcon className="w-4 h-4" />}>
                 Already asked
-            </CustomButton>
-        )
-    } else if (item.reserved) {
-        primary = (
-            <CustomButton className={`${base} flex-1 !bg-gray-200 !text-gray-500`} disabled icon={<BookmarkIcon className="w-4 h-4" />}>
-                Reserved
-            </CustomButton>
-        )
-    } else {
-        primary = (
-            <CustomButton
-                className={`${base} flex-1 !bg-forest hover:!bg-forest-dark`}
-                onClick={onAsk}
-                disabled={busy}
-                isLoading={busy}
-                icon={<HandIcon className="w-4 h-4" />}
-            >
-                Ask for it
             </CustomButton>
         )
     }
 
     return (
-        <div className="flex gap-2 w-full">
-            {primary}
-            <ShareAction
-                url={shareUrl}
-                title={shareTitle}
-                iconOnly
-                className="rounded-full py-6 px-5 flex-shrink-0 border-gray-200 !text-ink hover:bg-transparent"
-            />
-        </div>
+        <CustomButton
+            className={`${base} !bg-forest hover:!bg-forest-dark`}
+            onClick={onAsk}
+            disabled={busy}
+            isLoading={busy}
+            icon={<HandIcon className="w-4 h-4" />}
+        >
+            Ask for it
+        </CustomButton>
     )
 }
