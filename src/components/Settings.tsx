@@ -8,6 +8,7 @@ import { Button } from './ui/button';
 import EditProfile from './EditProfile';
 import { PushOptIn } from "./pwa/PushOptIn";
 import { useQueryState } from 'nuqs';
+import { useRouter } from 'next/navigation';
 import ChangePassword from './ChangePassword';
 import ConfirmDeleteAccount from './ConfirmDeleteAccount';
 import { VerificationPanel } from './verification/VerificationPanel';
@@ -38,13 +39,17 @@ const SettingsOptions = [
         icon: <FileText size={24} />,
         title: "Terms of Condition",
         description: "Review our terms and conditions to understand your rights and responsibilities.",
-        action: "terms_of_condition"
+        action: "terms_of_condition",
+        // A real page, not a sheet — nothing was ever listening for this
+        // action, so the card did nothing at all when clicked.
+        href: "/terms-of-use"
     },
     {
         icon: <Shield size={24} />,
         title: "Privacy Policy",
         description: "Learn about how we protect and handle your personal information.",
-        action: "privacy_policy"
+        action: "privacy_policy",
+        href: "/privacy-policy"
     },
     {
         icon: <UserX size={24} />,
@@ -67,6 +72,7 @@ const SettingsCard = ({ icon, title, description, onClick }: SettingsCardProps) 
 export default function Settings() {
     const { user } = useAuth();
     const [action, setAction] = useQueryState('action')
+    const router = useRouter()
     return (
         <div className="space-y-8">
             <div>
@@ -87,7 +93,7 @@ export default function Settings() {
                                 icon={option.icon}
                                 title={option.title}
                                 description={option.description}
-                                onClick={() => setAction(option.action)}
+                                onClick={() => option.href ? router.push(option.href) : setAction(option.action)}
                             />
                         ))}
                     </div>
@@ -101,8 +107,8 @@ export default function Settings() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p>
-                                For any technical issues, questions about your account, or general support inquiries, our dedicated support team is here to help. Please reach out to us at <a href="mailto:support@example.com">support@givny.com</a> and we&apos;ll get back to you within 24 hours.
+                            <p className="text-justify">
+                                For any technical issues, questions about your account, or general support inquiries, our dedicated support team is here to help. Please reach out to us at <a href="mailto:support@givny.com" className="text-blue-600 hover:text-blue-800 underline">support@givny.com</a> and we&apos;ll get back to you within 24 hours.
                             </p>
                         </CardContent>
                         <CardFooter>

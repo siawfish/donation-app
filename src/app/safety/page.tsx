@@ -75,7 +75,7 @@ export default function SafetyPage() {
 
         {/* Intro card */}
         <div className="bg-sand rounded-3xl p-8 mb-12">
-          <p className="text-gray-700 leading-relaxed mb-0">
+          <p className="text-gray-700 leading-relaxed text-justify mb-0">
             Every listing on Givny is genuinely free, and most exchanges go exactly as
             you&apos;d hope. These are the same habits people already use meeting anyone new
             from the internet — nothing exotic, just worth having front of mind.
@@ -94,7 +94,7 @@ export default function SafetyPage() {
               </div>
               <ul className="space-y-2.5">
                 {tips.map((tip) => (
-                  <li key={tip} className="flex items-start gap-2.5 text-sm text-gray-600 leading-relaxed">
+                  <li key={tip} className="flex items-start gap-2.5 text-sm text-gray-600 leading-relaxed text-justify">
                     <span className="w-1.5 h-1.5 rounded-full bg-forest flex-shrink-0 mt-1.5" />
                     <span>{tip}</span>
                   </li>
@@ -111,7 +111,7 @@ export default function SafetyPage() {
           </span>
           <div>
             <h2 className="text-lg font-bold">Look for the verified badge</h2>
-            <p className="text-sm text-white/70 mt-1 leading-relaxed">
+            <p className="text-sm text-white/70 mt-1 leading-relaxed text-justify">
               A verified checkmark next to someone&apos;s name means they&apos;ve confirmed their
               identity with us. It&apos;s one more signal, not a guarantee — the habits above
               still apply either way.

@@ -18,7 +18,7 @@ export default function TermsOfUse() {
         {/* Content */}
         <div className="prose prose-lg prose-gray max-w-none">
           <div className="bg-sand rounded-3xl p-8 mb-12">
-            <p className="text-gray-700 leading-relaxed mb-0">
+            <p className="text-gray-700 leading-relaxed text-justify mb-0">
               These Terms and Conditions govern your use of our website, mobile application, and services. 
               By accessing or using Givny, you agree to comply with and be bound by these Terms.
             </p>
@@ -27,7 +27,7 @@ export default function TermsOfUse() {
           <div className="space-y-12">
             <section>
               <h2 className="text-2xl font-medium text-ink mb-4">Definitions</h2>
-              <p className="text-gray-700 leading-relaxed">
+              <p className="text-gray-700 leading-relaxed text-justify">
                 Givny refers to the platform owned and operated by Givnt Ltd. A &ldquo;User&rdquo; refers to anyone 
                 registering for or using the Services, including donors and recipients. &ldquo;Items&rdquo; refer to 
                 goods listed, requested, or exchanged on the Platform.
@@ -36,7 +36,7 @@ export default function TermsOfUse() {
 
             <section>
               <h2 className="text-2xl font-medium text-ink mb-4">Eligibility</h2>
-              <p className="text-gray-700 leading-relaxed">
+              <p className="text-gray-700 leading-relaxed text-justify">
                 You must be at least 18 years old to use our Platform. Users under 18 may use the Platform 
                 only under the supervision of a parent or guardian. By registering, you represent and warrant 
                 that all information you provide is accurate and complete.
@@ -45,7 +45,7 @@ export default function TermsOfUse() {
 
             <section>
               <h2 className="text-2xl font-medium text-ink mb-4">Account Registration</h2>
-              <p className="text-gray-700 leading-relaxed">
+              <p className="text-gray-700 leading-relaxed text-justify">
                 Users must create an account to list, request, or receive items. You are responsible for 
                 maintaining the confidentiality of your account credentials and all activities under your account. 
                 If you suspect unauthorized use of your account, notify us immediately at{" "}
@@ -57,7 +57,7 @@ export default function TermsOfUse() {
 
             <section>
               <h2 className="text-2xl font-medium text-ink mb-4">Acceptable Use</h2>
-              <p className="text-gray-700 leading-relaxed">
+              <p className="text-gray-700 leading-relaxed text-justify">
                 You agree to use the Platform only for lawful purposes. Users may not post or share false, 
                 misleading, or fraudulent information. You may not use the Platform to harass, abuse, or harm 
                 others or engage in activities that damage or impair the operation of the Platform.
@@ -66,7 +66,7 @@ export default function TermsOfUse() {
 
             <section>
               <h2 className="text-2xl font-medium text-ink mb-4">Passing Items On</h2>
-              <p className="text-gray-700 leading-relaxed">
+              <p className="text-gray-700 leading-relaxed text-justify">
                 Users can create listings for items they no longer need by providing accurate descriptions, 
                 photos, and item conditions. All items exchanged through the Platform must be free, and selling 
                 items is strictly prohibited. Givny facilitates connections but does not guarantee successful 
@@ -77,7 +77,7 @@ export default function TermsOfUse() {
             <section>
               <h2 className="text-2xl font-medium text-ink mb-4">Prohibited Items</h2>
               <div className="bg-red-50 border border-red-200 rounded-3xl p-6">
-                <p className="text-gray-700 leading-relaxed mb-3">
+                <p className="text-gray-700 leading-relaxed text-justify mb-3">
                   The following items cannot be listed on the Platform:
                 </p>
                 <ul className="text-gray-700 space-y-1 ml-4">
@@ -93,7 +93,7 @@ export default function TermsOfUse() {
 
             <section>
               <h2 className="text-2xl font-medium text-ink mb-4">Privacy & Data</h2>
-              <p className="text-gray-700 leading-relaxed">
+              <p className="text-gray-700 leading-relaxed text-justify">
                 We collect and process your personal data in accordance with our Privacy Policy. 
                 By using the Platform, you consent to our collection, storage, and use of your 
                 information as described in the Privacy Policy.
@@ -102,7 +102,7 @@ export default function TermsOfUse() {
 
             <section>
               <h2 className="text-2xl font-medium text-ink mb-4">Limitation of Liability</h2>
-                             <p className="text-gray-700 leading-relaxed">
+                             <p className="text-gray-700 leading-relaxed text-justify">
                  Givny is provided &ldquo;as is&rdquo; and &ldquo;as available.&rdquo; We make no warranties regarding the 
                  platform&apos;s accuracy, reliability, or availability. To the fullest extent permitted 
                  by law, Givny shall not be liable for any indirect, incidental, or consequential 
@@ -112,7 +112,7 @@ export default function TermsOfUse() {
 
             <section>
               <h2 className="text-2xl font-medium text-ink mb-4">Termination</h2>
-              <p className="text-gray-700 leading-relaxed">
+              <p className="text-gray-700 leading-relaxed text-justify">
                 We reserve the right to suspend or terminate your account at any time for violations 
                 of these Terms. You may terminate your account at any time in account settings or by
                 contacting us at{" "}
