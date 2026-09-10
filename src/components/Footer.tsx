@@ -28,7 +28,7 @@ const links: Record<string, FooterLink[]> = {
   Legal: [
     { label: "Safety & Trust", href: "/safety" },
     { label: "Terms of Service", href: "/terms-of-use" },
-    { label: "Privacy Policy", href: "/" },
+    { label: "Privacy Policy", href: "/privacy-policy" },
     { label: "Contact", href: "/contact" },
     // Links every public page from every page, which is the part of a sitemap
     // that actually helps a crawler — and it is genuinely useful to a person.
