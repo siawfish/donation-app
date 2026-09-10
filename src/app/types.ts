@@ -55,6 +55,13 @@ export interface ItemType {
     updatedAt?: string;
     donatedTo?: string;
     donatedOn?: string;
+    /**
+     * Owner-set pause: hidden from browse/search while true, but still shown
+     * in the owner's own "Up for grabs" list. For a hand-off arranged outside
+     * the app while it's spoken for — distinct from `donatedOn`, which means
+     * it's actually gone.
+     */
+    reserved?: boolean;
     views?: number;
     // Location — stamped from donor's profile at listing time
     lat?: number;
