@@ -1,3 +1,5 @@
+'use server';
+
 import { CategoryType, ItemType, PaginatedData, RequestStatus, RequestType, ResponseData, WishlistType } from "@/app/types";
 import { FirebaseErrors } from "@/firebase/errors";
 import { db } from "@/firebase/init";
@@ -46,7 +48,6 @@ function sortByDistance(
 }
 
 export async function addItem(item: ItemType): Promise<ResponseData<string | null>> {
-    'use server';
     try {
         const tokens = await getTokens(await cookies(), authConfig);
 
@@ -113,9 +114,44 @@ export async function addItem(item: ItemType): Promise<ResponseData<string | nul
     }
 }
 
-export async function updateItem(item: ItemType, id: string): Promise<ResponseData<ItemType | null>> {
-    'use server';
+export async function deleteItem(id: string): Promise<ResponseData<null>> {
+    try {
+        const tokens = await getTokens(await cookies(), authConfig);
 
+        if (!tokens) {
+            throw new Error('Unauthorized');
+        }
+
+        const itemRef = db.collection('items').doc(id);
+        const snap = await itemRef.get();
+        if (!snap.exists) {
+            return { success: false, message: "Item not found", data: null };
+        }
+        // Re-checked server-side rather than trusted from the client — the
+        // sheet only ever offers this button to the owner, but the action
+        // itself has to be the thing that actually enforces it.
+        if (snap.data()?.createdBy !== tokens.decodedToken.uid) {
+            throw new Error('Unauthorized');
+        }
+
+        await itemRef.delete();
+
+        return {
+            success: true,
+            message: "Item deleted successfully",
+            data: null
+        }
+    } catch (error: any) {
+        const message = FirebaseErrors[error.code] || error.message;
+        return {
+            success: false,
+            message: message,
+            data: null
+        }
+    }
+}
+
+export async function updateItem(item: ItemType, id: string): Promise<ResponseData<ItemType | null>> {
     try {
         const tokens = await getTokens(await cookies(), authConfig);
   
@@ -153,7 +189,6 @@ export async function getMyItems({
     page?: number,
     limit?: number
 }): Promise<ResponseData<PaginatedData<ItemType[]> | null>> {
-    'use server';
     try {
         const tokens = await getTokens(await cookies(), authConfig);
   
@@ -222,7 +257,6 @@ export interface HomeFeed {
  * the same pool in memory.
  */
 export async function getHomeFeed(): Promise<ResponseData<HomeFeed | null>> {
-    'use server';
     try {
         let userLocation: { lat: number; lng: number } | null = null;
         try {
@@ -303,7 +337,6 @@ export async function getMyDonations({
     page?: number,
     limit?: number
 }): Promise<ResponseData<PaginatedData<ItemType[]> | null>> {
-    'use server';
     try {
         const tokens = await getTokens(await cookies(), authConfig);
   
@@ -361,7 +394,6 @@ export async function getReceivedDonations({
     page?: number,
     limit?: number
 }): Promise<ResponseData<PaginatedData<ItemType[]> | null>> {
-    'use server';
     try {
         const tokens = await getTokens(await cookies(), authConfig);
   
@@ -417,7 +449,6 @@ export async function getMyRequests({
     page?: number,
     limit?: number
 }): Promise<ResponseData<PaginatedData<ItemType[]> | null>> {
-    'use server';
     try {
         const tokens = await getTokens(await cookies(), authConfig);
   
@@ -497,7 +528,6 @@ export async function getListings({
     limit?: number;
     maxDistanceKm?: number;
 }): Promise<ResponseData<PaginatedData<ItemType[]> | null>> {
-    'use server';
     try {
         // Try to get user location for proximity sorting
         let userLocation: { lat: number; lng: number } | null = null;
@@ -572,7 +602,6 @@ export async function getWishlist({
     page?: number,
     limit?: number
 }): Promise<ResponseData<PaginatedData<ItemType[]> | null>> {
-    'use server';
     try {
         const tokens = await getTokens(await cookies(), authConfig);
   
@@ -630,7 +659,6 @@ export async function getWishlist({
 }
 
 export async function getItem(id: string): Promise<ResponseData<ItemType | null>> {
-    'use server';
     try {
         const itemDoc = await db.collection('items').doc(id).get();
         // A missing document used to fall through as `{ id }` with every other
@@ -678,7 +706,6 @@ export interface PublicListing {
  * is most of what a shared link is.
  */
 export async function getPublicListing(id: string): Promise<PublicListing | null> {
-    'use server';
     try {
         const snap = await db.collection('items').doc(id).get();
         if (!snap.exists) return null;
@@ -730,7 +757,6 @@ export async function getPublicListing(id: string): Promise<PublicListing | null
 
 /** Ids and timestamps of available listings, for the sitemap. */
 export async function listListingsForSitemap(): Promise<{ id: string; updatedAt: string }[]> {
-    'use server';
     try {
         const snap = await db.collection('items')
             .where('donatedTo', '==', null)
