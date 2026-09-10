@@ -12,9 +12,9 @@ type FooterLink = { label: string; href: string; badge?: string; action?: "signo
 
 const links: Record<string, FooterLink[]> = {
   Explore: [
+    { label: "How it works", href: "/#how-it-works" },
     { label: "Browse nearby", href: "/explore" },
     { label: "Leaderboard", href: "/leaderboard" },
-    { label: "How it works", href: "/#how-it-works" },
   ],
   Company: [
     { label: "About", href: "/about" },

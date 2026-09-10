@@ -3,7 +3,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
-import { ChevronDown, CircleAlertIcon, CircleCheckIcon } from 'lucide-react'
+import { ChevronDown, CircleAlertIcon, CircleCheckIcon, SparklesIcon } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -34,6 +34,8 @@ interface SelectInputProps {
 const Icon = ({ condition }: { condition: ConditionType }) => {
   return (
     <>
+      {condition === ConditionType.NEW && <SparklesIcon className="w-4 h-4 text-emerald-500" />}
+      {condition === ConditionType.LIKE_NEW && <CircleCheckIcon className="w-4 h-4 text-teal-500" />}
       {condition === ConditionType.GOOD && <CircleCheckIcon className="w-4 h-4 text-green-500" />}
       {condition === ConditionType.FAIR && <CircleAlertIcon className="w-4 h-4 text-yellow-500" />}
       {condition === ConditionType.POOR && <CircleAlertIcon className="w-4 h-4 text-red-500" />}

@@ -175,10 +175,17 @@ export default async function ListingPage({ params }: { params: { id: string } }
                             )}
                         </div>
 
-                        {item.description && (
-                            <p className="text-ink text-base leading-relaxed whitespace-pre-line mt-6">
-                                {item.description}
-                            </p>
+                        {(item.description || item.size) && (
+                            <div className="mt-6">
+                                {item.size && (
+                                    <p className="text-ink text-base font-bold mb-1">Size: {item.size}</p>
+                                )}
+                                {item.description && (
+                                    <p className="text-ink text-base leading-relaxed whitespace-pre-line">
+                                        {item.description}
+                                    </p>
+                                )}
+                            </div>
                         )}
 
                         {/* Who is passing it on */}
