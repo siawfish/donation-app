@@ -645,7 +645,10 @@ function ShareAction({
                     {!iconOnly && "Share"}
                 </Button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-auto p-3">
+            {/* A fixed width rather than w-auto: ShareButtons now lays its
+                targets out in a two-column grid, which needs a real width to
+                divide rather than shrinking to fit its content. */}
+            <PopoverContent align="end" className="w-72 p-3">
                 <ShareButtons url={url} title={title} includeLinkedIn={false} label="" />
             </PopoverContent>
         </Popover>
