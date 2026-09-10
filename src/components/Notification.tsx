@@ -1,5 +1,5 @@
 import { ActivityAction, ActivityType, UserType, ItemType } from "@/app/types"
-import { CheckIcon, XIcon, HandIcon, GiftIcon, HeartIcon, HeartOffIcon, PencilIcon, Building2 as Building2Icon } from "lucide-react"
+import { CheckIcon, XIcon, HandIcon, GiftIcon, HeartIcon, HeartOffIcon, PencilIcon, Building2 as Building2Icon, MessageCircleIcon } from "lucide-react"
 import { formatDistanceToNow } from "date-fns";
 import NotificationAction from "./NotificationAction";
 import { FirebaseErrors } from "@/firebase/errors"
@@ -67,6 +67,12 @@ const getNotificationIconAndDescription = (notification: NotificationProps['noti
             description: <p className="text-base text-gray-500"><span className="font-medium text-black">{notification?.item?.orgName ?? "An organisation you follow"}</span> listed <Link href={`${pathname}?id=${notification?.activity?.itemId}`} className="font-medium text-black">{notification?.item?.name ?? "something new"}</Link>.</p>
         }
     }
+    if (notification?.activity?.action === ActivityAction.MESSAGE_RECEIVED) {
+        return {
+            icon: <MessageCircleIcon className="w-4 h-4 text-primary" />,
+            description: <p className="text-base text-gray-500"><span className="font-medium text-black">{notification?.creator?.name}</span> sent you a message about <Link href={`${pathname}?id=${notification?.activity?.itemId}`} className="font-medium text-black">{notification?.item?.name}</Link>.</p>
+        }
+    }
     if (notification?.activity?.action === ActivityAction.ACCOUNT_UPDATED) {
         return {
             icon: <PencilIcon className="w-4 h-4 text-green-500" />,
@@ -116,6 +122,17 @@ export default function Notification({ notification }: NotificationProps) {
                             <Link className="text-xs text-primary hover:underline-none" href={`/app/messages?rid=${notification?.activity?.requestId}`}>
                                 <Button className="rounded-full border-primary text-primary hover:bg-primary hover:text-white" variant="outline">
                                     Message {notification?.creator?.name}
+                                </Button>
+                            </Link>
+                        </div>
+                    )
+                }
+                {
+                    notification?.activity?.action === ActivityAction.MESSAGE_RECEIVED && (
+                        <div className="flex flex-row justify-end">
+                            <Link className="text-xs text-primary hover:underline-none" href={`/app/messages?rid=${notification?.activity?.requestId}`}>
+                                <Button className="rounded-full border-primary text-primary hover:bg-primary hover:text-white" variant="outline">
+                                    Reply to {notification?.creator?.name}
                                 </Button>
                             </Link>
                         </div>

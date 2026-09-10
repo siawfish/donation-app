@@ -687,43 +687,42 @@ function Actions({
                 </CustomButton>
             )
         }
+        // A simple vertical list — a paired-up grid here previously let the
+        // Share popover trigger and "Mark as given out" occupy the same
+        // rectangle at some sizes, so a tap meant for one fired the other.
         return (
             <div className="flex flex-col gap-2 w-full">
-                <div className="flex gap-2 w-full">
-                    <Link href={`/app/edit-item/${id}`} className="flex-1">
-                        <CustomButton
-                            variant="outline"
-                            className={`${base} w-full border-forest !text-forest hover:bg-transparent`}
-                            icon={<PencilIcon className="w-4 h-4" />}
-                        >
-                            Edit listing
-                        </CustomButton>
-                    </Link>
-                    <ShareAction url={shareUrl} title={shareTitle} className={`${base} flex-1 border-gray-200 !text-ink hover:bg-transparent`} />
-                </div>
-                <div className="flex gap-2 w-full">
+                <Link href={`/app/edit-item/${id}`} className="block">
                     <CustomButton
-                        type="button"
                         variant="outline"
-                        className={`${base} flex-1 border-amber-300 !text-amber-700 hover:bg-amber-50`}
-                        icon={<BookmarkIcon className="w-4 h-4" />}
-                        onClick={onToggleReserved}
-                        disabled={reserving}
-                        isLoading={reserving}
+                        className={`${base} w-full border-forest !text-forest hover:bg-transparent`}
+                        icon={<PencilIcon className="w-4 h-4" />}
                     >
-                        {item.reserved ? "Unmark reserved" : "Mark as reserved"}
+                        Edit listing
                     </CustomButton>
-                    <CustomButton
-                        type="button"
-                        className={`${base} flex-1 !bg-forest hover:!bg-forest-dark`}
-                        icon={<CheckCircle2Icon className="w-4 h-4" />}
-                        onClick={onMarkGiven}
-                        disabled={marking}
-                        isLoading={marking}
-                    >
-                        Mark as given out
-                    </CustomButton>
-                </div>
+                </Link>
+                <ShareAction url={shareUrl} title={shareTitle} className={`${base} w-full border-gray-200 !text-ink hover:bg-transparent`} />
+                <CustomButton
+                    type="button"
+                    variant="outline"
+                    className={`${base} w-full border-amber-300 !text-amber-700 hover:bg-amber-50`}
+                    icon={<BookmarkIcon className="w-4 h-4" />}
+                    onClick={onToggleReserved}
+                    disabled={reserving}
+                    isLoading={reserving}
+                >
+                    {item.reserved ? "Unmark reserved" : "Mark as reserved"}
+                </CustomButton>
+                <CustomButton
+                    type="button"
+                    className={`${base} w-full !bg-forest hover:!bg-forest-dark`}
+                    icon={<CheckCircle2Icon className="w-4 h-4" />}
+                    onClick={onMarkGiven}
+                    disabled={marking}
+                    isLoading={marking}
+                >
+                    Mark as given out
+                </CustomButton>
                 <button
                     type="button"
                     onClick={onDelete}
