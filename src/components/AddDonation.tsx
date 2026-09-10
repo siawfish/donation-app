@@ -467,7 +467,11 @@ export default function AddDonation({ addItem, editItem, defaultValues }: AddDon
                     // stops for an explicit "yes, post it" instead of submitting on click.
                     type={isEditing ? "submit" : "button"}
                     onClick={isEditing ? undefined : () => setConfirmPublish(true)}
-                    className="rounded-full px-7 py-3 !bg-forest hover:!bg-forest-dark min-w-[160px]"
+                    // Extra right padding (rather than the plain px-7 every other
+                    // button here uses) so the icon, pinned a fixed distance from
+                    // the edge, has room to sit clear of "Review & publish" — the
+                    // longest label this button ever shows.
+                    className="rounded-full pl-7 pr-11 py-3 !bg-forest hover:!bg-forest-dark min-w-[160px]"
                     icon={isEditing ? <SaveIcon className="w-4 h-4" /> : <Send className="w-4 h-4" />}
                     disabled={busy}
                     isLoading={busy}
