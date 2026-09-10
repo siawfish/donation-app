@@ -10,6 +10,17 @@ import { haversineKm } from "@/lib/distance";
 import { getMyOrgLite } from "./organisations";
 import { notifyFollowersOfListing } from "./orgSocial";
 
+/**
+ * Confirms the signed-in user owns `id`, throwing otherwise. Shared by every
+ * action that mutates an item's status — the button only ever appears for the
+ * owner client-side, but that's presentation, not enforcement.
+ */
+async function assertOwnsItem(id: string, uid: string) {
+    const snap = await db.collection('items').doc(id).get();
+    if (!snap.exists) throw new Error('Item not found');
+    if (snap.data()?.createdBy !== uid) throw new Error('Unauthorized');
+}
+
 /** Fetch the authenticated user's lat/lng from Firestore. Returns null if unavailable. */
 async function getUserLocation(uid: string): Promise<{ lat: number; lng: number } | null> {
     try {
@@ -117,28 +128,85 @@ export async function addItem(item: ItemType): Promise<ResponseData<string | nul
 export async function deleteItem(id: string): Promise<ResponseData<null>> {
     try {
         const tokens = await getTokens(await cookies(), authConfig);
-
         if (!tokens) {
             throw new Error('Unauthorized');
         }
 
-        const itemRef = db.collection('items').doc(id);
-        const snap = await itemRef.get();
-        if (!snap.exists) {
-            return { success: false, message: "Item not found", data: null };
-        }
-        // Re-checked server-side rather than trusted from the client — the
-        // sheet only ever offers this button to the owner, but the action
-        // itself has to be the thing that actually enforces it.
-        if (snap.data()?.createdBy !== tokens.decodedToken.uid) {
-            throw new Error('Unauthorized');
-        }
-
-        await itemRef.delete();
+        await assertOwnsItem(id, tokens.decodedToken.uid);
+        await db.collection('items').doc(id).delete();
 
         return {
             success: true,
             message: "Item deleted successfully",
+            data: null
+        }
+    } catch (error: any) {
+        const message = FirebaseErrors[error.code] || error.message;
+        return {
+            success: false,
+            message: message,
+            data: null
+        }
+    }
+}
+
+/**
+ * Marks an item given away outside the request/message flow — someone came
+ * by in person, say. There's no in-app recipient to record, but `donatedTo`
+ * is what every "is this still available" query filters on (and those
+ * queries are paginated/ordered, so they lean on composite indexes already
+ * built around `donatedTo` — swapping the field would mean building new ones
+ * before this could safely ship). A per-item sentinel keeps it out of browse
+ * and moves it to "Passed on" without claiming a real recipient: it can
+ * never collide with an actual uid, and `getReceivedDonations`
+ * (`donatedTo == <uid>`) correctly never matches it for anyone.
+ */
+export async function markItemDonated(id: string): Promise<ResponseData<null>> {
+    try {
+        const tokens = await getTokens(await cookies(), authConfig);
+        if (!tokens) {
+            throw new Error('Unauthorized');
+        }
+
+        await assertOwnsItem(id, tokens.decodedToken.uid);
+        await db.collection('items').doc(id).update({
+            donatedTo: `offline:${id}`,
+            donatedOn: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        });
+
+        return {
+            success: true,
+            message: "Item marked as given out",
+            data: null
+        }
+    } catch (error: any) {
+        const message = FirebaseErrors[error.code] || error.message;
+        return {
+            success: false,
+            message: message,
+            data: null
+        }
+    }
+}
+
+/** Toggles the owner-only pause that pulls an item from browse/search without closing it. */
+export async function setItemReserved(id: string, reserved: boolean): Promise<ResponseData<null>> {
+    try {
+        const tokens = await getTokens(await cookies(), authConfig);
+        if (!tokens) {
+            throw new Error('Unauthorized');
+        }
+
+        await assertOwnsItem(id, tokens.decodedToken.uid);
+        await db.collection('items').doc(id).update({
+            reserved,
+            updatedAt: new Date().toISOString(),
+        });
+
+        return {
+            success: true,
+            message: reserved ? "Item marked as reserved" : "Item unmarked as reserved",
             data: null
         }
     } catch (error: any) {
@@ -198,7 +266,7 @@ export async function getMyItems({
 
         let queryRef = db.collection('items')
             .where('createdBy', '==', tokens.decodedToken.uid)
-            .where('donatedTo', '==', null); // Only get items that haven't been donated
+            .where('donatedTo', '==', null); // Only get items that haven't been donated — reserved items stay in this list
 
         if (query) {
             if (queryBy === "categories") {
@@ -271,7 +339,12 @@ export async function getHomeFeed(): Promise<ResponseData<HomeFeed | null>> {
             .limit(LISTINGS_POOL)
             .get();
 
-        const pool: ItemType[] = snapshot.docs.map((d) => ({ ...d.data(), id: d.id } as ItemType));
+        // Reserved items stay live for their owner but shouldn't surface to
+        // anyone else browsing — filtered here rather than in the query to
+        // avoid a second composite index for what's still a small pool.
+        const pool: ItemType[] = snapshot.docs
+            .map((d) => ({ ...d.data(), id: d.id } as ItemType))
+            .filter((item) => !item.reserved);
 
         const categoryCounts: Record<string, number> = {};
         pool.forEach((item) =>
@@ -552,7 +625,11 @@ export async function getListings({
             .limit(LISTINGS_POOL)
             .get();
 
-        let items: ItemType[] = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id } as ItemType));
+        // Reserved items stay off the browse list — the owner has this one
+        // spoken for, so surfacing it just invites an ask that goes nowhere.
+        let items: ItemType[] = snapshot.docs
+            .map((doc) => ({ ...doc.data(), id: doc.id } as ItemType))
+            .filter((item) => !item.reserved);
 
         // Text search \u2014 substring and case-insensitive across name and description.
         // The previous Firestore range query only matched a case-sensitive prefix
@@ -762,10 +839,12 @@ export async function listListingsForSitemap(): Promise<{ id: string; updatedAt:
             .where('donatedTo', '==', null)
             .limit(5000)
             .get();
-        return snap.docs.map((d) => ({
-            id: d.id,
-            updatedAt: (d.data().updatedAt as string) || (d.data().createdAt as string) || new Date().toISOString(),
-        }));
+        return snap.docs
+            .filter((d) => !d.data().reserved)
+            .map((d) => ({
+                id: d.id,
+                updatedAt: (d.data().updatedAt as string) || (d.data().createdAt as string) || new Date().toISOString(),
+            }));
     } catch {
         return [];
     }
