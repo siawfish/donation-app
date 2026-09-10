@@ -215,6 +215,22 @@ export default function Chatbox() {
         createdAt: serverTimestamp()
       })
 
+      // The bell only ever learns about a message via this — without it, a
+      // reply just sits in the thread until whoever it's for happens to open
+      // it, request-accepted or not.
+      if (recipient?.id) {
+        addDoc(collection(firestore, 'activities'), {
+          recipientId: recipient.id,
+          action: ActivityAction.MESSAGE_RECEIVED,
+          requestId: rid,
+          itemId: item?.id,
+          createdAt: new Date().toISOString(),
+          createdBy: user.uid,
+          read: false,
+          updatedAt: new Date().toISOString()
+        }).catch(() => {/* the message itself already sent — a missed notification isn't worth failing that */})
+      }
+
       setNewMessage('')
       setMediaPreviews([])
     } catch (error) {

@@ -146,6 +146,7 @@ export enum ActivityAction {
     ITEM_REMOVED_FROM_WISHLIST = "item_removed_from_wishlist",
     REQUEST_ACCEPTED = "request_accepted",
     REQUEST_REJECTED = "request_rejected",
+    MESSAGE_RECEIVED = "message_received",
     ACCOUNT_CREATED = "account_created",
     ACCOUNT_UPDATED = "account_updated",
     ACCOUNT_DELETED = "account_deleted",
