@@ -52,13 +52,15 @@ export default function Footer() {
     }
   };
 
-  // Signed in: no point offering to join (again) or sign in (already are) —
-  // "Log out" replaces "Sign in" in the same slot so the column doesn't reflow.
+  // Signed in: swap the join/sign-in prompts for the account links someone
+  // who already has one actually wants, matching the dashboard's own quick
+  // links (Active listings, My requests) so both places agree on where they go.
   const account: FooterLink[] = user
     ? [
         { label: "Profile", href: "/app" },
+        { label: "My Listings", href: "/app/my-items" },
+        { label: "My Requests", href: "/app/pending-requests" },
         { label: "Log out", href: "#", action: "signout" },
-        { label: "List an item", href: "/app/add-item" },
       ]
     : [
         { label: "Sign in", href: "/auth/login" },

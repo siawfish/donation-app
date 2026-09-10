@@ -119,7 +119,7 @@ export function ContactForm({ initialTopic }: { initialTopic?: ContactTopic }) {
             {/* Some topics have a better answer than "write to us and wait". */}
             {form.topic === "organisation" && (
                 <p className="text-sm text-gray-600 bg-sand rounded-2xl px-4 py-3 mt-3 leading-relaxed">
-                    You can apply directly — it takes about five minutes and skips the queue.{" "}
+                    You can apply directly, it takes about five minutes and skips the queue.{" "}
                     <Link href="/for-organisations" className="font-bold text-forest hover:underline">
                         Apply to list
                     </Link>
@@ -127,8 +127,8 @@ export function ContactForm({ initialTopic }: { initialTopic?: ContactTopic }) {
             )}
             {form.topic === "support" && (
                 <p className="text-sm text-gray-600 bg-sand rounded-2xl px-4 py-3 mt-3 leading-relaxed">
-                    If it&rsquo;s about a specific item or request, tell us the name of the item —
-                    it saves a round trip.
+                    If it&rsquo;s about a specific item or request, tell us the name of the item.
+                    It saves a round trip.
                 </p>
             )}
 

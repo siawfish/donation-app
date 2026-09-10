@@ -18,7 +18,7 @@ import { absoluteUrl, jsonLd, siteUrl } from "@/lib/seo";
 export const metadata: Metadata = {
     title: "Sitemap",
     description:
-        "Every page on Givny — browse listings, organisations, the journal, open roles and everything else.",
+        "Every page on Givny: browse listings, organisations, the journal, open roles and everything else.",
     alternates: { canonical: absoluteUrl("/sitemap") },
 };
 
@@ -203,7 +203,7 @@ export default async function SitemapPage() {
                         ))}
                     </ul>
                     <p className="text-xs text-gray-400 mt-3">
-                        Individual listings are not indexed here — there are too many and they
+                        Individual listings are not indexed here. There are too many and they
                         change constantly. They are in sitemap.xml, and searchable on{" "}
                         <Link href="/explore" className="font-semibold text-forest hover:underline">
                             Browse

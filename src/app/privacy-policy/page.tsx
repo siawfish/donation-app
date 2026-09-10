@@ -39,11 +39,11 @@ export default function PrivacyPolicy() {
                 Platform, and information from your device:
               </p>
               <ul className="text-gray-700 space-y-2 ml-4">
-                <li>• <strong>Account information</strong> — your name, email address, phone number, address, city, country, and profile picture.</li>
-                <li>• <strong>Location</strong> — a general area (not your exact address) used to show nearby listings and estimate distance.</li>
-                <li>• <strong>Listings and messages</strong> — photos, descriptions, and conditions of items you list, and the messages you exchange with other members to arrange a pickup.</li>
-                <li>• <strong>Verification data</strong> — if you choose to verify your identity, the document you submit for that purpose.</li>
-                <li>• <strong>Usage and device data</strong> — pages you visit, actions you take, your device type and browser, and IP address, collected automatically as you use the Platform.</li>
+                <li>• <strong>Account information:</strong> your name, email address, phone number, address, city, country, and profile picture.</li>
+                <li>• <strong>Location:</strong> a general area, not your exact address, used to show nearby listings and estimate distance.</li>
+                <li>• <strong>Listings and messages:</strong> photos, descriptions, and conditions of items you list, and the messages you exchange with other members to arrange a pickup.</li>
+                <li>• <strong>Verification data:</strong> if you choose to verify your identity, the document you submit for that purpose.</li>
+                <li>• <strong>Usage and device data:</strong> pages you visit, actions you take, your device type and browser, and IP address, collected automatically as you use the Platform.</li>
               </ul>
             </section>
 
@@ -53,10 +53,10 @@ export default function PrivacyPolicy() {
                 We use the information we collect to:
               </p>
               <ul className="text-gray-700 space-y-2 ml-4">
-                <li>• Operate the Platform — matching donors with people who&apos;ve asked for an item, and showing listings near you.</li>
+                <li>• Operate the Platform, matching donors with people who&apos;ve asked for an item and showing listings near you.</li>
                 <li>• Let you communicate with other members about a listing.</li>
                 <li>• Confirm your identity where you&apos;ve asked to be verified, and keep the Platform safe from fraud and abuse.</li>
-                <li>• Send you notifications about requests, messages, and account activity, and — where you&apos;ve opted in — push notifications and email updates.</li>
+                <li>• Send you notifications about requests, messages, and account activity, plus push notifications and email updates if you&apos;ve opted in.</li>
                 <li>• Understand how Givny is used so we can improve it, including aggregate, non-identifying statistics like leaderboards and impact figures.</li>
                 <li>• Meet our legal obligations and enforce our Terms of Service.</li>
               </ul>
@@ -68,10 +68,10 @@ export default function PrivacyPolicy() {
                 We don&apos;t sell your personal information. We share it only in these situations:
               </p>
               <ul className="text-gray-700 space-y-2 ml-4">
-                <li>• <strong>With other members</strong> — your name, profile picture, general location, and listings are visible to people browsing the Platform; your exact address is never shown; it stays between you and whoever you arrange a pickup with.</li>
-                <li>• <strong>With organisations</strong> — if you list an item on behalf of an organisation, that listing is attributed to the organisation rather than to you personally.</li>
-                <li>• <strong>With service providers</strong> — we use Google Firebase to host our infrastructure, store data, and send notifications; these providers only process data on our instructions.</li>
-                <li>• <strong>For legal reasons</strong> — where required by law, or to protect the rights, safety, or property of Givny, our members, or the public.</li>
+                <li>• <strong>With other members:</strong> your name, profile picture, general location, and listings are visible to people browsing the Platform. Your exact address is never shown; it stays between you and whoever you arrange a pickup with.</li>
+                <li>• <strong>With organisations:</strong> if you list an item on behalf of an organisation, that listing is attributed to the organisation rather than to you personally.</li>
+                <li>• <strong>With service providers:</strong> we use Google Firebase to host our infrastructure, store data, and send notifications. These providers only process data on our instructions.</li>
+                <li>• <strong>For legal reasons:</strong> where required by law, or to protect the rights, safety, or property of Givny, our members, or the public.</li>
               </ul>
             </section>
 
@@ -92,10 +92,10 @@ export default function PrivacyPolicy() {
               </p>
               <ul className="text-gray-700 space-y-2 ml-4">
                 <li>• Update or correct your account details, and add or remove your profile picture, any time from Edit Profile.</li>
-                <li>• Choose how precise a location you share — a nearby landmark works fine until you&apos;re ready to meet someone.</li>
+                <li>• Choose how precise a location you share; a nearby landmark works fine until you&apos;re ready to meet someone.</li>
                 <li>• Turn push notifications on or off from your device or account settings.</li>
                 <li>• Temporarily disable your account, hiding your profile and listings, from Settings.</li>
-                <li>• Request a copy of your data, or ask us to delete your account and associated personal information, by contacting us below — we&apos;ll action this unless we&apos;re required to retain something by law.</li>
+                <li>• Request a copy of your data, or ask us to delete your account and associated personal information, by contacting us below. We&apos;ll action this unless we&apos;re required by law to retain something.</li>
               </ul>
             </section>
 
@@ -105,7 +105,7 @@ export default function PrivacyPolicy() {
                 We keep your information for as long as your account is active, or as needed to
                 provide the Platform to you. If you delete your account, we remove or anonymise your
                 personal information within a reasonable time, except where we&apos;re required to
-                keep it — for example, to resolve disputes or meet a legal obligation.
+                keep it, for example to resolve disputes or meet a legal obligation.
               </p>
             </section>
 
@@ -132,7 +132,7 @@ export default function PrivacyPolicy() {
               <h2 className="text-2xl font-medium text-ink mb-4">Changes to This Policy</h2>
               <p className="text-gray-700 leading-relaxed text-justify">
                 We may update this Privacy Policy from time to time. If we make material changes,
-                we&apos;ll let you know — for example, by notice on the Platform — before they take
+                we&apos;ll let you know, for example by a notice on the Platform, before they take
                 effect. The date this policy was last updated is shown below.
               </p>
             </section>
