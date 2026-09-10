@@ -10,7 +10,9 @@ import { ConfirmDialog } from "./ConfirmDialog"
 import * as yup from "yup"
 import { AssetType, ItemType, ResponseData } from "@/app/types"
 import { useEffect, useMemo, useState, useTransition } from "react"
-import { storage, firestore } from "@/firebase/auth/firebase"
+import { storage, firestore, getFirebaseAuth } from "@/firebase/auth/firebase"
+import { signInWithCustomToken } from "firebase/auth"
+import { getFreshCustomToken } from "@/app/app/actions/user"
 import CategoryPicker from "./CategoryPicker"
 import { SafetyDialog } from "./SafetyDialog"
 import SelectInput from "./SelectInput"
@@ -142,7 +144,23 @@ export default function AddDonation({ addItem, editItem, defaultValues }: AddDon
     // Storage rules check the *client* SDK's user, which is signed in with a
     // custom token after mount. Without this the first upload after a page load
     // can race that and come back as storage/unauthorized.
-    const signedIn = await awaitClientAuth()
+    let signedIn = await awaitClientAuth()
+    if (!signedIn) {
+      // The token AuthProvider signed in with came from the root layout's
+      // very first render, which doesn't re-run on client-side navigation —
+      // so on a long-lived tab it can simply have gone stale by the time
+      // someone gets around to listing something. Mint a fresh one and sign
+      // in again before asking for a page reload.
+      const fresh = await getFreshCustomToken()
+      if (fresh.success && fresh.data) {
+        try {
+          await signInWithCustomToken(getFirebaseAuth(), fresh.data)
+          signedIn = await awaitClientAuth()
+        } catch {
+          // Falls through to the error below.
+        }
+      }
+    }
     if (!signedIn) {
       throw new Error("Couldn't verify your session for uploads. Refresh the page and try again.")
     }

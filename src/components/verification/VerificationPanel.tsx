@@ -4,10 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BadgeCheck, ShieldCheck, Upload, X, Loader2, AlertCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ref, uploadBytesResumable } from "firebase/storage";
-import { storage } from "@/firebase/auth/firebase";
+import { signInWithCustomToken } from "firebase/auth";
+import { storage, getFirebaseAuth } from "@/firebase/auth/firebase";
 import { useAuth } from "@/firebase/auth/AuthContext";
 import { awaitClientAuth } from "@/firebase/auth/clientAuth";
 import { getMyVerification, submitVerification } from "@/app/app/actions/verification";
+import { getFreshCustomToken } from "@/app/app/actions/user";
 import {
     STATUS_COPY,
     VerificationRecord,
@@ -61,7 +63,23 @@ export function VerificationPanel() {
         setBusy(true);
         setProgress(0);
         try {
-            const signedIn = await awaitClientAuth();
+            let signedIn = await awaitClientAuth();
+            if (!signedIn) {
+                // The token AuthProvider signed in with came from the root
+                // layout's very first render, which doesn't re-run on
+                // client-side navigation — so on a long-lived tab it can
+                // simply have gone stale. Mint a fresh one and sign in again
+                // before asking for a page reload.
+                const fresh = await getFreshCustomToken();
+                if (fresh.success && fresh.data) {
+                    try {
+                        await signInWithCustomToken(getFirebaseAuth(), fresh.data);
+                        signedIn = await awaitClientAuth();
+                    } catch {
+                        // Falls through to the error below.
+                    }
+                }
+            }
             if (!signedIn) throw new Error("Couldn't verify your session. Refresh and try again.");
 
             const safe = (file.name || "card").replace(/[^a-zA-Z0-9._-]/g, "_").slice(-48);
