@@ -48,7 +48,7 @@ export default function TermsOfUse() {
               <p className="text-gray-700 leading-relaxed">
                 Users must create an account to list, request, or receive items. You are responsible for 
                 maintaining the confidentiality of your account credentials and all activities under your account. 
-                If you suspect unauthorized use of your account, notify us immediately at 
+                If you suspect unauthorized use of your account, notify us immediately at{" "}
                 <a href="mailto:support@givny.com" className="text-blue-600 hover:text-blue-800 underline">
                   support@givny.com
                 </a>.
@@ -114,8 +114,8 @@ export default function TermsOfUse() {
               <h2 className="text-2xl font-medium text-ink mb-4">Termination</h2>
               <p className="text-gray-700 leading-relaxed">
                 We reserve the right to suspend or terminate your account at any time for violations 
-                of these Terms. You may terminate your account at any time in account settings or by 
-                contacting us at 
+                of these Terms. You may terminate your account at any time in account settings or by
+                contacting us at{" "}
                 <a href="mailto:support@givny.com" className="text-blue-600 hover:text-blue-800 underline">
                   support@givny.com
                 </a>.
