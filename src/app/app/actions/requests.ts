@@ -19,7 +19,14 @@ export async function sendRequest(request: RequestType): Promise<ResponseData<st
         // listings back. Read server-side: a client could otherwise credit
         // someone else's organisation.
         const itemSnap = await db.collection('items').doc(request.itemId).get();
-        const orgId = itemSnap.data()?.orgId ?? null;
+        const itemData = itemSnap.data();
+        // The sheet already hides "Ask for it" once an item is gone or
+        // reserved — re-checked here so a stale tab or a direct call can't
+        // slip a request through anyway.
+        if (!itemSnap.exists || itemData?.donatedOn || itemData?.reserved) {
+            throw new Error('This item is no longer available to ask for.');
+        }
+        const orgId = itemData?.orgId ?? null;
 
         const docRef = await db.collection('requests').add({
             ...request,
