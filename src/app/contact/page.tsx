@@ -26,7 +26,7 @@ const ANSWERS = [
     },
     {
         q: "Can my business or NGO list?",
-        a: "Yes — organisations get their own page, team logins and an impact record.",
+        a: "Yes. Organisations get their own page, team logins and an impact record.",
         href: "/for-organisations",
     },
     {
@@ -78,7 +78,7 @@ export default function ContactPage({
                 </h1>
                 <p className="text-base md:text-lg text-gray-500 mt-4 max-w-xl leading-relaxed">
                     A small team in Ghana reads every message. Tell us what&rsquo;s happening and
-                    we&rsquo;ll come back to you — usually within two working days.
+                    we&rsquo;ll come back to you, usually within two working days.
                 </p>
 
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 lg:gap-10 mt-10 items-start">
