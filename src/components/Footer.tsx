@@ -13,16 +13,15 @@ type FooterLink = { label: string; href: string; badge?: string; action?: "signo
 const links: Record<string, FooterLink[]> = {
   Explore: [
     { label: "Browse nearby", href: "/explore" },
-    { label: "Near me", href: "/explore?radius=5" },
     { label: "Leaderboard", href: "/leaderboard" },
     { label: "How it works", href: "/#how-it-works" },
   ],
   Company: [
-    { label: "Journal", href: "/blog" },
-    { label: "For organisations", href: "/for-organisations" },
-    { label: "Organisations", href: "/organisations" },
     { label: "About", href: "/about" },
     { label: "Team", href: "/team" },
+    { label: "For organisations", href: "/for-organisations" },
+    { label: "Organisations", href: "/organisations" },
+    { label: "Journal", href: "/blog" },
     // Flagged rather than buried: a careers link only works if someone notices it.
     { label: "Careers", href: "/careers", badge: "We're hiring" },
   ],
@@ -57,6 +56,7 @@ export default function Footer() {
   // "Log out" replaces "Sign in" in the same slot so the column doesn't reflow.
   const account: FooterLink[] = user
     ? [
+        { label: "Profile", href: "/app" },
         { label: "Log out", href: "#", action: "signout" },
         { label: "List an item", href: "/app/add-item" },
       ]
