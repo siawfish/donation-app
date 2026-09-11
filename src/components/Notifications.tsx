@@ -1,6 +1,6 @@
 'use client'
 
-import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { useQueryState } from 'nuqs'
 import { BellIcon } from "lucide-react"
 import Notification from "./Notification"
@@ -78,7 +78,7 @@ export function Notifications({ items }: NotificationsProps) {
                                     <BellIcon className="w-4 h-4" />
                                 </span>
                                 <div className="flex flex-col">
-                                    <h2 className="text-xl font-semibold mb-0 tracking-tight leading-tight">Notifications</h2>
+                                    <SheetTitle className="text-xl font-semibold mb-0 tracking-tight leading-tight">Notifications</SheetTitle>
                                     <p className="text-muted-foreground mb-0 tracking-tight leading-tight">
                                         Here are your notifications.
                                     </p>

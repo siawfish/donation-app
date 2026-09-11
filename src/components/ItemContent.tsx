@@ -302,14 +302,17 @@ export default function ItemContent() {
             side="right"
             className="w-full p-0 bg-canvas sm:max-w-none lg:w-[min(1060px,94vw)] overflow-y-auto"
         >
+            {/* Radix requires a title on every render of this content, not just once
+                an item has loaded — otherwise the loading and not-found branches
+                below trip its "DialogContent requires a DialogTitle" warning. */}
+            <SheetTitle className="sr-only">{item?.name || "Listing"}</SheetTitle>
+
             {loading ? (
                 <ItemLoader />
             ) : !item ? (
                 <EmptyState title="Item not found" description="This listing may have been rehomed or removed." />
             ) : (
                 <>
-                    <SheetTitle className="sr-only">{item.name}</SheetTitle>
-
                     {/* Gallery left, decision column right — the pattern people already
                         know from every marketplace, and it keeps the primary action
                         visible instead of buried under the description. */}

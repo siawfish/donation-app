@@ -2,7 +2,7 @@
 
 import { useQueryState } from 'nuqs'
 import React, { useCallback, useEffect, useState, useTransition } from 'react'
-import { Sheet, SheetContent } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useAuth } from '@/firebase/auth/AuthContext';
 import { SaveIcon, UserCog, Trash2 } from 'lucide-react';
 import CustomButton from './Button';
@@ -153,7 +153,7 @@ export default function EditProfile() {
                                             <UserCog className="w-4 h-4" />
                                         </span>
                                         <div className="flex flex-col">
-                                            <h2 className="text-xl font-semibold mb-0">Edit Profile</h2>
+                                            <SheetTitle className="text-xl font-semibold mb-0">Edit Profile</SheetTitle>
                                             <p className="text-muted-foreground mb-0">
                                                 Update your profile information here.
                                             </p>
