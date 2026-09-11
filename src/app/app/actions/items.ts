@@ -7,6 +7,7 @@ import { authConfig } from "@/firebase/config/server-config";
 import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
 import { haversineKm } from "@/lib/distance";
+import { getDepartmentIdForCategoryId } from "@/lib/categoryTree";
 import { getMyOrgLite } from "./organisations";
 import { notifyFollowersOfListing } from "./orgSocial";
 
@@ -346,10 +347,15 @@ export async function getHomeFeed(): Promise<ResponseData<HomeFeed | null>> {
             .map((d) => ({ ...d.data(), id: d.id } as ItemType))
             .filter((item) => !item.reserved);
 
+        // Keyed by department, not the specific subcategory a listing carries —
+        // that's the granularity the chips filter by, so this is what tells the
+        // strip a department actually has something in it.
         const categoryCounts: Record<string, number> = {};
         pool.forEach((item) =>
             item.categories?.forEach((c) => {
-                if (c?.id) categoryCounts[c.id] = (categoryCounts[c.id] ?? 0) + 1;
+                if (!c?.id) return;
+                const deptId = getDepartmentIdForCategoryId(c.id);
+                categoryCounts[deptId] = (categoryCounts[deptId] ?? 0) + 1;
             })
         );
 
@@ -644,8 +650,11 @@ export async function getListings({
         }
 
         if (categoryId) {
+            // categoryId is a department (from the chips row); a listing carries
+            // its specific subcategory, so match on the department it belongs to
+            // rather than the exact id.
             items = items.filter((item) =>
-                item.categories?.some((category) => category?.id === categoryId)
+                item.categories?.some((category) => category?.id && getDepartmentIdForCategoryId(category.id) === categoryId)
             );
         }
 

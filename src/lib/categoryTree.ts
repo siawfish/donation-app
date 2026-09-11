@@ -222,6 +222,18 @@ export function getDepartments(): Department[] {
   return CATEGORY_TREE
 }
 
+/**
+ * The department a category or subcategory id belongs to — every id in this
+ * tree is built as `department`, `department__category`, or
+ * `department__category__subcategory`, so the department is always the first
+ * segment. Used to bucket a listing's specific subcategory under the coarser
+ * department filter shown when browsing, so the two always agree on what
+ * counts as a match.
+ */
+export function getDepartmentIdForCategoryId(id: string): string {
+  return id.split("__")[0]
+}
+
 export function getCategoriesFor(departmentId: string): CategoryBranch[] {
   return CATEGORY_TREE.find((d) => d.id === departmentId)?.categories ?? []
 }

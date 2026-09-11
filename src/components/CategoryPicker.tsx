@@ -147,7 +147,7 @@ export default function CategoryPicker({
                 Back
               </button>
             ) : (
-              <span className="text-sm font-semibold text-ink">All departments</span>
+              <span className="text-sm font-semibold text-ink">All categories</span>
             )}
             <span className="text-xs text-gray-400 truncate">
               {activeDept?.name}

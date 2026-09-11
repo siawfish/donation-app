@@ -12,6 +12,7 @@ import { FirebaseErrors } from "@/firebase/errors";
 import { toast } from "sonner";
 import { Check, X, MessageCircle, Sparkles, ArrowRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { SafetyDialog } from "./SafetyDialog";
 
 type Enriched = {
     request: RequestType;
@@ -59,6 +60,8 @@ export function AttentionCenter() {
     const [readyToArrange, setReadyToArrange] = useState<Enriched[]>([]);
     const [loading, setLoading] = useState(true);
     const [busyId, setBusyId] = useState<string | null>(null);
+    // Holds the row awaiting the safety reminder before an accept goes through.
+    const [pendingAccept, setPendingAccept] = useState<Enriched | null>(null);
 
     useEffect(() => {
         if (!user || !clientReady) return;
@@ -234,7 +237,7 @@ export function AttentionCenter() {
                                 <X className="w-3.5 h-3.5" /> Decline
                             </button>
                             <button
-                                onClick={() => decide(row, RequestStatus.ACCEPTED)}
+                                onClick={() => setPendingAccept(row)}
                                 disabled={busyId === row.request.id}
                                 className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-lime text-forest text-xs font-bold hover:brightness-95 transition-all disabled:opacity-50"
                             >
@@ -281,6 +284,25 @@ export function AttentionCenter() {
                 See all requests
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </Link>
+
+            {/* Accepting hands out contact — the reminder every time keeps a
+                safe handover top of mind right when it's about to happen. */}
+            <SafetyDialog
+                open={!!pendingAccept}
+                onOpenChange={(open) => { if (!open) setPendingAccept(null) }}
+                title="Before you accept"
+                intro="Accepting shares your details so you two can arrange a pickup — a couple of things worth knowing."
+                tips={[
+                    "Meet in a public place, or bring a friend along if you can.",
+                    "Everything here is free — never send or accept money, even for \"shipping\" or a \"deposit\".",
+                    "Keep the conversation in Givny messages until you've arranged a pickup.",
+                ]}
+                ctaLabel="Got it, accept"
+                onAcknowledge={() => {
+                    if (pendingAccept) decide(pendingAccept, RequestStatus.ACCEPTED);
+                    setPendingAccept(null);
+                }}
+            />
         </div>
     );
 }

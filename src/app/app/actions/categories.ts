@@ -1,12 +1,20 @@
 import { CategoryType, ItemType, ResponseData } from "@/app/types";
 import { FirebaseErrors } from "@/firebase/errors";
 import { db } from "@/firebase/init";
+import { getDepartments } from "@/lib/categoryTree";
 
+/**
+ * The departments a listing can actually be tagged under (Women, Men,
+ * Electronics & Tech, and so on) — the same tree `CategoryPicker` drills into
+ * when listing an item. These drive every "browse by category" chip (hero,
+ * home strip, explore filters), so a filter can never point at a bucket a
+ * listing was never tagged into: they're the same source, not two lists that
+ * happen to be kept in sync by hand.
+ */
 export async function getCategories(): Promise<ResponseData<CategoryType[] | null>> {
     'use server';
     try {
-        const categories = await db.collection('categories').get();
-        const categoriesData = categories.docs.map((doc) => doc.data() as CategoryType);
+        const categoriesData = getDepartments().map((dept) => ({ id: dept.id, name: dept.name }));
         return {
             success: true,
             message: "Categories fetched successfully",
