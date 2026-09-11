@@ -15,6 +15,7 @@ import { signInWithCustomToken } from "firebase/auth"
 import { getFreshCustomToken } from "@/app/app/actions/user"
 import CategoryPicker from "./CategoryPicker"
 import { Condition } from "./Condition"
+import { SizeDetails, EcoNotice } from "./listing/ItemFacts"
 import { SafetyDialog } from "./SafetyDialog"
 import SelectInput from "./SelectInput"
 import { Conditions } from "@/lib/utils"
@@ -677,36 +678,42 @@ function ListingPreview({ values }: { values: ItemType }) {
         )}
       </div>
 
-      {/* Info */}
-      <div className="min-w-0">
-        {category && (
-          <span className="inline-block text-[11px] font-bold text-primary bg-primary-light px-2.5 py-1 rounded-full mb-3">
-            {category.name}
-          </span>
-        )}
-        <h3 className="text-2xl md:text-3xl font-bold text-ink tracking-tight leading-tight text-balance">
-          {values.name || "Your item name"}
-        </h3>
-
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3">
-          {values.condition && <Condition condition={values.condition} />}
-          {values.size && (
-            <span className="text-sm font-semibold text-ink">Size {values.size}</span>
+      {/* Info — mirrors the real item page's layout, so what's previewed here
+          is what a viewer will actually see. */}
+      <div className="min-w-0 space-y-5">
+        <div>
+          {category && (
+            <span className="inline-block text-[11px] font-bold text-primary bg-primary-light px-2.5 py-1 rounded-full mb-3">
+              {category.name}
+            </span>
           )}
+          <h3 className="text-2xl md:text-3xl font-bold text-ink tracking-tight leading-tight text-balance">
+            {values.name || "Your item name"}
+          </h3>
         </div>
 
         {values.locationName && (
-          <p className="flex items-center gap-1.5 text-sm text-gray-500 mt-3">
+          <p className="flex items-center gap-1.5 text-sm text-gray-500">
             <MapPin className="w-4 h-4 text-primary flex-shrink-0" /> {values.locationName}
           </p>
         )}
 
-        <div className="mt-5 pt-5 border-t border-gray-100">
+        {values.condition && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Condition condition={values.condition} />
+          </div>
+        )}
+
+        <div className="pt-5 border-t border-gray-100">
           <p className="text-xs font-bold tracking-[0.15em] uppercase text-gray-400 mb-2">Description</p>
           <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
             {values.description || "Your description appears here."}
           </p>
         </div>
+
+        <SizeDetails size={values.size} />
+
+        <EcoNotice />
       </div>
     </div>
   )

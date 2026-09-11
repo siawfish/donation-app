@@ -3,14 +3,11 @@
 import Image from "next/image"
 import { MapPin, Images, Building2, Share2, Check } from "lucide-react"
 import { formatDistance } from "@/lib/distance"
-import { firestore } from "@/firebase/auth/firebase"
-import { collection, where, query, getDocs, addDoc, deleteDoc } from "firebase/firestore"
 import { toast } from "sonner"
-import { FirebaseErrors } from "@/firebase/errors"
 import { useAuth } from "@/firebase/auth/AuthContext"
-import { useState, useEffect, useCallback } from "react"
+import { useState } from "react"
 import { Button } from "./button"
-import { ActivityAction } from "@/app/types"
+import { useWishlist } from "@/hooks/use-wishlist"
 
 import { listingShareMessage } from "@/lib/listingCopy"
 import { PUBLIC_SITE_URL as SITE } from "@/lib/seo";
@@ -54,8 +51,7 @@ export default function ImageCard({
     orgName,
 }: ImageCardProps) {
     const { user } = useAuth();
-    const [isWishlisted, setIsWishlisted] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const { isWishlisted, loading, toggle: handleWishlist } = useWishlist(itemId, createdBy);
     const [shared, setShared] = useState(false);
 
     /**
@@ -96,105 +92,6 @@ export default function ImageCard({
             toast.error("Couldn't copy the link");
         }
     };
-
-    const checkWishlistStatus = useCallback(async () => {
-        if (!user || !itemId) return;
-        
-        try {
-            const wishlistRef = collection(firestore, "wishlist");
-            const q = query(
-                wishlistRef,
-                where("createdBy", "==", user.uid),
-                where("itemId", "==", itemId)
-            );
-            const querySnapshot = await getDocs(q);
-            setIsWishlisted(!querySnapshot.empty);
-        } catch (error:any) {
-            const message = FirebaseErrors[error.code] || error.message;
-            toast.error("Something wrong happen",{
-                description: message,
-                position: "bottom-left"
-            })
-        }
-    }, [user, itemId]);
-
-    useEffect(() => {
-        checkWishlistStatus();
-    }, [checkWishlistStatus]);
-
-    const handleWishlist = async (e: React.MouseEvent) => {
-        e.stopPropagation(); // Prevent event bubbling to parent card
-        e.preventDefault(); // Prevent any default link behavior
-        
-        setLoading(true);
-        try {
-            if (!user) {
-                throw new Error("Your seesion seem to have expired, please login again")
-            }
-            const wishlistRef = collection(firestore, "wishlist");
-            
-            if (isWishlisted) {
-                // Remove from wishlist
-                const q = query(
-                    wishlistRef,
-                    where("createdBy", "==", user.uid),
-                    where("itemId", "==", itemId)
-                );
-                const querySnapshot = await getDocs(q);
-                const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
-                await Promise.all([
-                    ...deletePromises,
-                    recordActivity(ActivityAction.ITEM_REMOVED_FROM_WISHLIST)
-                ]);
-                toast.success("Removed from wishlist",{
-                    position: "bottom-left"
-                });
-            } else {
-                // Add to wishlist
-                await Promise.all([
-                    addDoc(wishlistRef, {
-                        createdBy: user.uid,
-                        itemId: itemId,
-                        createdAt: new Date(),
-                    }),
-                    recordActivity(ActivityAction.ITEM_ADDED_TO_WISHLIST)
-                ]);
-                toast.success("Added to wishlist",{
-                    position: "bottom-left"
-                });
-            }
-            setIsWishlisted(!isWishlisted);
-        } catch (error:any) {
-            const message = FirebaseErrors[error.code] || error.message;
-            toast.error("Failed to update wishlist",{
-                description: message,
-                position: "bottom-left"
-            });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const recordActivity = async (action: ActivityAction) => {
-        if (!user || !itemId || !createdBy) return;
-        try {
-            const activityRef = collection(firestore, "activities");
-            await addDoc(activityRef, {
-                recipientId: createdBy,
-                action: action,
-                itemId: itemId,
-                read: false,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-                createdBy: user.uid
-            });
-        } catch (error:any) {
-            const message = FirebaseErrors[error.code] || error.message;
-            toast.error("Failed to record activity",{
-                description: message
-            });
-        }
-    }
 
     return (
         <div className={`group card-hover w-full overflow-hidden bg-white rounded-3xl border border-gray-200/70 ${containerClassName}`}>
@@ -240,7 +137,12 @@ export default function ImageCard({
                         variant="ghost"
                         size="icon"
                         className="max-w-8 max-h-8 absolute top-2.5 right-2.5 bg-white/95 hover:bg-white hover:scale-110 transition-all shadow-sm rounded-full"
-                        onClick={handleWishlist}
+                        onClick={(e) => {
+                            // Prevent event bubbling — the whole card is a link.
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleWishlist();
+                        }}
                         disabled={loading}
                     >
                         {isWishlisted ? (

@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState, useTransition } from "react"
 import { SheetContent, SheetTitle } from "./ui/sheet"
 import {
-    CalendarIcon, EyeIcon, HandIcon, LockIcon, MapPin, MessageCircleIcon,
+    CalendarIcon, EyeIcon, HandIcon, Heart, LockIcon, MapPin, MessageCircleIcon,
     PencilIcon, ChevronLeft, ChevronRight, ShieldCheck, Sparkles, Building2, Trash2Icon,
     Share2Icon, BookmarkIcon, CheckCircle2Icon,
 } from "lucide-react"
@@ -36,6 +36,8 @@ import { VerifiedBadge } from "./verification/VerifiedBadge"
 import { ShareButtons } from "./ShareButtons"
 import { listingShareMessage } from "@/lib/listingCopy"
 import { PUBLIC_SITE_URL as SITE } from "@/lib/seo";
+import { useWishlist } from "@/hooks/use-wishlist"
+import { SizeDetails, EcoNotice } from "./listing/ItemFacts"
 
 
 const SAFETY_NOTICE_SEEN_KEY = "givny:safety-notice-seen"
@@ -388,26 +390,22 @@ export default function ItemContent() {
 
                             {/* Identity first — you should know what this is before anything else */}
                             <div>
-                                <div className="flex items-start justify-between gap-3">
-                                    <h2 className="text-3xl lg:text-4xl font-bold text-ink tracking-tight leading-[1.05]">
-                                        {item.name}
-                                    </h2>
-                                    <div className="flex-shrink-0 pt-1">
-                                        <Condition condition={item.condition!} />
+                                {(item.categories?.length ?? 0) > 0 && (
+                                    <div className="flex flex-wrap items-center gap-1.5 mb-3">
+                                        {item.categories?.map((category) => (
+                                            <Link
+                                                key={category?.id}
+                                                href={`/explore?cid=${encodeURIComponent(category?.id)}`}
+                                                className="text-xs font-semibold text-forest bg-primary-light hover:bg-lime px-3 py-1 rounded-full transition-colors"
+                                            >
+                                                {category?.name}
+                                            </Link>
+                                        ))}
                                     </div>
-                                </div>
-
-                                <div className="flex flex-wrap items-center gap-1.5 mt-3">
-                                    {item.categories?.map((category) => (
-                                        <Link
-                                            key={category?.id}
-                                            href={`/explore?cid=${encodeURIComponent(category?.id)}`}
-                                            className="text-xs font-semibold text-forest bg-primary-light hover:bg-lime px-3 py-1 rounded-full transition-colors"
-                                        >
-                                            {category?.name}
-                                        </Link>
-                                    ))}
-                                </div>
+                                )}
+                                <h2 className="text-3xl lg:text-4xl font-bold text-ink tracking-tight leading-[1.05]">
+                                    {item.name}
+                                </h2>
                             </div>
 
                             {/* Facts */}
@@ -426,6 +424,15 @@ export default function ItemContent() {
                                 )}
                             </div>
 
+                            {/* Condition gets its own row rather than crowding the title —
+                                same chip the wizard's preview shows, so what's promised is
+                                what's seen. */}
+                            {item.condition && (
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <Condition condition={item.condition} />
+                                </div>
+                            )}
+
                             {/* Single status line rather than a stack of alerts */}
                             {standing && (
                                 <div className={`rounded-2xl px-4 py-3 ${toneClass[standing.tone]}`}>
@@ -438,20 +445,17 @@ export default function ItemContent() {
                                 getting it home is part of whether to ask at all. */}
                             {!isMine && <DeliveryEstimate item={item} />}
 
-                            {(item.description || item.size) && (
+                            {item.description && (
                                 <div>
                                     <p className="text-xs font-bold tracking-[0.15em] uppercase text-gray-400 mb-2">Description</p>
-                                    {/* Shown to everyone browsing, not just the lister — the
-                                        whole reason to structure it as its own field rather
-                                        than leaving it for someone to type into the text. */}
-                                    {item.size && (
-                                        <p className="text-ink text-base font-bold mb-1">Size: {item.size}</p>
-                                    )}
-                                    {item.description && (
-                                        <p className="text-ink text-base leading-relaxed whitespace-pre-line">{item.description}</p>
-                                    )}
+                                    <p className="text-ink text-base leading-relaxed whitespace-pre-line">{item.description}</p>
                                 </div>
                             )}
+
+                            {/* Size gets its own row now — a field, not a line buried in prose. */}
+                            <SizeDetails size={item.size} />
+
+                            <EcoNotice />
 
                             {/* Owner — not shown to yourself. You already know who's passing it on. */}
                             {!isMine && (
@@ -616,6 +620,33 @@ export default function ItemContent() {
 }
 
 /**
+ * The favourite/wishlist toggle for a visitor viewing someone else's
+ * listing — the same heart the explore grid offers, so saving works
+ * identically wherever an item is seen.
+ */
+function WishlistAction({
+    itemId, ownerId, className,
+}: {
+    itemId: string
+    ownerId?: string
+    className?: string
+}) {
+    const { isWishlisted, loading, toggle } = useWishlist(itemId, ownerId)
+    return (
+        <Button
+            type="button"
+            variant="outline"
+            aria-label={isWishlisted ? "Remove from wishlist" : "Save to wishlist"}
+            onClick={toggle}
+            disabled={loading}
+            className={className}
+        >
+            <Heart className={`w-4 h-4 ${isWishlisted ? "fill-red-500 text-red-500" : ""}`} />
+        </Button>
+    )
+}
+
+/**
  * The Share trigger — a button that pops WhatsApp/X/Facebook/Copy link,
  * rather than laying them all out inline.
  *
@@ -698,28 +729,43 @@ function Actions({
                 </CustomButton>
             )
         }
-        // A clear pecking order rather than five equally-loud pills: Edit and
-        // Share are routine, so they share a row; the one action that closes
-        // the listing out is the only solid button; "reserved" is a light
-        // toggle, not a commitment; Delete stays a quiet, separate last resort.
+        // Edit is the one thing an owner comes back to do most, so it's the
+        // lone solid button; Share and Delete sit beside it as equally-quick
+        // circular actions rather than a whole second row. Mark-as-given-out
+        // and reserved stay below as outline/ghost — real but secondary.
         return (
             <div className="flex flex-col gap-2 w-full">
-                <div className="grid grid-cols-2 gap-2">
-                    <Link href={`/app/edit-item/${id}`} className="block">
+                <div className="flex gap-2 w-full">
+                    <Link href={`/app/edit-item/${id}`} className="flex-1 block">
                         <CustomButton
-                            variant="outline"
-                            className={`${base} w-full border-gray-200 !text-ink hover:bg-gray-50`}
+                            className={`${base} w-full !bg-forest hover:!bg-forest-dark`}
                             icon={<PencilIcon className="w-4 h-4" />}
                         >
-                            Edit
+                            Edit listing
                         </CustomButton>
                     </Link>
-                    <ShareAction url={shareUrl} title={shareTitle} className={`${base} w-full border-gray-200 !text-ink hover:bg-gray-50`} />
+                    <ShareAction
+                        url={shareUrl}
+                        title={shareTitle}
+                        iconOnly
+                        className="rounded-full py-6 px-5 flex-shrink-0 border-gray-200 !text-ink hover:bg-transparent"
+                    />
+                    <Button
+                        type="button"
+                        variant="outline"
+                        aria-label="Delete listing"
+                        onClick={onDelete}
+                        disabled={deleting}
+                        className="rounded-full py-6 px-5 flex-shrink-0 border-gray-200 !text-red-500 hover:bg-red-50 hover:border-red-200"
+                    >
+                        <Trash2Icon className="w-4 h-4" />
+                    </Button>
                 </div>
 
                 <CustomButton
                     type="button"
-                    className={`${base} w-full !bg-forest hover:!bg-forest-dark`}
+                    variant="outline"
+                    className={`${base} w-full border-gray-200 !text-ink hover:bg-gray-50`}
                     icon={<CheckCircle2Icon className="w-4 h-4" />}
                     onClick={onMarkGiven}
                     disabled={marking}
@@ -739,16 +785,6 @@ function Actions({
                 >
                     {item.reserved ? "Unmark reserved" : "Mark as reserved"}
                 </CustomButton>
-
-                <button
-                    type="button"
-                    onClick={onDelete}
-                    disabled={deleting}
-                    className="inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-red-500 hover:text-red-600 py-1 disabled:opacity-50"
-                >
-                    <Trash2Icon className="w-3.5 h-3.5" />
-                    Delete listing
-                </button>
             </div>
         )
     }
@@ -814,6 +850,16 @@ function Actions({
     return (
         <div className="flex gap-2 w-full">
             {primary}
+            {/* A signed-out visitor's primary button already routes to sign-in —
+                offering a heart that just toasts "sign in" on top of that is
+                redundant, so it only appears once there's an account to save to. */}
+            {signedIn && (
+                <WishlistAction
+                    itemId={id!}
+                    ownerId={item.createdBy}
+                    className="rounded-full py-6 px-5 flex-shrink-0 border-gray-200 !text-ink hover:bg-transparent"
+                />
+            )}
             <ShareAction
                 url={shareUrl}
                 title={shareTitle}
