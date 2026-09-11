@@ -61,6 +61,14 @@ export function siteUrl(): string {
         // production gets the canonical domain.
         (process.env.VERCEL_ENV === "production" ? CANONICAL_ORIGIN : "") ||
         (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
+        // Any other production build — self-hosted, a non-Vercel platform, or
+        // Vercel without VERCEL_ENV wired up — still deserves the real domain
+        // rather than silently falling through to localhost. This is what was
+        // actually reaching Google's sitemap crawler and every organisation
+        // share link in production: this app isn't running on Vercel (or
+        // VERCEL_ENV isn't set there), so neither check above ever matched,
+        // and the chain fell all the way to the hardcoded localhost literal.
+        (process.env.NODE_ENV === "production" ? CANONICAL_ORIGIN : "") ||
         "http://localhost:3000";
     return raw.replace(/\/+$/, "");
 }
