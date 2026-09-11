@@ -58,9 +58,9 @@ export default function Hero({
             className="text-[2.6rem] sm:text-6xl md:text-[5.5rem] font-bold text-white leading-[1] md:leading-[0.98] tracking-tight text-center text-balance max-w-4xl mb-5 md:mb-6 animate-fade-in-up"
             style={{ animationDelay: "80ms" }}
           >
-            Everything here{" "}
+            Give things a{" "}
             <span className="relative inline-block text-lime">
-              is free.
+              second life.
               <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 200 12" fill="none" preserveAspectRatio="none">
                 <path d="M3 9C50 3 150 3 197 8" stroke="currentColor" strokeWidth="4" strokeLinecap="round" opacity="0.5" />
               </svg>
@@ -80,8 +80,9 @@ export default function Hero({
               </>
             ) : (
               <>
-                Neighbours giving good things a second life. The shelves are just
-                filling up — add something you no longer use and get it seen.
+                Good things shouldn&apos;t go to waste. Give away what you no
+                longer need, find what you need, and help keep useful items in
+                circulation.
               </>
             )}
           </p>
@@ -175,7 +176,7 @@ export default function Hero({
 
         {/* Floating chips — only from xl up. At lg the headline is wide enough
             to run underneath them, and the right-hand chip covered "free". */}
-        <div className="hidden xl:flex absolute top-28 left-10 z-10 items-center gap-2 bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl px-4 py-3 animate-float">
+        <div className="hidden xl:flex absolute top-[364px] left-10 z-10 items-center gap-2 bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl px-4 py-3 animate-float">
           <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-lime text-forest">
             <MapPin className="w-4 h-4" />
           </span>
@@ -186,7 +187,7 @@ export default function Hero({
         </div>
 
         <div className="hidden xl:flex absolute bottom-28 right-10 z-10 items-center gap-2 bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl px-4 py-3 animate-float" style={{ animationDelay: "1.2s" }}>
-          <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-white text-forest text-xs font-bold">€0</span>
+          <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-white text-forest text-xs font-bold">₵0</span>
           <div>
             <p className="text-white text-xs font-semibold leading-tight">Always free</p>
             <p className="text-white/50 text-[10px] leading-tight">no fees, no catch</p>
