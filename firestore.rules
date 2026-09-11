@@ -77,6 +77,17 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // One member blocking another. Doc id is `${blockerId}_${blockedId}`, so
+    // a block is a simple existence check rather than a query, and the same
+    // pair can't accidentally create two rows. Only the person who made a
+    // block may remove it.
+    match /blocks/{blockId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.blockerId == request.auth.uid;
+      allow delete: if signedIn() && resource.data.blockerId == request.auth.uid;
+      allow update: if false;
+    }
+
     match /wishlist/{entryId} {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.createdBy == request.auth.uid;

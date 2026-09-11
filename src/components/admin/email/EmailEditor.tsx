@@ -126,8 +126,8 @@ export function EmailEditor({
                     description={template.trigger}
                     actions={
                         <div className="flex items-center gap-2">
-                            <Badge tone={template.category === "marketing" ? "info" : "neutral"}>
-                                {template.category}
+                            <Badge tone={template.category === "marketing" ? "info" : template.category === "careers" ? "warn" : "neutral"}>
+                                {template.category === "careers" ? "Careers" : template.category === "marketing" ? "Marketing" : "Transactional"}
                             </Badge>
                             {template.customised && <Badge tone="warn">Customised</Badge>}
                             {!template.live && <Badge tone="neutral">Not wired up yet</Badge>}

@@ -4,9 +4,10 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { Loader2, Mail, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { sendCandidateMessage, listApplicationMessages } from "@/app/app/actions/candidateMessages";
+import { listCareerTemplates } from "@/app/app/actions/emailTemplates";
 import {
-    CANDIDATE_MERGE_TAGS, CANDIDATE_MESSAGE_PRESETS, CANDIDATE_SUBJECT_MAX,
-    PURPOSE_LABELS, SENDER_MODE_LABELS, presetFor, renderCandidatePreview,
+    CANDIDATE_MERGE_TAGS, CANDIDATE_SUBJECT_MAX,
+    PURPOSE_LABELS, PURPOSE_TEMPLATE_KEY, SENDER_MODE_LABELS, renderCandidatePreview,
     validateCandidateMessage,
     type CandidateMessage, type CandidateMessagePurpose, type SenderMode,
 } from "@/lib/candidateMessages";
@@ -15,12 +16,20 @@ import { Badge, Button, Input, Segmented, Select, Textarea } from "../ui";
 
 const LABEL = "block text-[11px] font-semibold uppercase tracking-[0.06em] text-gray-500";
 
+const PURPOSES: CandidateMessagePurpose[] = ["acknowledge", "rejection", "interview", "offer", "other"];
+
+type Draft = { subject: string; body: string };
+
 /**
  * One-to-one candidate email, built on the same editor shape as the campaign
- * manager — a preset to start from, a live preview with real values instead
- * of placeholders, and a send button that can't double-fire. Opened as a
- * modal rather than a full-page swap: it's one message, not a document worth
+ * manager — a starting draft, a live preview with real values instead of
+ * placeholders, and a send button that can't double-fire. Opened as a modal
+ * rather than a full-page swap: it's one message, not a document worth
  * navigating to.
+ *
+ * The starting draft for each purpose comes from Admin → Email templates
+ * (the "Careers" group) rather than being written here — edit the wording
+ * there and this is what shows up next time, no second copy to keep in sync.
  */
 export function CandidateMessenger({
     application,
@@ -30,8 +39,10 @@ export function CandidateMessenger({
     onClose: () => void;
 }) {
     const [purpose, setPurpose] = useState<CandidateMessagePurpose>("acknowledge");
-    const [subject, setSubject] = useState(presetFor("acknowledge").subject);
-    const [body, setBody] = useState(presetFor("acknowledge").body);
+    const [subject, setSubject] = useState("");
+    const [body, setBody] = useState("");
+    const [drafts, setDrafts] = useState<Record<CandidateMessagePurpose, Draft> | null>(null);
+    const [loadingDrafts, setLoadingDrafts] = useState(true);
     const [senderMode, setSenderMode] = useState<SenderMode>("replyable");
     const [history, setHistory] = useState<CandidateMessage[]>([]);
     const [loadingHistory, setLoadingHistory] = useState(true);
@@ -47,21 +58,47 @@ export function CandidateMessenger({
         return () => { alive = false };
     }, [application.id]);
 
+    // The five careers templates, resolved with whatever an admin has
+    // customised — the same content Admin → Email templates shows, so a
+    // wording fix there is what lands here next time, not a stale copy.
+    useEffect(() => {
+        let alive = true;
+        listCareerTemplates().then((res) => {
+            if (!alive) return;
+            if (!res.success) {
+                toast.error(res.message);
+                setLoadingDrafts(false);
+                return;
+            }
+            const byKey = new Map((res.data ?? []).map((t) => [t.key, t]));
+            const map = Object.fromEntries(
+                PURPOSES.map((p) => {
+                    const t = byKey.get(PURPOSE_TEMPLATE_KEY[p]);
+                    return [p, { subject: t?.subject ?? "", body: t?.body ?? "" }];
+                })
+            ) as Record<CandidateMessagePurpose, Draft>;
+            setDrafts(map);
+            setSubject(map.acknowledge.subject);
+            setBody(map.acknowledge.body);
+            setLoadingDrafts(false);
+        });
+        return () => { alive = false };
+    }, []);
+
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && !busy) onClose() };
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
     }, [onClose, busy]);
 
-    // Switching purpose swaps in that moment's starting copy — the whole point
-    // of the dropdown is not having to write "sorry, not this time" from
-    // scratch every time. Still just a starting point: everything below stays
-    // fully editable afterwards.
+    // Switching purpose swaps in that moment's starting draft — the whole
+    // point of the dropdown is not writing "sorry, not this time" from
+    // scratch every time. Still just a starting point: everything below
+    // stays fully editable afterwards.
     const choosePurpose = (next: CandidateMessagePurpose) => {
         setPurpose(next);
-        const preset = presetFor(next);
-        setSubject(preset.subject);
-        setBody(preset.body);
+        const draft = drafts?.[next];
+        if (draft) { setSubject(draft.subject); setBody(draft.body) }
     };
 
     const preview = useMemo(
@@ -79,7 +116,7 @@ export function CandidateMessenger({
                 body,
                 senderMode,
             });
-            if (!res.success) { toast.error(res.message); return; }
+            if (!res.success) { toast.error(res.message); return }
             toast.success(res.message);
             setHistory((prev) => (res.data ? [res.data, ...prev] : prev));
         });
@@ -112,6 +149,11 @@ export function CandidateMessenger({
                     </button>
                 </header>
 
+                {loadingDrafts ? (
+                    <div className="p-8 flex items-center justify-center text-gray-400">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                    </div>
+                ) : (
                 <div className="p-5 space-y-4">
                     <label className="block">
                         <span className={LABEL}>Subject / template</span>
@@ -120,12 +162,12 @@ export function CandidateMessenger({
                             onChange={(e) => choosePurpose(e.target.value as CandidateMessagePurpose)}
                             className="w-full mt-1"
                         >
-                            {CANDIDATE_MESSAGE_PRESETS.map((p) => (
-                                <option key={p.purpose} value={p.purpose}>{PURPOSE_LABELS[p.purpose]}</option>
+                            {PURPOSES.map((p) => (
+                                <option key={p} value={p}>{PURPOSE_LABELS[p]}</option>
                             ))}
                         </Select>
                         <span className="block text-[11px] text-gray-400 mt-1">
-                            Fills in a starting subject and message below — edit either as much as you like.
+                            Fills in a starting subject and message below, from Admin → Email templates — edit either as much as you like.
                         </span>
                     </label>
 
@@ -217,6 +259,7 @@ export function CandidateMessenger({
                         </div>
                     )}
                 </div>
+                )}
             </div>
         </div>
     );

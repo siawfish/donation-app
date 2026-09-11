@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Mail, Megaphone } from "lucide-react";
+import { Briefcase, Mail, Megaphone } from "lucide-react";
 import { toast } from "sonner";
 import { listEmailTemplates } from "@/app/app/actions/emailTemplates";
 import type { ResolvedTemplate } from "@/lib/email/templates";
@@ -47,6 +47,11 @@ export function TemplateLibrary() {
             category: "transactional",
         },
         {
+            title: "Careers",
+            note: "Recruitment mail. The four manual ones also back the candidate messenger on a job's application pipeline — edit one here and that's the starting draft it offers next.",
+            category: "careers",
+        },
+        {
             title: "Marketing",
             note: "Campaign mail. Always carries an unsubscribe link and respects the opt-out list.",
             category: "marketing",
@@ -68,9 +73,13 @@ export function TemplateLibrary() {
                                 {items.map((t) => (
                                     <li key={t.key} className="flex flex-wrap items-center gap-3 px-4 py-3">
                                         <span className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center flex-shrink-0">
-                                            {t.category === "marketing"
-                                                ? <Megaphone className="w-4 h-4 text-gray-500" />
-                                                : <Mail className="w-4 h-4 text-gray-500" />}
+                                            {t.category === "marketing" ? (
+                                                <Megaphone className="w-4 h-4 text-gray-500" />
+                                            ) : t.category === "careers" ? (
+                                                <Briefcase className="w-4 h-4 text-gray-500" />
+                                            ) : (
+                                                <Mail className="w-4 h-4 text-gray-500" />
+                                            )}
                                         </span>
 
                                         <span className="min-w-0 flex-1">

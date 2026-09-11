@@ -66,6 +66,36 @@ export async function listEmailTemplates(): Promise<ResponseData<ResolvedTemplat
     }
 }
 
+/**
+ * The careers templates, resolved — read-only, and gated more loosely than
+ * the editor above. Whoever triages applicants (moderators included, who
+ * hold `applications.manage` but not `crm.manage`) needs to read these so the
+ * candidate messenger can offer today's actual wording as a starting draft;
+ * only editing the words still requires the full template-admin capability.
+ */
+export async function listCareerTemplates(): Promise<ResponseData<ResolvedTemplate[]>> {
+    try {
+        const tokens = await getTokens(await cookies(), authConfig);
+        if (!tokens) throw new Error("Unauthorized");
+        const role = await getMyAdminRole();
+        if (!can(role, "crm.manage") && !can(role, "applications.manage")) {
+            throw new Error("You don't have permission to read email templates.");
+        }
+
+        const snap = await db.collection(COLLECTION).get();
+        const overrides = new Map(snap.docs.map((d) => [d.id, d.data() as TemplateOverride]));
+
+        return {
+            success: true,
+            message: "ok",
+            data: TEMPLATES.filter((t) => t.category === "careers")
+                .map((t) => resolveTemplate(t.key, overrides.get(t.key) ?? null)),
+        };
+    } catch (error: any) {
+        return { success: false, message: error.message, data: [] };
+    }
+}
+
 export interface TemplatePreview {
     subject: string;
     preheader: string;

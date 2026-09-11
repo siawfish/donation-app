@@ -12,7 +12,7 @@
  * improvement to the default still reaches anyone who has not customised it.
  */
 
-export type TemplateCategory = "transactional" | "marketing";
+export type TemplateCategory = "transactional" | "marketing" | "careers";
 
 export type TemplateKey =
     | "welcome"
@@ -21,6 +21,11 @@ export type TemplateKey =
     | "org_approved"
     | "org_declined"
     | "application_received"
+    | "candidate_acknowledge"
+    | "candidate_rejection"
+    | "candidate_interview"
+    | "candidate_offer"
+    | "candidate_other"
     | "verification_approved"
     | "verification_rejected"
     | "contact_reply"
@@ -168,8 +173,8 @@ export const TEMPLATES: EmailTemplateDef[] = [
     {
         key: "application_received",
         name: "Job application received",
-        trigger: "Someone applies for a role through the careers page.",
-        category: "transactional",
+        trigger: "Someone applies for a role through the careers page — sent automatically, immediately.",
+        category: "careers",
         subject: "We've got your application for {{job_title}}",
         preheader: "Here's what happens next.",
         body:
@@ -177,6 +182,97 @@ export const TEMPLATES: EmailTemplateDef[] = [
             "Thanks for applying for **{{job_title}}**. Your application is with us.\n\n" +
             "We read every one and come back either way, usually within a week or two. " +
             "If we want to talk, we'll email you to arrange a time.",
+        vars: [V.first_name, V.job_title, V.site_url],
+        unsubscribable: false,
+        live: true,
+    },
+    /**
+     * The five below back the candidate messenger on a job's application
+     * pipeline (Admin → Jobs → a role → the message icon next to a CV).
+     * Picking a reason there fills the subject and message in from whichever
+     * of these is live right now — edit one here and that's what shows up
+     * next time someone reaches for it, not a second copy of the words that
+     * only this file remembers.
+     */
+    {
+        key: "candidate_acknowledge",
+        name: "Candidate: acknowledge receipt",
+        trigger: "Sent manually from an application, once someone's actually looked at it.",
+        category: "careers",
+        subject: "We've got your application, {{first_name}}",
+        preheader: "This is just to say it arrived safely.",
+        body:
+            "Hi {{first_name}},\n\n" +
+            "Thanks for applying for {{job_title}} — this is just to say it arrived safely.\n\n" +
+            "Someone on our team will read it properly and come back to you with next steps, " +
+            "or with a straight answer if it isn't a fit this time.\n\n" +
+            "Appreciate you taking the time to apply.",
+        vars: [V.first_name, V.job_title, V.site_url],
+        unsubscribable: false,
+        live: true,
+    },
+    {
+        key: "candidate_rejection",
+        name: "Candidate: rejection",
+        trigger: "Sent manually from an application, once a candidate is out of the running.",
+        category: "careers",
+        subject: "About your application for {{job_title}}",
+        preheader: "",
+        body:
+            "Hi {{first_name}},\n\n" +
+            "Thanks for the time you put into applying for {{job_title}} — we read it properly.\n\n" +
+            "We've decided to move forward with other candidates this time. That's not a " +
+            "verdict on your work, just where things landed for this particular role.\n\n" +
+            "We'd genuinely like to hear from you again if something else opens up that fits. " +
+            "Thanks again for considering Givny.",
+        vars: [V.first_name, V.job_title, V.site_url],
+        unsubscribable: false,
+        live: true,
+    },
+    {
+        key: "candidate_interview",
+        name: "Candidate: interview invitation",
+        trigger: "Sent manually from an application, to arrange a conversation.",
+        category: "careers",
+        subject: "Let's talk — {{job_title}} at Givny",
+        preheader: "",
+        body:
+            "Hi {{first_name}},\n\n" +
+            "We'd like to talk with you about {{job_title}}. Nothing formal — a conversation " +
+            "about what the role actually involves and whether it's a fit both ways.\n\n" +
+            "Reply with a couple of times that work for you over the next few days and we'll " +
+            "get it in the diary.\n\n" +
+            "Looking forward to it.",
+        vars: [V.first_name, V.job_title, V.site_url],
+        unsubscribable: false,
+        live: true,
+    },
+    {
+        key: "candidate_offer",
+        name: "Candidate: offer",
+        trigger: "Sent manually from an application, once a decision to hire is made.",
+        category: "careers",
+        subject: "We'd like to offer you {{job_title}}",
+        preheader: "",
+        body:
+            "Hi {{first_name}},\n\n" +
+            "Good news — we'd like to offer you the {{job_title}} role.\n\n" +
+            "We'll follow up separately with the details, but wanted you to hear it directly " +
+            "first. Take the time you need to decide, and let us know if anything's unclear " +
+            "before then.\n\n" +
+            "Really hope this works out.",
+        vars: [V.first_name, V.job_title, V.site_url],
+        unsubscribable: false,
+        live: true,
+    },
+    {
+        key: "candidate_other",
+        name: "Candidate: general update",
+        trigger: "Sent manually from an application — a starting point for anything the other four don't cover.",
+        category: "careers",
+        subject: "About your application, {{first_name}}",
+        preheader: "",
+        body: "Hi {{first_name}},\n\n",
         vars: [V.first_name, V.job_title, V.site_url],
         unsubscribable: false,
         live: true,

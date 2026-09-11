@@ -97,6 +97,13 @@ export interface WishlistType {
     updatedAt: string;
 }
 
+/** One member blocking another. Doc id is `${blockerId}_${blockedId}`. */
+export interface BlockType {
+    blockerId: string;
+    blockedId: string;
+    createdAt: string;
+}
+
 export interface AssetType {
     id: string;
     url: string;
@@ -125,6 +132,12 @@ export interface RequestType {
     createdAt?: string;
     updatedAt?: string;
     status: RequestStatus;
+    /**
+     * Uids who've deleted this conversation from their own inbox. The
+     * request itself — and the other person's view of it — is untouched;
+     * this only ever grows, and only for the person who deleted it.
+     */
+    hiddenFor?: string[];
 }
 
 export interface ActivityType {
