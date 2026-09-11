@@ -38,6 +38,7 @@ import { listingShareMessage } from "@/lib/listingCopy"
 import { PUBLIC_SITE_URL as SITE } from "@/lib/seo";
 import { useWishlist } from "@/hooks/use-wishlist"
 import { SizeDetails, EcoNotice } from "./listing/ItemFacts"
+import { getDepartmentIdForCategoryId } from "@/lib/categoryTree"
 
 
 const SAFETY_NOTICE_SEEN_KEY = "givny:safety-notice-seen"
@@ -181,6 +182,10 @@ export default function ItemContent() {
                     description: `${firstName} will let you know shortly.`,
                     position: 'bottom-left',
                 })
+                // Every time, not just the once-per-browser reminder on first
+                // view — the moment right after asking is when a meetup is
+                // actually about to get arranged.
+                setShowSafety(true)
             } catch (error: any) {
                 toast.error('Could not send your request', {
                     description: FirebaseErrors[error.code] || error.message,
@@ -398,7 +403,9 @@ export default function ItemContent() {
                                         {item.categories?.map((category) => (
                                             <Link
                                                 key={category?.id}
-                                                href={`/explore?cid=${encodeURIComponent(category?.id)}`}
+                                                // The browse filter matches by department, not this item's exact
+                                                // subcategory — link there so the chip actually lands on results.
+                                                href={`/explore?cid=${encodeURIComponent(getDepartmentIdForCategoryId(category?.id ?? ""))}`}
                                                 className="text-xs font-semibold text-forest bg-primary-light hover:bg-lime px-3 py-1 rounded-full transition-colors"
                                             >
                                                 {category?.name}

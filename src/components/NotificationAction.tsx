@@ -10,6 +10,7 @@ import { toast } from "sonner"
 import { useAuth } from "@/firebase/auth/AuthContext";
 import Link from "next/link"
 import { MessageCircleIcon } from "lucide-react"
+import { SafetyDialog } from "./SafetyDialog"
 
 interface NotificationActionProps {
     requestId: string
@@ -19,6 +20,7 @@ interface NotificationActionProps {
 export default function NotificationAction({ requestId, creator }: NotificationActionProps) {
     const [request, setRequest] = useState<RequestType | null>(null)
     const [isLoading, setIsLoading] = useState(false)
+    const [showSafety, setShowSafety] = useState(false)
     const { user } = useAuth()
 
     const fetchRequest = useCallback(async () => {
@@ -102,13 +104,30 @@ export default function NotificationAction({ requestId, creator }: NotificationA
                 Reject
             </Button>
             <Button
-                onClick={() => handleUpdateRequest(RequestStatus.ACCEPTED)}
+                onClick={() => setShowSafety(true)}
                 className="text-xs h-fit py-2 rounded-md"
                 variant="default"
                 disabled={isLoading}
             >
                 Accept
             </Button>
+
+            {/* Accepting hands out contact — the reminder every time keeps a
+                safe handover top of mind right when it's about to happen,
+                rather than something read once and forgotten. */}
+            <SafetyDialog
+                open={showSafety}
+                onOpenChange={setShowSafety}
+                title="Before you accept"
+                intro="Accepting shares your details so you two can arrange a pickup — a couple of things worth knowing."
+                tips={[
+                    "Meet in a public place, or bring a friend along if you can.",
+                    "Everything here is free — never send or accept money, even for \"shipping\" or a \"deposit\".",
+                    "Keep the conversation in Givny messages until you've arranged a pickup.",
+                ]}
+                ctaLabel="Got it, accept"
+                onAcknowledge={() => handleUpdateRequest(RequestStatus.ACCEPTED)}
+            />
         </div>
     )
 }

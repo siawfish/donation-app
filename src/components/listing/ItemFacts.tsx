@@ -21,7 +21,7 @@ export function DetailsList({ children }: { children: ReactNode }) {
 
 export function DetailRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
     return (
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center gap-2 text-sm">
             <span className="flex items-center gap-2 text-gray-500">
                 {icon}
                 {label}
