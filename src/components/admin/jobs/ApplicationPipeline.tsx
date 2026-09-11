@@ -3,7 +3,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import {
-    Loader2, FileText, Trash2, Mail, Phone, ChevronDown, Star, ExternalLink,
+    Loader2, FileText, Trash2, Mail, MessageSquare, Phone, ChevronDown, Star, ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -16,6 +16,7 @@ import {
     Badge, Button, EmptyRow, Initials, Num, Panel, Select, SkeletonRows,
     Table, TableWrap, Td, Th, Tr,
 } from "../ui";
+import { CandidateMessenger } from "./CandidateMessenger";
 
 const COLS = 7;
 
@@ -29,6 +30,7 @@ export function ApplicationPipeline({ jobId, canManage }: { jobId?: string; canM
     const [busy, setBusy] = useState<string | null>(null);
     const [stage, setStage] = useState<ApplicationStage | "all">("all");
     const [expanded, setExpanded] = useState<string | null>(null);
+    const [messaging, setMessaging] = useState<JobApplication | null>(null);
     const [, startTransition] = useTransition();
 
     const load = useCallback(async () => {
@@ -128,7 +130,7 @@ export function ApplicationPipeline({ jobId, canManage }: { jobId?: string; canM
                                 <Th width="140px">Stage</Th>
                                 <Th align="center" width="110px">Rating</Th>
                                 <Th align="right" width="100px">Applied</Th>
-                                <Th align="right" width="90px">CV</Th>
+                                <Th align="right" width="130px">CV</Th>
                                 <Th align="right" width="70px" />
                             </tr>
                         </thead>
@@ -203,14 +205,21 @@ export function ApplicationPipeline({ jobId, canManage }: { jobId?: string; canM
                                                 {new Date(row.createdAt).toLocaleDateString()}
                                             </Td>
                                             <Td align="right">
-                                                {row.resumePath ? (
-                                                    <Button size="xs" onClick={() => openResume(row)} disabled={busy === row.id}>
-                                                        {busy === row.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}
-                                                        Open
-                                                    </Button>
-                                                ) : (
-                                                    <span className="text-gray-300">—</span>
-                                                )}
+                                                <span className="inline-flex items-center gap-1">
+                                                    {row.resumePath ? (
+                                                        <Button size="xs" onClick={() => openResume(row)} disabled={busy === row.id}>
+                                                            {busy === row.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}
+                                                            Open
+                                                        </Button>
+                                                    ) : (
+                                                        <span className="text-gray-300">—</span>
+                                                    )}
+                                                    {canManage && (
+                                                        <Button size="xs" onClick={() => setMessaging(row)} aria-label={`Message ${row.name}`}>
+                                                            <MessageSquare className="w-3 h-3" />
+                                                        </Button>
+                                                    )}
+                                                </span>
                                             </Td>
                                             <Td align="right">
                                                 {canManage && (
@@ -270,6 +279,13 @@ export function ApplicationPipeline({ jobId, canManage }: { jobId?: string; canM
                     </Table>
                 </TableWrap>
             </Panel>
+
+            {messaging && (
+                <CandidateMessenger
+                    application={messaging as JobApplication & { id: string }}
+                    onClose={() => setMessaging(null)}
+                />
+            )}
         </div>
     );
 }

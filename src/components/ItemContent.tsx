@@ -38,7 +38,7 @@ import { listingShareMessage } from "@/lib/listingCopy"
 import { PUBLIC_SITE_URL as SITE } from "@/lib/seo";
 import { useWishlist } from "@/hooks/use-wishlist"
 import { SizeDetails, EcoNotice } from "./listing/ItemFacts"
-import { getDepartmentIdForCategoryId } from "@/lib/categoryTree"
+import { getDepartmentIdForCategoryId, getCategoryIdForCategoryId, describeLeaf } from "@/lib/categoryTree"
 
 
 const SAFETY_NOTICE_SEEN_KEY = "givny:safety-notice-seen"
@@ -403,12 +403,16 @@ export default function ItemContent() {
                                         {item.categories?.map((category) => (
                                             <Link
                                                 key={category?.id}
-                                                // The browse filter matches by department, not this item's exact
-                                                // subcategory — link there so the chip actually lands on results.
-                                                href={`/explore?cid=${encodeURIComponent(getDepartmentIdForCategoryId(category?.id ?? ""))}`}
+                                                // Lands on the exact category within its department, not just
+                                                // the department at large — the chip reads specific, so the
+                                                // click should too.
+                                                href={`/explore?cid=${encodeURIComponent(getDepartmentIdForCategoryId(category?.id ?? ""))}&catId=${encodeURIComponent(getCategoryIdForCategoryId(category?.id ?? ""))}`}
                                                 className="text-xs font-semibold text-forest bg-primary-light hover:bg-lime px-3 py-1 rounded-full transition-colors"
                                             >
-                                                {category?.name}
+                                                {/* Full breadcrumb — Department-Category-Subcategory — rather
+                                                    than just the leaf name, so what this was listed under is
+                                                    never a mystery. */}
+                                                {describeLeaf(category?.id ?? "") ?? category?.name}
                                             </Link>
                                         ))}
                                     </div>

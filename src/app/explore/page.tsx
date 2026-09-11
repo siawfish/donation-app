@@ -20,6 +20,10 @@ export default async function Explore({
 }) {
     const q = typeof searchParams.q === "string" ? searchParams.q : undefined;
     const cid = typeof searchParams.cid === "string" ? searchParams.cid : undefined;
+    // Once someone has drilled into a category within a department, that's the
+    // more specific filter — cid stays in the URL only so the department
+    // context (and its row of category chips) survives a refresh.
+    const catId = typeof searchParams.catId === "string" ? searchParams.catId : undefined;
     const radius = typeof searchParams.radius === "string" ? searchParams.radius : undefined;
     const maxDistanceKm = radius ? Number(radius) : undefined;
 
@@ -28,7 +32,7 @@ export default async function Explore({
             page: 1,
             limit: PAGE_SIZE,
             query: q,
-            categoryId: cid,
+            categoryId: catId || cid,
             maxDistanceKm,
         }),
         getCategories(),

@@ -225,6 +225,12 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Every message sent to a candidate — same reasoning as jobApplications
+    // above: it's someone's personal correspondence, not the platform's.
+    match /applicationMessages/{messageId} {
+      allow read, write: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

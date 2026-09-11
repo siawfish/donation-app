@@ -7,7 +7,7 @@ import { authConfig } from "@/firebase/config/server-config";
 import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
 import { haversineKm } from "@/lib/distance";
-import { getDepartmentIdForCategoryId } from "@/lib/categoryTree";
+import { getDepartmentIdForCategoryId, categoryIdMatches } from "@/lib/categoryTree";
 import { getMyOrgLite } from "./organisations";
 import { notifyFollowersOfListing } from "./orgSocial";
 
@@ -650,11 +650,12 @@ export async function getListings({
         }
 
         if (categoryId) {
-            // categoryId is a department (from the chips row); a listing carries
-            // its specific subcategory, so match on the department it belongs to
-            // rather than the exact id.
+            // categoryId can be a department ("men") or, once someone has
+            // drilled into one, a specific category within it ("men__clothing")
+            // — a listing carries its exact subcategory, so match on either
+            // ancestor rather than requiring an exact id.
             items = items.filter((item) =>
-                item.categories?.some((category) => category?.id && getDepartmentIdForCategoryId(category.id) === categoryId)
+                item.categories?.some((category) => category?.id && categoryIdMatches(category.id, categoryId))
             );
         }
 
