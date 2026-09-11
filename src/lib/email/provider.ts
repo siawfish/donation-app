@@ -27,6 +27,12 @@ export interface EmailMessage {
     text: string;
     /** Per-recipient one-click unsubscribe, surfaced as a real mail header. */
     unsubscribeUrl?: string;
+    /**
+     * Overrides the default sender. Candidate messaging uses this to choose
+     * between a replyable address and a no-reply one for the same underlying
+     * verified domain — everything else sends as the platform default.
+     */
+    from?: string;
 }
 
 export interface SendResult {
@@ -37,6 +43,15 @@ export interface SendResult {
 }
 
 const FROM = process.env.EMAIL_FROM || "Givny <hello@givny.com>";
+
+/**
+ * The two senders candidate messaging can choose between — same verified
+ * domain, different local part, so no separate provider setup is needed.
+ * Replyable is the default for anything a candidate might reasonably answer;
+ * no-reply is for messages that are purely informational.
+ */
+export const CAREERS_REPLYABLE_FROM = process.env.EMAIL_CAREERS_FROM || "Givny Careers <careers@givny.com>";
+export const CAREERS_NO_REPLY_FROM = process.env.EMAIL_CAREERS_NO_REPLY_FROM || "Givny Careers <no-reply@givny.com>";
 
 export function activeProvider(): ProviderName {
     if (process.env.RESEND_API_KEY) return "resend";
@@ -76,7 +91,7 @@ async function sendViaResend(message: EmailMessage): Promise<SendResult> {
             "Content-Type": "application/json",
         },
         body: JSON.stringify({
-            from: FROM,
+            from: message.from ?? FROM,
             to: [message.to],
             subject: message.subject,
             html: message.html,
@@ -114,7 +129,7 @@ async function sendViaSmtp(message: EmailMessage): Promise<SendResult> {
     });
 
     const info = await transport.sendMail({
-        from: FROM,
+        from: message.from ?? FROM,
         to: message.to,
         subject: message.subject,
         html: message.html,

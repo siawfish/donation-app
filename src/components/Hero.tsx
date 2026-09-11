@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, PackagePlus, MapPin, Sparkles, Search } from "lucide-react";
+import { ArrowRight, PackagePlus, Sparkles, Search } from "lucide-react";
 import { useAuth } from "@/firebase/auth/AuthContext";
 
 export interface HeroCategory {
@@ -174,25 +174,6 @@ export default function Hero({
           </div>
         </div>
 
-        {/* Floating chips — only from xl up. At lg the headline is wide enough
-            to run underneath them, and the right-hand chip covered "free". */}
-        <div className="hidden xl:flex absolute top-[364px] left-10 z-10 items-center gap-2 bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl px-4 py-3 animate-float">
-          <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-lime text-forest">
-            <MapPin className="w-4 h-4" />
-          </span>
-          <div>
-            <p className="text-white text-xs font-semibold leading-tight">Near you</p>
-            <p className="text-white/50 text-[10px] leading-tight">sorted by distance</p>
-          </div>
-        </div>
-
-        <div className="hidden xl:flex absolute bottom-28 right-10 z-10 items-center gap-2 bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl px-4 py-3 animate-float" style={{ animationDelay: "1.2s" }}>
-          <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-white text-forest text-xs font-bold">₵0</span>
-          <div>
-            <p className="text-white text-xs font-semibold leading-tight">Always free</p>
-            <p className="text-white/50 text-[10px] leading-tight">no fees, no catch</p>
-          </div>
-        </div>
       </div>
     </section>
   );

@@ -44,6 +44,14 @@ interface RawCategory {
 
 interface RawDepartment {
   name: string
+  /**
+   * Pins the department's id independently of `name` — set this whenever
+   * `name` is shortened for display so the id (and every category/subcategory
+   * id built on top of it) stays exactly what it was, and a listing tagged
+   * before the rename still matches. Omit for a department whose name has
+   * never changed; it falls back to `slugify(name)`.
+   */
+  id?: string
   gender?: Gender
   categories: RawCategory[]
 }
@@ -90,7 +98,8 @@ const RAW_TREE: RawDepartment[] = [
     ],
   },
   {
-    name: "Kids & Baby",
+    name: "Kids",
+    id: "kids-and-baby",
     gender: "kids",
     categories: [
       { name: "Girls' Clothing (2–8 yrs)", subs: ["Tops", "Dresses & Skirts", "Bottoms", "Outerwear", "Sleepwear", "Swimwear", "Multipacks"] },
@@ -105,7 +114,8 @@ const RAW_TREE: RawDepartment[] = [
     ],
   },
   {
-    name: "Home & Living",
+    name: "Home",
+    id: "home-and-living",
     categories: [
       { name: "Furniture", subs: ["Sofas & Armchairs", "Tables & Desks", "Chairs & Stools", "Beds & Mattresses", "Wardrobes & Storage", "Shelving & Bookcases", "Outdoor Furniture"] },
       { name: "Kitchen & Dining", subs: ["Cookware", "Tableware & Cutlery", "Small Kitchen Appliances", "Storage Containers", "Kitchen Textiles"] },
@@ -116,7 +126,8 @@ const RAW_TREE: RawDepartment[] = [
     ],
   },
   {
-    name: "Electronics & Tech",
+    name: "Electronics",
+    id: "electronics-and-tech",
     categories: [
       { name: "Phones & Accessories", subs: ["Mobile Phones", "Cases & Covers", "Chargers & Cables", "Headphones & Earphones"] },
       { name: "Computers & Laptops", subs: ["Laptops", "Desktops", "Monitors", "Keyboards & Mice", "Printers & Scanners"] },
@@ -126,7 +137,8 @@ const RAW_TREE: RawDepartment[] = [
     ],
   },
   {
-    name: "Books, Movies & Music",
+    name: "Books & Media",
+    id: "books-movies-and-music",
     categories: [
       { name: "Books", subs: ["Fiction", "Non-Fiction", "Children's Books", "Textbooks & Educational", "Comics & Graphic Novels", "Cookbooks"] },
       { name: "Movies & TV", subs: ["DVDs & Blu-rays"] },
@@ -134,7 +146,8 @@ const RAW_TREE: RawDepartment[] = [
     ],
   },
   {
-    name: "Sports & Outdoors",
+    name: "Sports",
+    id: "sports-and-outdoors",
     categories: [
       { name: "Fitness Equipment", subs: ["Weights & Dumbbells", "Yoga & Pilates", "Cardio Machines"] },
       { name: "Team Sports", subs: ["Football", "Basketball", "Rugby"] },
@@ -146,7 +159,8 @@ const RAW_TREE: RawDepartment[] = [
     ],
   },
   {
-    name: "Games & Hobbies",
+    name: "Hobbies & Collectables",
+    id: "games-and-hobbies",
     categories: [
       { name: "Games", subs: ["Board Games", "Card Games", "Video Games", "Puzzles"] },
       { name: "Arts & Crafts", subs: ["Craft Supplies", "Drawing & Painting", "Sewing & Knitting Supplies"] },
@@ -199,7 +213,7 @@ const RAW_TREE: RawDepartment[] = [
 
 /** Built once at module load: raw names above, turned into id-bearing nodes. */
 export const CATEGORY_TREE: Department[] = RAW_TREE.map((dept) => {
-  const deptId = slugify(dept.name)
+  const deptId = dept.id ?? slugify(dept.name)
   return {
     id: deptId,
     name: dept.name,
@@ -234,6 +248,22 @@ export function getDepartmentIdForCategoryId(id: string): string {
   return id.split("__")[0]
 }
 
+/** The category (department + category, dropping any subcategory segment) a leaf id belongs to. */
+export function getCategoryIdForCategoryId(id: string): string {
+  return id.split("__").slice(0, 2).join("__")
+}
+
+/**
+ * Whether a listing's tagged category id falls under `filterId` — exact match
+ * at any level, or a descendant of it. `filterId` can be a department id
+ * ("men"), a category id ("men__clothing"), or a full leaf id; the same
+ * hierarchical prefix check works at every level, which is what lets browsing
+ * filter by department alone or drill into one of its categories.
+ */
+export function categoryIdMatches(itemCategoryId: string, filterId: string): boolean {
+  return itemCategoryId === filterId || itemCategoryId.startsWith(`${filterId}__`)
+}
+
 export function getCategoriesFor(departmentId: string): CategoryBranch[] {
   return CATEGORY_TREE.find((d) => d.id === departmentId)?.categories ?? []
 }
@@ -251,9 +281,9 @@ export function flattenLeaves(): { leaf: CategoryLeaf; department: Department; c
   )
 }
 
-/** Looks up a previously-picked subcategory id and rebuilds "Department › Category › Subcategory" for display. */
-export function describeLeaf(id: string): string | null {
+/** Looks up a previously-picked subcategory id and rebuilds "Department-Category-Subcategory" for display. */
+export function describeLeaf(id: string, separator = "-"): string | null {
   const found = flattenLeaves().find((entry) => entry.leaf.id === id)
   if (!found) return null
-  return `${found.department.name} › ${found.category.name} › ${found.leaf.name}`
+  return [found.department.name, found.category.name, found.leaf.name].join(separator)
 }

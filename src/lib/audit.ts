@@ -23,6 +23,7 @@ export type AuditAction =
     | "verification.reject"
     | "application.delete"
     | "application.stage"
+    | "application.message"
     | "job.delete"
     | "post.delete"
     | "post.publish"
@@ -62,6 +63,7 @@ export const AUDIT_LABELS: Record<AuditAction, string> = {
     "verification.reject": "Rejected a verification",
     "application.delete": "Deleted a job application",
     "application.stage": "Moved an applicant",
+    "application.message": "Messaged a candidate",
     "job.delete": "Deleted a role",
     "post.delete": "Deleted a post",
     "post.publish": "Published a post",
@@ -105,6 +107,9 @@ export const AUDIT_SEVERITY: Record<AuditAction, AuditSeverity> = {
     "verification.reject": "notable",
     "application.delete": "destructive",
     "application.stage": "info",
+    // A real message reaching someone outside the platform — worth seeing on
+    // a scan of the log, same as any other outward mail.
+    "application.message": "notable",
     "job.delete": "destructive",
     "post.delete": "destructive",
     "post.publish": "notable",

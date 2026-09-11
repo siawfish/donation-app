@@ -20,7 +20,7 @@ import {
 const JOBS = "jobs";
 const APPLICATIONS = "jobApplications";
 
-async function requireJobsAdmin(capability: "jobs.manage" | "applications.manage" = "jobs.manage") {
+export async function requireJobsAdmin(capability: "jobs.manage" | "applications.manage" = "jobs.manage") {
     const tokens = await getTokens(await cookies(), authConfig);
     if (!tokens) throw new Error("Unauthorized");
     const role = await getMyAdminRole();
@@ -28,7 +28,7 @@ async function requireJobsAdmin(capability: "jobs.manage" | "applications.manage
     return { uid: tokens.decodedToken.uid };
 }
 
-async function actorName(uid: string): Promise<string> {
+export async function actorName(uid: string): Promise<string> {
     const snap = await db.collection("users").doc(uid).get();
     return (snap.data()?.name as string) || "Admin";
 }

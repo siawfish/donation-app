@@ -21,6 +21,7 @@ import SelectInput from "./SelectInput"
 import { Conditions } from "@/lib/utils"
 import { PARCEL_SIZES } from "@/lib/delivery"
 import { sizeKindFor, sizesFor } from "@/lib/sizes"
+import { describeLeaf } from "@/lib/categoryTree"
 import Link from "next/link"
 import { useAuth } from "@/firebase/auth/AuthContext"
 import { awaitClientAuth } from "@/firebase/auth/clientAuth"
@@ -684,7 +685,7 @@ function ListingPreview({ values }: { values: ItemType }) {
         <div>
           {category && (
             <span className="inline-block text-[11px] font-bold text-primary bg-primary-light px-2.5 py-1 rounded-full mb-3">
-              {category.name}
+              {describeLeaf(category.id) ?? category.name}
             </span>
           )}
           <h3 className="text-2xl md:text-3xl font-bold text-ink tracking-tight leading-tight text-balance">

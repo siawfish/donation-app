@@ -8,6 +8,7 @@ import ImageCard from "./ui/image-card";
 import EmptyState from "./EmptyState";
 import { CategoryType, ItemType, PaginatedData, ResponseData } from "@/app/types";
 import { useAuth } from "@/firebase/auth/AuthContext";
+import { getCategoriesFor } from "@/lib/categoryTree";
 
 /**
  * Shape of `getListings`, declared locally on purpose: the actions module has
@@ -56,6 +57,9 @@ export default function Donations({ initial, categories, loadListings }: Donatio
 
   const q = searchParams.get("q") ?? "";
   const cid = searchParams.get("cid") ?? "";
+  // Only meaningful once a department is picked — the row of category chips
+  // underneath it (Clothing, Shoes, ... for Men) drills into that department.
+  const catId = searchParams.get("catId") ?? "";
   const radius = searchParams.get("radius") ?? "";
 
   const { user } = useAuth();
@@ -79,8 +83,15 @@ export default function Donations({ initial, categories, loadListings }: Donatio
 
   const items = useMemo(() => [...initial.items, ...extraItems], [initial.items, extraItems]);
   const hasMore = items.length < initial.total;
-  const activeCategory = categories.find((c) => c.id === cid);
-  const filtersActive = Boolean(q || cid || radius);
+  const activeDepartment = categories.find((c) => c.id === cid);
+  // The categories within the selected department — only shown once one is
+  // picked, so browsing "Men" offers Clothing/Shoes/Bags/... to narrow into.
+  const subcategories = useMemo(() => (cid ? getCategoriesFor(cid) : []), [cid]);
+  const activeSubcategory = subcategories.find((c) => c.id === catId);
+  // A category, once picked, is the more specific filter; falling back to the
+  // department keeps "Men" alone still filtering to everything under it.
+  const effectiveCategoryId = catId || cid;
+  const filtersActive = Boolean(q || cid || catId || radius);
 
   const setParams = useCallback(
     (changes: Record<string, string>) => {
@@ -116,7 +127,7 @@ export default function Donations({ initial, categories, loadListings }: Donatio
         page: next,
         limit: initial.limit,
         query: q || undefined,
-        categoryId: cid || undefined,
+        categoryId: effectiveCategoryId || undefined,
         maxDistanceKm: radius ? Number(radius) : undefined,
       });
       if (data?.items?.length) {
@@ -126,7 +137,7 @@ export default function Donations({ initial, categories, loadListings }: Donatio
     } finally {
       setLoadingMore(false);
     }
-  }, [loadingMore, hasMore, page, initial.limit, q, cid, radius, loadListings]);
+  }, [loadingMore, hasMore, page, initial.limit, q, effectiveCategoryId, radius, loadListings]);
 
   // Auto-load as the sentinel scrolls into view.
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -222,7 +233,7 @@ export default function Donations({ initial, categories, loadListings }: Donatio
         {/* Categories */}
         <div className="flex gap-2 mt-2 overflow-x-auto scrollbar-hide pb-1">
           <button
-            onClick={() => setParams({ cid: "" })}
+            onClick={() => setParams({ cid: "", catId: "" })}
             className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-semibold border transition-colors ${
               !cid ? "bg-lime text-forest border-lime" : "bg-white text-gray-600 border-gray-200 hover:border-forest/40"
             }`}
@@ -232,7 +243,9 @@ export default function Donations({ initial, categories, loadListings }: Donatio
           {categories.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => setParams({ cid: cid === cat.id ? "" : cat.id })}
+              // Switching (or toggling off) the department always drops
+              // whatever category was picked within the previous one.
+              onClick={() => setParams({ cid: cid === cat.id ? "" : cat.id, catId: "" })}
               className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-semibold border transition-colors ${
                 cid === cat.id ? "bg-lime text-forest border-lime" : "bg-white text-gray-600 border-gray-200 hover:border-forest/40"
               }`}
@@ -241,6 +254,32 @@ export default function Donations({ initial, categories, loadListings }: Donatio
             </button>
           ))}
         </div>
+
+        {/* Categories within the selected department — collapsed until one is
+            picked, so "Men" alone still shows everything under it. */}
+        {subcategories.length > 0 && (
+          <div className="flex gap-2 mt-2 overflow-x-auto scrollbar-hide pb-1">
+            <button
+              onClick={() => setParams({ catId: "" })}
+              className={`flex-shrink-0 px-3.5 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                !catId ? "bg-forest text-white border-forest" : "bg-white text-gray-500 border-gray-200 hover:border-forest/40"
+              }`}
+            >
+              All {activeDepartment?.name}
+            </button>
+            {subcategories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setParams({ catId: catId === cat.id ? "" : cat.id })}
+                className={`flex-shrink-0 px-3.5 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                  catId === cat.id ? "bg-forest text-white border-forest" : "bg-white text-gray-500 border-gray-200 hover:border-forest/40"
+                }`}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Active filters */}
         {filtersActive && (
@@ -256,12 +295,13 @@ export default function Donations({ initial, categories, loadListings }: Donatio
                 “{q}” <X className="w-3 h-3" />
               </button>
             )}
-            {activeCategory && (
+            {activeDepartment && (
               <button
-                onClick={() => setParams({ cid: "" })}
+                onClick={() => setParams({ cid: "", catId: "" })}
                 className="inline-flex items-center gap-1 bg-primary-light text-primary px-3 py-1 rounded-full font-semibold hover:brightness-95 transition-all"
               >
-                {activeCategory.name} <X className="w-3 h-3" />
+                {activeSubcategory ? `${activeDepartment.name} · ${activeSubcategory.name}` : activeDepartment.name}
+                <X className="w-3 h-3" />
               </button>
             )}
             {radius && (
@@ -273,7 +313,7 @@ export default function Donations({ initial, categories, loadListings }: Donatio
               </button>
             )}
             <button
-              onClick={() => { setDraft(""); setParams({ q: "", cid: "", radius: "" }); }}
+              onClick={() => { setDraft(""); setParams({ q: "", cid: "", catId: "", radius: "" }); }}
               className="text-gray-400 hover:text-ink font-semibold underline underline-offset-2 transition-colors"
             >
               Clear all

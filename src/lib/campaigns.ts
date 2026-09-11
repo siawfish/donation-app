@@ -136,6 +136,10 @@ export function computeStats(sends: CampaignSend[]): CampaignStats {
  * member's own dashboard contradicts.
  */
 export interface MergeContext {
+    // Lets a concrete MergeContext value pass into renderMergeTags, which
+    // (shared with candidate messaging) takes a plain string map rather than
+    // this interface specifically.
+    [key: string]: string;
     first_name: string;
     points: string;
     tier: string;
@@ -159,10 +163,16 @@ export const MERGE_TAGS: { tag: keyof MergeContext; label: string; example: stri
 
 const TAG_RE = /\{\{\s*([a-z_]+)\s*\}\}/g;
 
-/** Replace every `{{tag}}` with the member's own value. Unknown tags survive. */
-export function renderMergeTags(text: string, context: MergeContext): string {
+/**
+ * Replace every `{{tag}}` with its value from `context`. Unknown tags survive.
+ *
+ * Takes a plain string map rather than `MergeContext` specifically — the
+ * candidate-messaging system reuses this with its own, smaller set of tags
+ * (first name, role applied for) rather than a member's loyalty standing.
+ */
+export function renderMergeTags(text: string, context: Record<string, string>): string {
     return (text ?? "").replace(TAG_RE, (whole, tag: string) =>
-        tag in context ? String(context[tag as keyof MergeContext]) : whole
+        tag in context ? String(context[tag]) : whole
     );
 }
 
