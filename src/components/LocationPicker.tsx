@@ -230,6 +230,13 @@ export default function LocationPicker({ lat, lng, locationName, onChange, disab
         if (!aliveRef.current) return;
         const { latitude, longitude } = pos.coords;
         setBlocked(false);
+        // Some devices fire the error callback once before the real fix comes
+        // through on the same request — a fast, low-accuracy attempt failing
+        // ahead of the GPS one succeeding, in violation of what the API is
+        // supposed to guarantee. Whatever caused an error a moment ago, a
+        // location just came in, so clear it rather than leaving a stale
+        // "couldn't find you" sitting above the pin it contradicts.
+        setGeoError(null);
         mapInstanceRef.current?.setView([latitude, longitude], 16);
         placeMarker({ lat: latitude, lng: longitude }, true);
         setDetecting(false);

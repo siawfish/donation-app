@@ -9,11 +9,12 @@ import { Form, Formik, FormikProps } from "formik"
 import { ConfirmDialog } from "./ConfirmDialog"
 import * as yup from "yup"
 import { AssetType, ItemType, ResponseData } from "@/app/types"
-import { useEffect, useMemo, useState, useTransition } from "react"
+import { useEffect, useState, useTransition } from "react"
 import { storage, firestore, getFirebaseAuth } from "@/firebase/auth/firebase"
 import { signInWithCustomToken } from "firebase/auth"
 import { getFreshCustomToken } from "@/app/app/actions/user"
 import CategoryPicker from "./CategoryPicker"
+import { Condition } from "./Condition"
 import { SafetyDialog } from "./SafetyDialog"
 import SelectInput from "./SelectInput"
 import { Conditions } from "@/lib/utils"
@@ -475,7 +476,7 @@ export default function AddDonation({ addItem, editItem, defaultValues }: AddDon
 
             {/* ── Step 3: pickup + review ── */}
             {step === 2 && (
-              <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-5">
+              <div className="space-y-5">
                 <section className="bg-white rounded-3xl border border-gray-200/70 p-5 md:p-6">
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-primary" />
@@ -497,12 +498,13 @@ export default function AddDonation({ addItem, editItem, defaultValues }: AddDon
                   />
                 </section>
 
-                {/* Seeing the actual card removes the "what will this look like?"
-                    doubt right before the commit point. */}
-                <section className="bg-white rounded-3xl border border-gray-200/70 p-5 md:p-6 h-fit">
-                  <p className="text-xs font-bold tracking-[0.2em] uppercase text-primary mb-3">Preview</p>
+                {/* Full-size, not a thumbnail — seeing the actual listing
+                    removes the "what will this look like?" doubt right before
+                    the commit point, and needs the room to do it properly. */}
+                <section className="bg-white rounded-3xl border border-gray-200/70 p-5 md:p-8">
+                  <p className="text-xs font-bold tracking-[0.2em] uppercase text-primary mb-5">Preview</p>
                   <ListingPreview values={values} />
-                  <p className="text-[11px] text-gray-400 mt-3 leading-relaxed">
+                  <p className="text-[11px] text-gray-400 mt-6 pt-5 border-t border-gray-100 leading-relaxed">
                     This is how your item appears while people are browsing.
                   </p>
                 </section>
@@ -611,46 +613,100 @@ export default function AddDonation({ addItem, editItem, defaultValues }: AddDon
 }
 
 /** Mini version of the browse card, fed by the live form values. */
+/**
+ * A full-size stand-in for the real listing page, not a thumbnail card — the
+ * point of showing a preview at all is to remove doubt right before the
+ * commit point, and a 240px card left too much to the imagination.
+ */
 function ListingPreview({ values }: { values: ItemType }) {
-  const cover = (values.assets as unknown as UploadItem[])?.[0]
+  const rawAssets = (values.assets as unknown as UploadItem[]) ?? []
+  const [urls, setUrls] = useState<string[]>([])
+  const [activeImage, setActiveImage] = useState(0)
 
-  const src = useMemo(() => {
-    if (!cover) return null
-    if (isUploadedAsset(cover)) return cover.url
-    if (cover instanceof File) return URL.createObjectURL(cover)
-    return null
-  }, [cover])
-
-  // Revoke the preview blob when the cover changes or the step unmounts.
   useEffect(() => {
-    return () => { if (src?.startsWith("blob:")) URL.revokeObjectURL(src) }
-  }, [src])
+    const next = rawAssets
+      .map((asset) => {
+        if (isUploadedAsset(asset)) return asset.url
+        if (asset instanceof File) return URL.createObjectURL(asset)
+        return null
+      })
+      .filter((url): url is string => !!url)
+    setUrls(next)
+    setActiveImage(0)
+    // Revoke the blobs when the photo set changes or the step unmounts.
+    return () => next.forEach((url) => { if (url.startsWith("blob:")) URL.revokeObjectURL(url) })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values.assets])
+
+  const category = values.categories?.[0]
+  const active = urls[activeImage]
 
   return (
-    <div className="rounded-3xl border border-gray-200/70 overflow-hidden bg-white max-w-[240px]">
-      <div className="relative aspect-square bg-sand">
-        {src ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-300">
-            <Camera className="w-7 h-7" />
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 lg:gap-10">
+      {/* Gallery */}
+      <div>
+        <div className="relative aspect-[4/3] rounded-3xl overflow-hidden bg-sand">
+          {active ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={active} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center text-gray-300">
+              <Camera className="w-10 h-10" />
+            </div>
+          )}
+          <span className="absolute top-4 left-4 bg-lime text-forest text-xs font-extrabold px-3 py-1.5 rounded-full tracking-widest">
+            FREE
+          </span>
+        </div>
+        {urls.length > 1 && (
+          <div className="flex gap-2 mt-3 overflow-x-auto">
+            {urls.map((url, i) => (
+              <button
+                key={url}
+                type="button"
+                onClick={() => setActiveImage(i)}
+                className={`w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 border-2 transition-colors ${
+                  i === activeImage ? "border-forest" : "border-transparent"
+                }`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={url} alt="" className="w-full h-full object-cover" />
+              </button>
+            ))}
           </div>
         )}
-        <span className="absolute top-3 left-3 bg-lime text-forest text-[10px] font-extrabold px-2.5 py-1 rounded-full tracking-widest">
-          FREE
-        </span>
       </div>
-      <div className="p-3.5">
-        <p className="text-sm font-bold text-ink truncate">{values.name || "Your item"}</p>
-        <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">
-          {values.description || "Your description appears here"}
-        </p>
+
+      {/* Info */}
+      <div className="min-w-0">
+        {category && (
+          <span className="inline-block text-[11px] font-bold text-primary bg-primary-light px-2.5 py-1 rounded-full mb-3">
+            {category.name}
+          </span>
+        )}
+        <h3 className="text-2xl md:text-3xl font-bold text-ink tracking-tight leading-tight text-balance">
+          {values.name || "Your item name"}
+        </h3>
+
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3">
+          {values.condition && <Condition condition={values.condition} />}
+          {values.size && (
+            <span className="text-sm font-semibold text-ink">Size {values.size}</span>
+          )}
+        </div>
+
         {values.locationName && (
-          <p className="flex items-center gap-1 text-xs text-gray-400 mt-2 truncate">
-            <MapPin className="w-3 h-3 flex-shrink-0" /> {values.locationName}
+          <p className="flex items-center gap-1.5 text-sm text-gray-500 mt-3">
+            <MapPin className="w-4 h-4 text-primary flex-shrink-0" /> {values.locationName}
           </p>
         )}
+
+        <div className="mt-5 pt-5 border-t border-gray-100">
+          <p className="text-xs font-bold tracking-[0.15em] uppercase text-gray-400 mb-2">Description</p>
+          <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+            {values.description || "Your description appears here."}
+          </p>
+        </div>
       </div>
     </div>
   )
