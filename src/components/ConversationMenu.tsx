@@ -1,6 +1,6 @@
 "use client"
 
-import { Ban, Flag, MoreVertical, Trash2 } from "lucide-react"
+import { Ban, Check, Flag, MoreVertical, Trash2, X } from "lucide-react"
 import { Button } from "./ui/button"
 import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -9,23 +9,34 @@ import {
 const ROW = "gap-3 px-4 py-3.5 rounded-none text-[15px] text-ink cursor-pointer focus:bg-gray-50"
 
 /**
- * The "..." on a conversation — report it, clear it from your own inbox, or
- * stop hearing from whoever's on the other end. No "Help" row: unlike the
- * reference this was modelled on, there's nothing behind it here yet.
+ * The "..." on a conversation — wrap up the request behind it, report it,
+ * clear it from your own inbox, or stop hearing from whoever's on the other
+ * end. No "Help" row: unlike the reference this was modelled on, there's
+ * nothing behind it here yet.
+ *
+ * Cancel/mark-completed only show while there's an active request to act on
+ * — pass both handlers together (or leave both out) via `onCancelRequest`
+ * and `onMarkCompleted`.
  */
 export function ConversationMenu({
     onReport,
     onDelete,
     onBlock,
+    onCancelRequest,
+    onMarkCompleted,
     blocked,
     triggerClassName,
 }: {
     onReport: () => void
     onDelete: () => void
     onBlock: () => void
+    onCancelRequest?: () => void
+    onMarkCompleted?: () => void
     blocked?: boolean
     triggerClassName?: string
 }) {
+    const showRequestActions = onCancelRequest && onMarkCompleted
+
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -39,6 +50,20 @@ export function ConversationMenu({
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64 p-0 rounded-2xl overflow-hidden">
+                {showRequestActions && (
+                    <>
+                        <DropdownMenuItem onClick={onMarkCompleted} className={ROW}>
+                            <Check className="h-5 w-5 text-forest" />
+                            Mark completed
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className="mx-0 my-0 bg-gray-100" />
+                        <DropdownMenuItem onClick={onCancelRequest} className={ROW}>
+                            <X className="h-5 w-5 text-red-500" />
+                            Cancel request
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className="mx-0 my-0 bg-gray-100" />
+                    </>
+                )}
                 <DropdownMenuItem onClick={onReport} className={ROW}>
                     <Flag className="h-5 w-5 text-red-500" />
                     Report

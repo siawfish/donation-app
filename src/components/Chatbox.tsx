@@ -20,7 +20,6 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
 import { addDoc, serverTimestamp } from "firebase/firestore"
 import { getInitials } from '@/lib/utils'
 import { startOfDay, format, isToday, isYesterday } from 'date-fns'
-import { RequestStatusBanner } from './RequestStatusBanner'
 import CustomAlert from './CustomAlert'
 import { ReportDialog } from './ReportDialog'
 import { ConversationMenu } from './ConversationMenu'
@@ -50,6 +49,7 @@ export default function Chatbox() {
   const [firstMessage, setFirstMessage] = useState<any>(null)
   const [showReport, setShowReport] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [requestAction, setRequestAction] = useState<RequestStatus.COMPLETED | RequestStatus.CANCELLED | null>(null)
   const { blocked, blockedByMe, block, unblock } = useBlockStatus(recipient?.id)
 
   const getRecipient = useCallback(async (id: string) => {
@@ -360,28 +360,31 @@ export default function Chatbox() {
 
   return (
     <div className="flex flex-col h-full relative">
-      <div className="p-4 border-b h-[73px] max-h-[73px] flex flex-row justify-between items-center">
-        <div className="flex flex-col">
-          <h2 className="text-xl font-semibold truncate max-w-[150px] md:max-w-[300px]">{recipient?.name}</h2>
+      <div className="p-3 sm:p-4 border-b h-[73px] max-h-[73px] flex flex-row justify-between items-center gap-3">
+        <div className="flex flex-row items-center gap-2 min-w-0 flex-shrink-0">
+          <Avatar className="h-9 w-9 flex-shrink-0">
+            <AvatarImage src={recipient?.profileUrl} alt={recipient?.name} />
+            <AvatarFallback>{getInitials(recipient?.name as string)}</AvatarFallback>
+          </Avatar>
+          <h2 className="text-base sm:text-xl font-semibold truncate max-w-[70px] sm:max-w-[200px]">{recipient?.name}</h2>
         </div>
-        {/* Listing in context */}
+        {/* Listing in context — kept visible on every breakpoint so the
+            conversation always carries what it's actually about. */}
         {
           item && (
-            <div className="hidden sm:flex flex-row items-center gap-2 max-w-[200px]">
-              <div className="w-12 h-12 bg-accent rounded-sm flex items-center justify-center">
+            <Link href={`${pathname}?id=${item?.id}`} className="flex flex-row items-center gap-2 min-w-0 flex-1 justify-end sm:justify-start">
+              <div className="flex flex-col items-end sm:items-start min-w-0">
+                <p className="text-xs sm:text-sm font-semibold truncate max-w-[80px] sm:max-w-[160px]">{item?.name}</p>
+                <span className="text-[11px] text-muted-foreground whitespace-nowrap">View listing</span>
+              </div>
+              <div className="w-9 h-9 sm:w-11 sm:h-11 bg-accent rounded-sm flex items-center justify-center flex-shrink-0 overflow-hidden">
                 {
                   item?.assets?.[0]?.url && (
-                    <Image src={item.assets[0].url} alt="Call" width={48} height={48} className="rounded-sm"/>
+                    <Image src={item.assets[0].url} alt={item?.name ?? 'Item'} width={44} height={44} className="rounded-sm w-full h-full object-cover"/>
                   )
                 }
               </div>
-              <div className="flex flex-col">
-                <p className="text-sm text-muted-foreground font-semibold truncate">{item?.name}</p>
-                <Link href={`${pathname}?id=${item?.id}`} className="text-xs text-primary">
-                  View listing
-                </Link>
-              </div>
-            </div>
+            </Link>
           )
         }
         <div className="flex items-center gap-1 flex-shrink-0">
@@ -393,6 +396,8 @@ export default function Chatbox() {
               onReport={() => setShowReport(true)}
               onDelete={() => setConfirmDelete(true)}
               onBlock={() => { if (blockedByMe) unblock(); else block() }}
+              onCancelRequest={request?.status === RequestStatus.ACCEPTED ? () => setRequestAction(RequestStatus.CANCELLED) : undefined}
+              onMarkCompleted={request?.status === RequestStatus.ACCEPTED ? () => setRequestAction(RequestStatus.COMPLETED) : undefined}
               blocked={blockedByMe}
               triggerClassName="text-gray-400 hover:text-red-600 hover:bg-red-50"
             />
@@ -409,12 +414,6 @@ export default function Chatbox() {
           loadOlderMessages()
         }
       }}>
-        {request && request.status === RequestStatus.ACCEPTED && (
-          <RequestStatusBanner 
-            request={request} 
-            onStatusChange={updateRequestStatus}
-          />
-        )}
         {messages?.length > 0 ? (
           <>
             {isLoadingMore && (
@@ -431,22 +430,32 @@ export default function Chatbox() {
                      format(new Date(date), 'MMMM d, yyyy')}
                   </span>
                 </div>
-                {dateMessages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex mb-4 ${message.senderId === user?.uid ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div className={`flex ${message.senderId === user?.uid ? 'flex-row-reverse' : 'flex-row'} max-w-[85%] sm:max-w-[75%]`}>
-                      <Avatar className="h-8 w-8 mx-2">
-                        <AvatarImage src={`${message.senderId === user?.uid ? user?.profileUrl : recipient?.profileUrl}`} alt={message.senderId} />
-                        <AvatarFallback>{message.senderId === user?.uid ? getInitials(user?.displayName as string) : getInitials(recipient?.name as string)}</AvatarFallback>
-                      </Avatar>
-                      <div className={`max-w-full ${message.senderId === user?.uid ? 'bg-primary text-white' : 'bg-muted'} rounded-lg p-3`}>
-                        <MessageContent message={message} />
+                {dateMessages.map((message) => {
+                  const isMine = message.senderId === user?.uid
+                  return (
+                    <div
+                      key={message.id}
+                      className={`flex mb-4 ${isMine ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} max-w-[85%] sm:max-w-[75%]`}>
+                        <div className={`flex ${isMine ? 'flex-row-reverse' : 'flex-row'} items-end gap-2`}>
+                          {!isMine && (
+                            <Avatar className="h-8 w-8 flex-shrink-0">
+                              <AvatarImage src={recipient?.profileUrl} alt={message.senderId} />
+                              <AvatarFallback>{getInitials(recipient?.name as string)}</AvatarFallback>
+                            </Avatar>
+                          )}
+                          <div className={`max-w-full ${isMine ? 'bg-primary-light text-forest' : 'bg-muted text-foreground'} rounded-2xl px-3.5 py-2.5`}>
+                            <MessageContent message={message} />
+                          </div>
+                        </div>
+                        <div className={!isMine ? 'ml-10' : ''}>
+                          <MessageMeta message={message} isMine={isMine} />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             ))}
             <div ref={messagesEndRef} />
@@ -599,21 +608,45 @@ export default function Chatbox() {
       >
         This removes it from your inbox only — {recipient?.name ?? "they"} will still see it on their side. This can&apos;t be undone.
       </ConfirmDialog>
+
+      <ConfirmDialog
+        title={requestAction === RequestStatus.CANCELLED ? "Cancel this request?" : "Mark as completed?"}
+        onConfirm={async () => { if (requestAction) { await updateRequestStatus(requestAction); setRequestAction(null) } }}
+        submitLabel={requestAction === RequestStatus.CANCELLED ? "Cancel request" : "Mark completed"}
+        open={!!requestAction}
+        onOpenChange={(open) => { if (!open) setRequestAction(null) }}
+      >
+        {requestAction === RequestStatus.CANCELLED
+          ? "This calls off the handover — the item goes back to being available. This can't be undone."
+          : "This confirms the item has actually changed hands. This can't be undone."}
+      </ConfirmDialog>
     </div>
   )
 }
 
-const MessageContent = ({ message }: { message: MessageType }) => {
-  const formatTimestamp = (timestamp: any) => {
-    if (!timestamp) return ''
-    const date = timestamp.toDate()
-    return new Intl.DateTimeFormat('en-US', {
-      hour: 'numeric',
-      minute: 'numeric',
-      hour12: true
-    }).format(date)
-  }
+function formatTimestamp(timestamp: any) {
+  if (!timestamp) return ''
+  const date = timestamp.toDate()
+  return new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: true
+  }).format(date)
+}
 
+/** Timestamp outside the bubble, same side it's on. Sent messages also get a
+ *  plain-language status — "Sent" until the other person's Chatbox has
+ *  marked it read, then "Delivered". There's no real delivery receipt here,
+ *  `read` is just the closest signal available, but the wording is what was
+ *  asked for. */
+const MessageMeta = ({ message, isMine }: { message: MessageType; isMine: boolean }) => (
+  <p className={`text-[11px] text-muted-foreground mt-1 px-1 ${isMine ? 'text-right' : 'text-left'}`}>
+    {formatTimestamp(message.createdAt)}
+    {isMine && <> · {message.read ? 'Delivered' : 'Sent'}</>}
+  </p>
+)
+
+const MessageContent = ({ message }: { message: MessageType }) => {
   if (message.media && message.media.length > 0) {
     const displayMedia = message.media.slice(0, 4)
     const remainingCount = message.media.length > 4 ? message.media.length - 4 : 0
@@ -664,17 +697,11 @@ const MessageContent = ({ message }: { message: MessageType }) => {
           ))}
         </div>
         {message.content && <p className="break-words">{message.content}</p>}
-        <p className="text-xs mt-1 opacity-70">{formatTimestamp(message.createdAt)}</p>
       </div>
     )
   }
 
-  return (
-    <>
-      <p className="break-words">{message.content}</p>
-      <p className="text-xs mt-1 opacity-70">{formatTimestamp(message.createdAt)}</p>
-    </>
-  )
+  return <p className="break-words">{message.content}</p>
 }
 
 const MediaPreview = ({ 
