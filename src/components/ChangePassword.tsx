@@ -2,7 +2,7 @@
 
 import { useQueryState } from 'nuqs'
 import React from 'react'
-import { Sheet, SheetContent } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useAuth } from '@/firebase/auth/AuthContext';
 import { EditIcon, SaveIcon } from 'lucide-react';
 import CustomButton from './Button';
@@ -63,7 +63,7 @@ export default function ChangePassword() {
                                             <EditIcon className="w-4 h-4" />
                                         </span>
                                         <div className="flex flex-col">
-                                            <h2 className="text-xl font-semibold mb-0">Change Password</h2>
+                                            <SheetTitle className="text-xl font-semibold mb-0">Change Password</SheetTitle>
                                             <p className="text-muted-foreground mb-0">
                                                 Update your password here.
                                             </p>
