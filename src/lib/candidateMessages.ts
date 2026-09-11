@@ -8,16 +8,19 @@
  * carries neither. What it does share with campaigns is everything else:
  * `{{tag}}` merge tags rendered the same way, the same markdown body, the
  * same branded shell (`renderCampaignEmail`/`renderCampaignText`), and the
- * same shape of editor (a preset to start from, a live preview, a send
- * button that can't be pressed twice).
+ * same shape of editor (a starting draft, a live preview, a send button that
+ * can't be pressed twice).
  *
- * The five presets below are deliberately plain rather than corporate —
- * short, first-person, and honest about where things stand, in keeping with
- * how Givny talks to people everywhere else in the product. "Other" is a
- * blank slate for anything the four fixed moments don't cover.
+ * The starting draft for each purpose is not written here — it's one of the
+ * "careers" templates in `email/templates.ts`, editable from Admin → Email
+ * templates the same way every other transactional mail is. That's the
+ * whole point of routing through the template system rather than a fixed
+ * preset in this file: an admin fixing the interview-invite wording there is
+ * fixing what the messenger fills in next time, not a second copy of it.
  */
 
 import { tagsUsed, renderMergeTags } from "./campaigns";
+import type { TemplateKey } from "./email/templates";
 
 export type CandidateMessagePurpose = "acknowledge" | "rejection" | "interview" | "offer" | "other";
 
@@ -27,6 +30,15 @@ export const PURPOSE_LABELS: Record<CandidateMessagePurpose, string> = {
     interview: "Interview invitation",
     offer: "Offer",
     other: "Other",
+};
+
+/** Which careers template backs each purpose in the composer's dropdown. */
+export const PURPOSE_TEMPLATE_KEY: Record<CandidateMessagePurpose, TemplateKey> = {
+    acknowledge: "candidate_acknowledge",
+    rejection: "candidate_rejection",
+    interview: "candidate_interview",
+    offer: "candidate_offer",
+    other: "candidate_other",
 };
 
 /** Who a reply would actually reach. */
@@ -77,67 +89,6 @@ export const CANDIDATE_MERGE_TAGS: { tag: keyof CandidateMergeContext; label: st
 export function unknownCandidateTags(text: string): string[] {
     const known = new Set(CANDIDATE_MERGE_TAGS.map((t) => t.tag as string));
     return tagsUsed(text).filter((t) => !known.has(t));
-}
-
-export interface CandidateMessagePreset {
-    purpose: CandidateMessagePurpose;
-    subject: string;
-    body: string;
-}
-
-export const CANDIDATE_MESSAGE_PRESETS: CandidateMessagePreset[] = [
-    {
-        purpose: "acknowledge",
-        subject: "We've got your application, {{first_name}}",
-        body:
-            "Hi {{first_name}},\n\n" +
-            "Thanks for applying for {{job_title}} — this is just to say it arrived safely.\n\n" +
-            "Someone on our team will read it properly and come back to you with next steps, " +
-            "or with a straight answer if it isn't a fit this time.\n\n" +
-            "Appreciate you taking the time to apply.",
-    },
-    {
-        purpose: "rejection",
-        subject: "About your application for {{job_title}}",
-        body:
-            "Hi {{first_name}},\n\n" +
-            "Thanks for the time you put into applying for {{job_title}} — we read it properly.\n\n" +
-            "We've decided to move forward with other candidates this time. That's not a verdict " +
-            "on your work, just where things landed for this particular role.\n\n" +
-            "We'd genuinely like to hear from you again if something else opens up that fits. " +
-            "Thanks again for considering Givny.",
-    },
-    {
-        purpose: "interview",
-        subject: "Let's talk — {{job_title}} at Givny",
-        body:
-            "Hi {{first_name}},\n\n" +
-            "We'd like to talk with you about {{job_title}}. Nothing formal — a conversation " +
-            "about what the role actually involves and whether it's a fit both ways.\n\n" +
-            "Reply with a couple of times that work for you over the next few days and we'll " +
-            "get it in the diary.\n\n" +
-            "Looking forward to it.",
-    },
-    {
-        purpose: "offer",
-        subject: "We'd like to offer you {{job_title}}",
-        body:
-            "Hi {{first_name}},\n\n" +
-            "Good news — we'd like to offer you the {{job_title}} role.\n\n" +
-            "We'll follow up separately with the details, but wanted you to hear it directly " +
-            "first. Take the time you need to decide, and let us know if anything's unclear " +
-            "before then.\n\n" +
-            "Really hope this works out.",
-    },
-    {
-        purpose: "other",
-        subject: "About your application, {{first_name}}",
-        body: "Hi {{first_name}},\n\n",
-    },
-];
-
-export function presetFor(purpose: CandidateMessagePurpose): CandidateMessagePreset {
-    return CANDIDATE_MESSAGE_PRESETS.find((p) => p.purpose === purpose) ?? CANDIDATE_MESSAGE_PRESETS[CANDIDATE_MESSAGE_PRESETS.length - 1];
 }
 
 /**

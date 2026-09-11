@@ -8,13 +8,14 @@
  * about something that already exists.
  */
 
-export type ContactTopic = "support" | "partnership" | "organisation" | "press" | "other";
+export type ContactTopic = "support" | "partnership" | "organisation" | "press" | "safety" | "other";
 
 export const TOPIC_LABELS: Record<ContactTopic, string> = {
     support: "Help with Givny",
     partnership: "Partnership",
     organisation: "List as an organisation",
     press: "Press or research",
+    safety: "Report a safety concern",
     other: "Something else",
 };
 
@@ -23,6 +24,7 @@ export const TOPIC_BLURB: Record<ContactTopic, string> = {
     partnership: "You'd like to work with us.",
     organisation: "Your business, NGO or school wants a page.",
     press: "You're writing about us, or studying the problem.",
+    safety: "A listing, a message, or another member — something worth us seeing.",
     other: "Anything that doesn't fit above.",
 };
 

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Send, Smile, Paperclip, X, Check } from 'lucide-react'
+import { Send, Smile, Paperclip, X, Check, ShieldBan } from 'lucide-react'
 import EmojiPicker from 'emoji-picker-react'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 import { toast } from 'sonner'
@@ -12,7 +12,7 @@ import { ItemType, MessageType, RequestType, UserType, RequestStatus, ActivityAc
 import { useQueryState } from 'nuqs'
 import { FirebaseErrors } from "@/firebase/errors"
 import { firestore } from "@/firebase/auth/firebase"
-import { collection, where, query, onSnapshot, doc, getDoc, orderBy, getDocs, limit, endBefore, updateDoc } from "firebase/firestore"
+import { collection, where, query, onSnapshot, doc, getDoc, orderBy, getDocs, limit, endBefore, updateDoc, arrayUnion } from "firebase/firestore"
 import { useAuth } from '@/firebase/auth/AuthContext'
 import { usePathname } from 'next/navigation'
 import { storage } from "@/firebase/auth/firebase"
@@ -22,6 +22,10 @@ import { getInitials } from '@/lib/utils'
 import { startOfDay, format, isToday, isYesterday } from 'date-fns'
 import { RequestStatusBanner } from './RequestStatusBanner'
 import CustomAlert from './CustomAlert'
+import { ReportDialog } from './ReportDialog'
+import { ConversationMenu } from './ConversationMenu'
+import { ConfirmDialog } from './ConfirmDialog'
+import { useBlockStatus } from '@/hooks/use-block'
 
 export default function Chatbox() {
   const [newMessage, setNewMessage] = useState('')
@@ -44,6 +48,9 @@ export default function Chatbox() {
   const [hasMore, setHasMore] = useState(true)
   const [lastMessage, setLastMessage] = useState<any>(null)
   const [firstMessage, setFirstMessage] = useState<any>(null)
+  const [showReport, setShowReport] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const { blocked, blockedByMe, block, unblock } = useBlockStatus(recipient?.id)
 
   const getRecipient = useCallback(async (id: string) => {
     try {
@@ -189,7 +196,7 @@ export default function Chatbox() {
   }
 
   const handleSendMessage = async () => {
-    if ((!newMessage.trim() && !mediaPreviews.length) || !user || !rid || isSending) return
+    if ((!newMessage.trim() && !mediaPreviews.length) || !user || !rid || isSending || blocked) return
 
     try {
       setIsSending(true)
@@ -331,6 +338,26 @@ export default function Chatbox() {
     }
   }
 
+  // Clears the conversation from this person's own inbox only — the request
+  // itself, and the other person's view of it, are untouched. Deleting a
+  // shared transaction record would be destroying someone else's copy of it
+  // too, which "delete conversation" was never asking for.
+  const handleDeleteConversation = async () => {
+    if (!rid || !user) return
+    try {
+      await updateDoc(doc(collection(firestore, 'requests'), rid), {
+        hiddenFor: arrayUnion(user.uid),
+      })
+      setConfirmDelete(false)
+      setRid(null)
+      toast.success('Conversation deleted')
+    } catch (error) {
+      toast.error('Failed to delete conversation', {
+        description: FirebaseErrors[error as keyof typeof FirebaseErrors] || 'An error occurred'
+      })
+    }
+  }
+
   return (
     <div className="flex flex-col h-full relative">
       <div className="p-4 border-b h-[73px] max-h-[73px] flex flex-row justify-between items-center">
@@ -343,8 +370,8 @@ export default function Chatbox() {
             <div className="hidden sm:flex flex-row items-center gap-2 max-w-[200px]">
               <div className="w-12 h-12 bg-accent rounded-sm flex items-center justify-center">
                 {
-                  item?.assets[0].url && (
-                    <Image src={item?.assets[0].url} alt="Call" width={48} height={48} className="rounded-sm"/>
+                  item?.assets?.[0]?.url && (
+                    <Image src={item.assets[0].url} alt="Call" width={48} height={48} className="rounded-sm"/>
                   )
                 }
               </div>
@@ -357,10 +384,24 @@ export default function Chatbox() {
             </div>
           )
         }
-        {/* Close button on mobile */}
-        <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => setRid(null)}>
-          <X className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {/* Reporting, deleting and blocking all stay available regardless
+              of request status — none of them stop mattering once a request
+              is cancelled or completed. */}
+          {recipient && (
+            <ConversationMenu
+              onReport={() => setShowReport(true)}
+              onDelete={() => setConfirmDelete(true)}
+              onBlock={() => { if (blockedByMe) unblock(); else block() }}
+              blocked={blockedByMe}
+              triggerClassName="text-gray-400 hover:text-red-600 hover:bg-red-50"
+            />
+          )}
+          {/* Close button on mobile */}
+          <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => setRid(null)}>
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
       <ScrollArea className="flex-grow p-2 sm:p-4 h-full lg:h-[calc(100vh-24rem)] relative" onScrollCapture={(e) => {
         const target = e.currentTarget
@@ -420,7 +461,23 @@ export default function Chatbox() {
         )}
       </ScrollArea>
       {
-        request?.status === RequestStatus.ACCEPTED && (
+        request?.status === RequestStatus.ACCEPTED && blocked && (
+          <div className="p-2 sm:p-4 border-t">
+            <CustomAlert
+              variant="destructive"
+              title="You can't message here"
+              description={
+                blockedByMe
+                  ? `You've blocked ${recipient?.name ?? "this person"}. Unblock them from the menu above to keep messaging.`
+                  : `${recipient?.name ?? "This person"} isn't receiving messages from you right now.`
+              }
+              containerClassName="p-4 border-t"
+            />
+          </div>
+        )
+      }
+      {
+        request?.status === RequestStatus.ACCEPTED && !blocked && (
           <div className="p-2 sm:p-4 border-t">
             <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex flex-col">
               {mediaPreviews.length > 0 && 
@@ -519,6 +576,29 @@ export default function Chatbox() {
           </div>
         )
       }
+
+      <ReportDialog
+        open={showReport}
+        onOpenChange={setShowReport}
+        context={{
+          recipientName: recipient?.name,
+          itemName: item?.name,
+          requestId: rid,
+          itemId: item?.id,
+        }}
+        reporterName={user?.displayName ?? undefined}
+        reporterEmail={user?.email ?? undefined}
+      />
+
+      <ConfirmDialog
+        title="Delete this conversation?"
+        onConfirm={handleDeleteConversation}
+        submitLabel="Delete conversation"
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+      >
+        This removes it from your inbox only — {recipient?.name ?? "they"} will still see it on their side. This can&apos;t be undone.
+      </ConfirmDialog>
     </div>
   )
 }

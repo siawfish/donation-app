@@ -8,14 +8,16 @@ import { FirebaseErrors } from "@/firebase/errors"
 import { useAuth } from "@/firebase/auth/AuthContext"
 import { useClientAuthReady } from "@/firebase/auth/useClientAuth"
 import { firestore } from "@/firebase/auth/firebase"
-import { collection, where, query, onSnapshot, doc, getDoc, orderBy, getDocs } from "firebase/firestore"
+import { collection, where, query, onSnapshot, doc, getDoc, orderBy, getDocs, arrayUnion, updateDoc } from "firebase/firestore"
 import { toast } from "sonner"
 import { RequestType, RequestStatus, ItemType, UserType } from "@/app/types";
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
+import { Trash2 } from "lucide-react";
 import StatusBadge from "./StatusBadge";
 import EmptyState from "./EmptyState";
 import { VerifiedBadge } from "./verification/VerifiedBadge";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 type ConversationEntry = {
   request: RequestType;
@@ -37,6 +39,10 @@ export default function MessageList() {
   const [rid, setRid] = useQueryState("rid")
   const [conversations, setConversations] = useState<ConversationEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [selecting, setSelecting] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     if (!user || !clientReady) return
@@ -127,26 +133,105 @@ export default function MessageList() {
   }, [user, clientReady])
 
   const filtered = useMemo(() => {
-    if (!searchTerm) return conversations
-    return conversations.filter(c =>
+    // A conversation this person deleted stays exactly as it is for the
+    // other party — this just drops it from their own inbox.
+    const visible = conversations.filter((c) => !c.request.hiddenFor?.includes(user?.uid ?? ''))
+    if (!searchTerm) return visible
+    return visible.filter(c =>
       c.otherPerson?.name?.toLowerCase().includes(searchTerm.toLowerCase())
     )
-  }, [conversations, searchTerm])
+  }, [conversations, searchTerm, user?.uid])
+
+  const allSelected = filtered.length > 0 && filtered.every((c) => selectedIds.has(c.request.id!))
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    setSelectedIds(allSelected ? new Set() : new Set(filtered.map((c) => c.request.id!)))
+  }
+
+  const exitSelecting = () => {
+    setSelecting(false)
+    setSelectedIds(new Set())
+  }
+
+  const bulkDelete = async () => {
+    if (!user || selectedIds.size === 0 || deleting) return
+    setDeleting(true)
+    try {
+      await Promise.all(
+        Array.from(selectedIds).map((id) =>
+          updateDoc(doc(firestore, 'requests', id), { hiddenFor: arrayUnion(user.uid) })
+        )
+      )
+      // The open chat was just deleted out from under itself — back to the list.
+      if (rid && selectedIds.has(rid)) setRid(null)
+      toast.success(`Deleted ${selectedIds.size} conversation${selectedIds.size === 1 ? '' : 's'}`)
+      exitSelecting()
+    } catch (error) {
+      toast.error('Failed to delete conversations', {
+        description: FirebaseErrors[error as keyof typeof FirebaseErrors] || 'An error occurred'
+      })
+    } finally {
+      setDeleting(false)
+      setConfirmBulkDelete(false)
+    }
+  }
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b">
+      <div className="p-4 border-b flex items-center justify-between gap-2">
         <h2 className="text-lg sm:text-xl font-semibold">Messages</h2>
+        {filtered.length > 0 && (
+          selecting ? (
+            <button onClick={exitSelecting} className="text-xs font-semibold text-gray-500 hover:text-ink">
+              Cancel
+            </button>
+          ) : (
+            <button onClick={() => setSelecting(true)} className="text-xs font-semibold text-primary hover:underline">
+              Select
+            </button>
+          )
+        )}
       </div>
-      <div className="p-4 border-b">
-        <Input
-          type="text"
-          placeholder="Search messages..."
-          value={searchTerm || ''}
-          onChange={(e) => setSearchTerm(e.target.value || null)}
-          className="w-full"
-        />
-      </div>
+      {selecting ? (
+        <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b bg-gray-50/70">
+          <label className="flex items-center gap-2 text-xs font-medium text-ink cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={toggleSelectAll}
+              className="w-4 h-4 rounded border-gray-300 accent-primary"
+            />
+            Select all
+          </label>
+          <button
+            onClick={() => setConfirmBulkDelete(true)}
+            disabled={selectedIds.size === 0}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 disabled:text-gray-300 disabled:cursor-not-allowed hover:text-red-700"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Delete{selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}
+          </button>
+        </div>
+      ) : (
+        <div className="p-4 border-b">
+          <Input
+            type="text"
+            placeholder="Search messages..."
+            value={searchTerm || ''}
+            onChange={(e) => setSearchTerm(e.target.value || null)}
+            className="w-full"
+          />
+        </div>
+      )}
       <ScrollArea className="flex-grow">
         {isLoading ? (
           <div className="p-4 space-y-3">
@@ -167,13 +252,27 @@ export default function MessageList() {
             containerClassName="min-h-[40vh]"
           />
         ) : (
-          filtered.map(({ request, otherPerson, item, lastMessage, unreadCount }) => (
+          filtered.map(({ request, otherPerson, item, lastMessage, unreadCount }) => {
+            const id = request.id!
+            const isSelected = selectedIds.has(id)
+            return (
             <div
-              key={request.id}
-              className={`flex flex-col cursor-pointer border-b hover:bg-gray-50 transition-colors ${rid === request.id ? 'bg-primary-light' : ''}`}
-              onClick={() => setRid(request.id ?? null)}
+              key={id}
+              className={`flex flex-col border-b transition-colors ${
+                !selecting ? 'cursor-pointer hover:bg-gray-50' : ''
+              } ${rid === id && !selecting ? 'bg-primary-light' : ''} ${isSelected ? 'bg-primary-light/60' : ''}`}
+              onClick={() => selecting ? toggleSelected(id) : setRid(id)}
             >
               <div className="flex flex-row items-center p-4 pb-1">
+                {selecting && (
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => toggleSelected(id)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-4 h-4 mr-3 flex-shrink-0 rounded border-gray-300 accent-primary"
+                  />
+                )}
                 <Avatar className="h-8 w-8 sm:h-10 sm:w-10 mr-3 flex-shrink-0">
                   <AvatarImage src={otherPerson?.profileUrl} alt={otherPerson?.name} />
                   <AvatarFallback>{otherPerson?.name?.slice(0, 2).toUpperCase()}</AvatarFallback>
@@ -214,9 +313,20 @@ export default function MessageList() {
                 <p className="text-[11px] text-gray-500 truncate">{item?.name}</p>
               </div>
             </div>
-          ))
+            )
+          })
         )}
       </ScrollArea>
+
+      <ConfirmDialog
+        title={`Delete ${selectedIds.size} conversation${selectedIds.size === 1 ? '' : 's'}?`}
+        onConfirm={bulkDelete}
+        submitLabel="Delete"
+        open={confirmBulkDelete}
+        onOpenChange={setConfirmBulkDelete}
+      >
+        This removes them from your inbox only — whoever you were talking to will still see their side. This can&apos;t be undone.
+      </ConfirmDialog>
     </div>
   )
 }
