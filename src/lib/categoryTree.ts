@@ -281,8 +281,8 @@ export function flattenLeaves(): { leaf: CategoryLeaf; department: Department; c
   )
 }
 
-/** Looks up a previously-picked subcategory id and rebuilds "Department-Category-Subcategory" for display. */
-export function describeLeaf(id: string, separator = "-"): string | null {
+/** Looks up a previously-picked subcategory id and rebuilds "Department - Category - Subcategory" for display. */
+export function describeLeaf(id: string, separator = " - "): string | null {
   const found = flattenLeaves().find((entry) => entry.leaf.id === id)
   if (!found) return null
   return [found.department.name, found.category.name, found.leaf.name].join(separator)

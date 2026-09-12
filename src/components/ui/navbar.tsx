@@ -61,7 +61,6 @@ export default function Navbar() {
     ...(isAdmin ? [{ id: "admin", href: "/app/admin", label: "Admin", icon: <ShieldCheck className="h-4 w-4" /> }] : []),
     { id: "ambassador", href: "/app/ambassador", label: "Ambassador", icon: <Megaphone className="h-4 w-4" /> },
     { id: "organisation", href: "/app/organisation", label: "Your organisation", icon: <Building2 className="h-4 w-4" /> },
-    { id: "journal", href: "/blog", label: "Journal", icon: <BookOpen className="h-4 w-4" /> },
     { id: "settings", href: "/app/settings", label: "Settings", icon: <SettingsIcon className="h-4 w-4" /> },
     { id: "signout", href: "#", label: "Sign out", icon: <LogOutIcon className="h-4 w-4" /> },
   ];
